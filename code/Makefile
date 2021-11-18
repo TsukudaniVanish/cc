@@ -8,4 +8,7 @@ test: cc
 clean:
 	rm -f cc *.o *~ tmp*
 
+db:
+	gdb cc
+
 .PHONY: test clean
