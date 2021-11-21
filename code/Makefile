@@ -6,7 +6,7 @@ test: cc
 	./test.sh
 
 clean:
-	rm -f cc *.o *~ tmp*
+	rm -f cc *.o *~ tmp* *.log
 
 db:
 	gdb cc
