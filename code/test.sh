@@ -13,7 +13,7 @@ assert(){
 then
 	    echo ": $input =>$actual : looks ok. "
 else
-	    echo "$input => $expected expected, but got $actual"
+	    echo ": $input => $expected expected, but got $actual"
 	    exit 1
 	fi
 }
@@ -37,7 +37,13 @@ echo -n "sum and sub test"
 assert 21 "5+20-4"
 echo -n "tokenize test"
 assert 21 "5 + 20 -4"
-
+echo -n "mul test"
+assert 47 '5+6*7'
+echo -n "div test"
+assert 4 '20/5'
+echo -n "braket test"
+assert 15 '5*(9-6)'
+ssert 4 '(3+5)/2'
 
 echo  "Error test"
 assert_e 20++3
