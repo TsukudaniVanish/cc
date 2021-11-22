@@ -10,17 +10,15 @@
 char *user_input;
 
 
-/*
- * 生成文法
- * expr = mul( "+"mul | "-"mul)*
- * mul = primary ("*" primary | "/" primary )*
- * primary = num | "(" expr ")"
- *
- * */
+
 
 
 typedef enum{
 	
+	ND_EQL,// <-> ==
+	ND_NEQ,// <-> !=
+	ND_LES,// <-> <
+	ND_LEQ,// <-> <=
 	ND_ADD, // <-> +
 	ND_SUB, // <-> -
 	ND_MUL, // <-> *
@@ -61,6 +59,7 @@ struct Token {
 	Token_t *next;
 	int val;//if kind == TK_DIGIT　-> val = the number
 	char *str;//string of token
+	int length;//length of token
 
 };
 
@@ -101,9 +100,9 @@ void error_at(char *loc,char *fmt,...){
 
 //token.kindが'op'か判定してtoken = token.next
 // char OPERATOR,Token_t TOKEN -> bool
-bool find(char operator,Token_t **token){
+bool find(char *operator,Token_t **token){
 
-	if( (*token) -> kind != TK_OPERATOR | (*token) -> str[0] != operator ){
+	if( (*token) -> kind != TK_OPERATOR | strlen(operator) != (*token) -> length | memcmp( (*token) -> str,operator,(*token)-> length ) != 0  ){
 
 
 		return false;
@@ -122,21 +121,21 @@ bool find(char operator,Token_t **token){
 
 //token.kind == TL_DIGIT なら token = token.next して val を返す
 //Token_t *token -> int
-int number(Token_t **token){
-
-	if( (*token) -> kind != TK_DIGIT ){
-
-
-		error_at( (*token)-> str,"数ではありません");
-
-	}else{
-
-
-		int val = (*token) -> val;
-		*token = (*token) -> next;
-		return val;
-	}
-};
+// int number(Token_t **token){
+// 
+// 	if( (*token) -> kind != TK_DIGIT ){
+// 
+// 
+// 		error_at( (*token)-> str,"数ではありません");
+// 
+// 	}else{
+// 
+// 
+// 		int val = (*token) -> val;
+// 		*token = (*token) -> next;
+// 		return val;
+// 	}
+// };
 
 
 
@@ -145,13 +144,12 @@ int number(Token_t **token){
  *expect function
  */
 
-void expect(char character ,Token_t **token){
+void expect(char *string ,Token_t **token){
 
 
-	if( (*token) -> kind != TK_OPERATOR | (*token) -> str[0] != character ){
+	if( (*token) -> kind != TK_OPERATOR | (*token) -> length != strlen(string) | memcmp( (*token) -> str,string,(*token) -> length ) ){
 		
 		error_at( (*token) -> str ,"不正な文字");
-		exit(1);
 	
 	}else{
 	
@@ -167,7 +165,6 @@ int expect_num(Token_t **token){
 
 
 		error_at( (*token) -> str ,"数ではありません");
-		exit(1);
 	
 	}else{
 		
@@ -195,6 +192,19 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
 
 
 
+/*
+ * tokenize function
+ * 演算子:
+ * 		算術演算子:
+ * 				+,-,*,/
+ * 		比較演算子:
+ * 				==,!=,<=,>=,<,>
+ * 		単項演算子:
+ * 				+,-
+ *
+ * 	演算子は長さの順にtokenizeすること
+ *
+ */
 //tokenize funcion char * -> Token_t
 Token_t *tokenize(char *p){//入力文字列
 
@@ -212,9 +222,17 @@ Token_t *tokenize(char *p){//入力文字列
 			p++;
 			continue;
 
-		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'  ){
+		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ // 2文字の演算子をtokenize
 
 			cur = new_token(TK_OPERATOR,cur,p);
+			cur -> length =2;
+			p+=2;
+			continue;
+
+		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>'  ){//単項の演算子をtokenize
+
+			cur = new_token(TK_OPERATOR,cur,p);
+			cur -> length =1;
 			p++;
 			continue;
 
@@ -258,16 +276,93 @@ Node_t *new_node_num(int val){
 /*
  * token から構文木を生成 
  */
+/*
+ * 生成文法
+ * equality = relational("==" relational | "!=" relational)*
+ * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
+ * add = mul( "+"mul | "-"mul)* 
+ * mul = unitary ("*" unitary | "/" unitary )*
+ * unitary = ('+' | '-' )? primary
+ * primary = num | "(" expr ")"
+ *
+ */
 
-Node_t *expr(Token_t **);
+Node_t *equality(Token_t **);
+Node_t *relational(Token_t **);
+Node_t *add(Token_t **);
 Node_t *mul(Token_t **);
+Node_t *unitary(Token_t **);
 Node_t *primary(Token_t **);
 
 /*
  * 関数実装
  */
 
-Node_t *expr(Token_t **token){
+Node_t *equality(Token_t **token){
+
+
+	Node_t *node = relational(token);
+
+	for(;;){
+		
+
+		if( find("==",token) ){
+		
+
+			node = new_node(ND_EQL,node,relational(token));
+		
+		}else if( find("!=",token) ){
+
+			
+			node = new_node(ND_NEQ,node,relational(token));
+		
+		}else{
+
+
+			return node;
+		}
+	}
+}
+
+
+Node_t *relational(Token_t **token){
+
+
+	Node_t *node = add(token);
+
+	for (;;){
+
+		
+		if( find("<=",token) ){
+			
+			
+			node = new_node(ND_LEQ,node,add(token));
+		
+		}else if( find("<",token) ){
+			
+	
+			node = new_node(ND_LES,node,add(token));
+		
+		}else if( find(">=",token) ){
+	
+	
+			node = new_node(ND_LEQ,add(token),node);
+	
+		}else if( find(">",token) ){
+		
+	
+			node = new_node(ND_LES,add(token),node);
+	
+		}else{
+		
+			
+			return node;
+		}
+	}
+}
+
+
+Node_t *add(Token_t **token){
 
 
 	Node_t *node = mul(token);
@@ -275,12 +370,12 @@ Node_t *expr(Token_t **token){
 	for(;;){
 
 		
-		if( find('+',token) ){
+		if( find("+",token) ){
 
 
 			node = new_node(ND_ADD,node,mul(token));
 
-		}else if( find('-',token) ){
+		}else if( find("-",token) ){
 
 
 			node = new_node(ND_SUB,node,mul(token));
@@ -300,20 +395,20 @@ Node_t *mul(Token_t **token){
 
 
 
-	Node_t *node = primary(token);
+	Node_t *node = unitary(token);
 
 	for(;;){
 
 
-		if( find('*',token) ){
+		if( find("*",token) ){
 
 
-			node = new_node(ND_MUL,node,primary(token));
+			node = new_node(ND_MUL,node,unitary(token));
 
-		}else if( find('/',token) ){
+		}else if( find("/",token) ){
 
 
-			node = new_node(ND_DIV,node,primary(token));
+			node = new_node(ND_DIV,node,unitary(token));
 
 		}else{
 
@@ -325,19 +420,53 @@ Node_t *mul(Token_t **token){
 
 
 
+Node_t *unitary(Token_t **token){
+
+	Node_t *node;
+	if( find("+",token) ){
+
+
+		node = primary(token);
+		
+	}else if( find("-",token) ){
+
+
+		node = new_node(ND_SUB,new_node_num(0),primary(token));
+		
+	}else{
+
+
+		node = primary(token);
+	}
+	return node;
+}
+
+
+
+
 
 Node_t *primary(Token_t **token){
 
 	
-	if( find('(',token) ){ // '(' の次は expr
+	if( find("(",token) ){ // '(' の次は expr
 
 
-		Node_t *node = expr(token);
-		expect(')',token);// ')'かcheck
+		Node_t *node = equality(token);
+		expect(")",token);// ')'かcheck
 		return node;
 	}
 
 	return new_node_num( expect_num(token) );
+}
+
+
+
+
+//トークン列から抽象構文木を生成
+Node_t *expr(Token_t **token){
+
+
+	return equality(token);
 }
 
 
@@ -361,6 +490,34 @@ void generate(Node_t *node){
 		printf("	pop rax\n");
 
 		switch (node -> kind){
+		case ND_EQL:
+			
+			printf("	cmp rax, rdi\n");
+			printf("	sete al\n");
+			printf("	movzb rax, al\n");
+			break;
+			
+		case ND_NEQ:
+
+			printf("	cmp rax, rdi\n");
+			printf("	setne al\n");
+			printf("	movzb rax, al\n");
+			break;
+
+		case ND_LES:
+
+			printf("	cmp rax, rdi\n");
+			printf("	setl al\n");
+			printf("	movzb rax, al\n");
+			break;
+
+		case ND_LEQ:
+
+			printf("	cmp rax, rdi\n");
+			printf("	setle al\n");
+			printf("	movzb rax, al\n");
+			break;
+
 		case ND_ADD:
 			
 			printf("	add rax, rdi\n");
@@ -368,7 +525,7 @@ void generate(Node_t *node){
 
 		case ND_SUB:
 			
-			printf("		sub rax, rdi\n");
+			printf("	sub rax, rdi\n");
 			break;
 		
 		case ND_MUL:
