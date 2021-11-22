@@ -1,5 +1,5 @@
 # cc
-cc is my c compiler making project.
+cc is a my c compiler making project.
 
 ## file
 
@@ -8,19 +8,19 @@ header file
 
 ### main.c 
 
-tokenizer and main function are written in this file.
+a tokenizer and a main function are written in this file.
 
 ### parse.c
-parser 
+a parser function 
 
 ### codegenerator.c
-generator function which convert abstract syntax tree into assembly code 
+a generator function which convert an abstract syntax tree into  assembly codes 
 
 ## coding policy
 
 #### memory management 
-For simplicity, we will not manage memory in cc code.
-We allocate memory to pointer but will not free memory　within  compiler life cycle.
+For simplicity, we will not manage memories in cc codes.
+We allocate memories to pointers but will not free memories within the compiler life cycle.
 Don't use "free" before changing this policy.
 
 
