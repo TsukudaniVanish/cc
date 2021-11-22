@@ -2,19 +2,21 @@
 cc is my c compiler making project.
 
 
-## file instruction
+## file
+
 
 ### cc.h
-ヘッダファイル
+header file
 
 ### main.c 
-main関数
+
+tokenizer and main function are written in this file.
 
 ### parse.c
-パーサ
+parser 
 
 ### codegenerator.c
-コードジェネレーター
+generator function which convert abstract syntax tree into assembry code 
 
 
 
