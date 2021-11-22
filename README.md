@@ -1,7 +1,10 @@
 # cc
 cc is a my c compiler making project.
 
+
 ## Files
+
+
 
 ### cc.h
 header file
@@ -16,16 +19,14 @@ a parser function
 ### codegenerator.c
 a generator function which convert an abstract syntax tree into  assembly codes 
 
+
+
 ## coding policy
 
 #### memory management 
 For simplicity, we will not manage memories in cc codes.
 We allocate memories to pointers but will not free memories within the compiler life cycle.
 Don't use "free" before changing this policy.
-
-
-
-
 
 
 ## Reference  
