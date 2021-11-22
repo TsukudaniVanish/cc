@@ -7,8 +7,10 @@
 
 
 //グローバル変数 エラー出力用
-//
 char *user_input;
+
+
+
 
 //user_input を読み込んでエラー個所を示す関数
 void error_at(char *loc,char *fmt,...){
@@ -26,6 +28,9 @@ void error_at(char *loc,char *fmt,...){
 
 }
 
+
+
+
 //token.kindが'op'か判定してtoken = token.next
 // char OPERATOR,Token_t TOKEN -> bool
 bool find(char *operator,Token_t **token){
@@ -42,6 +47,9 @@ bool find(char *operator,Token_t **token){
 		return true;
 	}
 };
+
+
+
 
 /*
  *expect function
@@ -61,6 +69,23 @@ void expect(char *string ,Token_t **token){
 	}
 };
 
+char expect_ident(Token_t **token){
+
+
+	if( (*token)->kind != TK_IDENT ){
+
+
+		error_at( (*token)-> str,"無効な変数名" );
+	
+	}else{
+
+
+		char name = (*token)-> str[0];
+		(*token) = (*token) -> next;
+		return name;
+	}
+}
+
 int expect_num(Token_t **token){
 
 	
@@ -76,6 +101,24 @@ int expect_num(Token_t **token){
 		return v;
 	}
 };
+
+bool at_eof(Token_t **token){
+
+
+	if( (*token)-> kind != TK_EOF ){
+
+
+		return false;
+	
+	}else{
+
+
+		return true;
+	}
+}
+
+
+
 
 //新しいtokenを作り　cur->nextに代入するtoken
 //Token_kind KIND_OF_Token_t , Token_t *CURRENT_TOKEN,char *STRING -> Token_t 
@@ -103,7 +146,11 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
  *
  */
 
-//tokenize funcion char * -> Token_t
+/*
+ * tokenize funcion 
+ */
+
+//char * -> Token_t
 Token_t *tokenize(char *p){//入力文字列
 
 
@@ -122,6 +169,7 @@ Token_t *tokenize(char *p){//入力文字列
 
 		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ // 2文字の演算子をtokenize
 
+			
 			cur = new_token(TK_OPERATOR,cur,p);
 			cur -> length =2;
 			p+=2;
@@ -129,6 +177,7 @@ Token_t *tokenize(char *p){//入力文字列
 
 		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>'  ){//単項の演算子をtokenize
 
+			
 			cur = new_token(TK_OPERATOR,cur,p);
 			cur -> length =1;
 			p++;
@@ -139,6 +188,14 @@ Token_t *tokenize(char *p){//入力文字列
 
 			cur = new_token(TK_DIGIT,cur,p);
 			cur -> val = strtol(p,&p,10);
+			continue;
+		
+		}else if('a' <= *p && *p <= 'z'){
+			
+
+			cur = new_token(TK_IDENT,cur,p);
+			p++;
+			cur -> length = 1;
 			continue;
 		}
 

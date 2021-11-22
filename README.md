@@ -1,14 +1,14 @@
 # cc
 cc is a my c compiler making project.
 
-## file
+## Files
 
 ### cc.h
 header file
 
 ### main.c 
 
-a tokenizer and a main function are written in this file.
+expect functions and a tokenizer and a main function are written in this file.
 
 ### parse.c
 a parser function 
