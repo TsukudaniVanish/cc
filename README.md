@@ -16,7 +16,7 @@ tokenizer and main function are written in this file.
 parser 
 
 ### codegenerator.c
-generator function which convert abstract syntax tree into assembry code 
+generator function which convert abstract syntax tree into assembly code 
 
 
 
@@ -24,8 +24,8 @@ generator function which convert abstract syntax tree into assembry code
 
 #### memory management 
 For simplicity, we will not manage memory in cc code.
-we allocate memory to pointer but will not free memory　within  compiler life cycle.
-don't use "free" before changeing this policy.
+We allocate memory to pointer but will not free memory　within  compiler life cycle.
+Don't use "free" before changing this policy.
 
 
 ## Reference  
