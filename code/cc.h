@@ -11,6 +11,8 @@ typedef enum{
 	ND_MUL, // <-> *
 	ND_DIV, // <-> /
 	ND_NUM, // <-> integer
+	ND_ASSIGN, // <-> = 
+	ND_VAR, // ローカル変数
 
 }Node_kind;
 
@@ -24,12 +26,14 @@ struct Node {
 	Node_t *left;
 	Node_t *right;
 	int val;
+	char name;
 
 };
 
 typedef enum{
 
 	TK_OPERATOR, //記号
+	TK_IDENT, //識別子
 	TK_DIGIT, //整数
 	TK_EOF, //終了記号
 
@@ -62,8 +66,9 @@ bool find(char *operator,Token_t **token);
  */
 
 void expect(char *string ,Token_t **token);
-
+char expect_ident(Token_t **);
 int expect_num(Token_t **token);
+bool at_eof(Token_t **token);
 
 //新しいtokenを作り　cur->nextに代入するtoken
 //Token_kind KIND_OF_Token_t , Token_t *CURRENT_TOKEN,char *STRING -> Token_t 
@@ -88,21 +93,34 @@ Token_t *tokenize(char *p);
 //Node_t を作る関数
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r);
 Node_t *new_node_num(int val);
+Node_t *new_node_ident(char alpha);
 
 /*
  * token から構文木を生成 
  */
 /*
  * 生成文法
+ *
+ * program = stmt*
+ * stmt = assign";"
+ * assign = equality ("=" assign )?
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
  * add = mul( "+"mul | "-"mul)* 
  * mul = unitary ("*" unitary | "/" unitary )*
  * unitary = ('+' | '-' )? primary
- * primary = num | "(" expr ")"
+ * primary = num | indent | "(" assign ")"
+ *
+ * 終端記号:
+ * 		num
+ * 		indent
+ *
  *
  */
 
+void program(Token_t **);
+Node_t *stmt(Token_t**);
+Node_t *assign(Token_t **);
 Node_t *equality(Token_t **);
 Node_t *relational(Token_t **);
 Node_t *add(Token_t **);
