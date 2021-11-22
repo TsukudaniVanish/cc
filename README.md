@@ -1,6 +1,7 @@
 # cc
 cc is my c compiler making project.
 
+
 ## file instruction
 
 ### cc.h
@@ -15,16 +16,14 @@ main関数
 ### codegenerator.c
 コードジェネレーター
 
+
+
 ## coding policy
 
 #### memory management 
 For simplicity, we will not manage memory in cc code.
 we allocate memory to pointer but will not free memory　within  compiler life cycle.
 don't use "free" before changeing this policy.
-
-
-
-
 
 
 ## Reference  
