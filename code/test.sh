@@ -11,9 +11,9 @@ assert(){
 
 	if [ "$actual" == "$expected" ]
 then
-	    echo ": $input =>$actual : looks ok. "
+	    echo -e ": $input =>$actual : \e[32mlooks ok.\e[m"
 else
-	    echo ": $input => $expected expected, but got $actual"
+	    echo -e ": $input => $expected expected, but got \e[31m$actual\e[m"
 	    exit 1
 	fi
 }
@@ -31,7 +31,7 @@ assert_e(){
 
 echo -n "Disply integer"
 assert 0 0
-echo -n "Displya integer another one"
+echo -n "Disply integer another one"
 assert 42 42
 echo -n "sum and sub test"
 assert 21 "5+20-4"
@@ -43,8 +43,27 @@ echo -n "div test"
 assert 4 '20/5'
 echo -n "braket test"
 assert 15 '5*(9-6)'
-ssert 4 '(3+5)/2'
+assert 4 '(3+5)/2'
+echo -n "unit '+' test"
+assert 30 '+10+20'
+echo -n "unit '-' test"
+assert 10 '-10+20'
+echo -n "equality test"
+assert 0 '1==11'
+assert 0 '1 != 1'
+assert 1 '1==1'
+assert 1 '1 !=11'
+echo -n "inequality test"
+assert 0 '11 < 2'
+assert 0 '1 < 1'
+assert 0 '1 > 2'
+assert 0 '1 > 1'
+assert 0 '11 <= 1'
+assert 0 '1 >= 11'
+assert 1 '2 < 11'
+assert 1 '11 <= 11'
+assert 1 '11 >= 2'
 
 echo  "Error test"
-assert_e 20++3
+assert_e 20+++3
 
