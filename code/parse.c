@@ -1,5 +1,5 @@
 #include "cc.h"
-#include<stdlib.h>
+//#include<stdlib.h>
 
 //Node_t を作る関数
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){

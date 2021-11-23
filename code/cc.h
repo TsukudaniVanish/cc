@@ -1,6 +1,29 @@
 #include<stdbool.h>
+#include<stdlib.h>
+//#include<ctype.h>
+//#include<stdarg.h>
+#include<stdio.h>
+#include<string.h>
 
 
+
+
+
+//local変数の実装
+typedef struct lvar Lvar;
+
+struct lvar{
+	
+	Lvar *next;
+	char *name;
+	int length;
+	int offset;
+};
+
+
+
+
+//抽象構文木のノード型
 
 typedef enum{
 	
@@ -20,7 +43,6 @@ typedef enum{
 
 typedef struct Node Node_t;
 
-//抽象構文木のノード型
 
 struct Node {
 	
@@ -44,7 +66,6 @@ typedef enum{
 
 }Token_kind;
 
-
 typedef struct Token Token_t;
 
 struct Token {
@@ -56,6 +77,13 @@ struct Token {
 	int length;//length of token
 
 };
+
+
+
+
+//変数を名前で検索する
+Lvar *find_lvar(Token_t **token,Lvar **locals);
+
 
 // //エラーをはく関数
 //void error(char *fmt,...){//printf と同じ引数をとる
