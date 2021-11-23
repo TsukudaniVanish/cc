@@ -4,7 +4,7 @@ assert(){
     expected="$1"
     input="$2"
 
-    ./cc "$input" > tmp.s
+    ./cc "$input;" > tmp.s
 	gcc -o tmp tmp.s
 	./tmp
 	actual="$?"
@@ -63,6 +63,9 @@ assert 0 '1 >= 11'
 assert 1 '2 < 11'
 assert 1 '11 <= 11'
 assert 1 '11 >= 2'
+
+echo "local var test"
+assert 14 'a=3;b =5*6- 8 ; a+b/2'
 
 echo  "Error test"
 assert_e 20+++3
