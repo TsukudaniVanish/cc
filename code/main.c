@@ -26,7 +26,7 @@ void error_at(char *loc,char *fmt,...){
 	fprintf(stderr,"\n");
 	exit(1);
 
-}
+};
 
 
 
@@ -84,7 +84,7 @@ char expect_ident(Token_t **token){
 		(*token) = (*token) -> next;
 		return name;
 	}
-}
+};
 
 int expect_num(Token_t **token){
 
@@ -115,7 +115,7 @@ bool at_eof(Token_t **token){
 
 		return true;
 	}
-}
+};
 
 
 
@@ -140,8 +140,8 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
  * 		比較演算子:
  * 				==,!=,<=,>=,<,>
  * 		単項演算子:
- * 				+,-
- *
+ * 				+,-,=
+ *	変数名: a~z
  * 	演算子は長さの順にtokenizeすること
  *
  */
@@ -175,7 +175,7 @@ Token_t *tokenize(char *p){//入力文字列
 			p+=2;
 			continue;
 
-		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>'  ){//単項の演算子をtokenize
+		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>' | *p == '=' ){//単項の演算子をtokenize
 
 			
 			cur = new_token(TK_OPERATOR,cur,p);
@@ -196,6 +196,12 @@ Token_t *tokenize(char *p){//入力文字列
 			cur = new_token(TK_IDENT,cur,p);
 			p++;
 			cur -> length = 1;
+			continue;
+		
+		}else if(*p == ';'){
+		
+			cur = new_token(TK_OPERATOR,cur,p++);
+			cur -> length =1;
 			continue;
 		}
 
@@ -218,12 +224,13 @@ int main(int argc, char **argv){
 //グローバル変数に代入　エラー出力用
 	user_input = argv[1];
 
+	Node_t *code[100];// ';'で区切った文
 	
 	Token_t *token = tokenize(argv[1]);//tokenize
 
 
 	//token を抽象構文木に変換
-	Node_t *node = expr(&token);
+	program(&token,code);
 
 	
 
@@ -233,13 +240,27 @@ int main(int argc, char **argv){
 	printf("main:\n");
 	
 
+	//prologue
+	//変数26こ分の領域を確保
+	printf("	push rbp\n");
+	printf("	mov rbp, rsp\n");
+	printf("	sub rsp, 208\n");//26*8 = 208
+
+	//先頭の式からコード生成
 	//抽象構文木を降りてコード生成
 	//スタックトップには式の結果が入っている
-	generate(node);
+	for(int i =0;code[i];i++){
+		generate(code[i]);
 
+		//式評価の結果がスタックに残っているので
+		//ポップしておく
+		printf("	pop rax\n");
+	}
 
-	//スタックトップとりだして返す
-	printf("	pop rax\n");
+	//epilogue
+	//スタックトップとりだしてraxの値を返す
+	printf("	mov rsp, rbp\n");
+	printf("	pop rbp\n");
 	printf("	ret\n");
 	return 0;
 }

@@ -1,5 +1,7 @@
 #include<stdbool.h>
 
+
+
 typedef enum{
 	
 	ND_EQL,// <-> ==
@@ -12,7 +14,7 @@ typedef enum{
 	ND_DIV, // <-> /
 	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
-	ND_VAR, // ローカル変数
+	ND_LVAL, // ローカル変数
 
 }Node_kind;
 
@@ -26,9 +28,12 @@ struct Node {
 	Node_t *left;
 	Node_t *right;
 	int val;
-	char name;
+	int offset;
 
 };
+
+
+
 
 typedef enum{
 
@@ -53,7 +58,7 @@ struct Token {
 };
 
 // //エラーをはく関数
-// void error(char *fmt,...){//printf と同じ引数をとる
+//void error(char *fmt,...){//printf と同じ引数をとる
 //user_input を読み込んでエラー個所を示す関数
 void error_at(char *loc,char *fmt,...);
 
@@ -118,7 +123,7 @@ Node_t *new_node_ident(char alpha);
  *
  */
 
-void program(Token_t **);
+void program(Token_t **,Node_t **);
 Node_t *stmt(Token_t**);
 Node_t *assign(Token_t **);
 Node_t *equality(Token_t **);

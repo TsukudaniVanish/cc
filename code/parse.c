@@ -16,8 +16,8 @@ Node_t *new_node_ident(char alpha){
 
 
 	Node_t *node = calloc(1,sizeof( Node_t ));
-	node -> kind = ND_VAR;
-	node -> name = alpha;
+	node -> kind = ND_LVAL;
+	node -> offset = ( alpha - 'a' +1 )*8;
 	return node;
 }
 
@@ -59,12 +59,12 @@ Node_t *new_node_num(int val){
  */
 
 
-Node_t *code[100];// ';'で区切った文
 
-void program(Token_t **token){
+
+void program(Token_t **token,Node_t **code){
 	
 
-	int number = 0;
+	int i = 0;
 	while(!at_eof(token)){
 
 
@@ -92,6 +92,7 @@ Node_t *assign(Token_t **token){
 
 		node = new_node(ND_ASSIGN,node,assign(token));
 	}
+	return node;
 }
 
 
@@ -246,10 +247,15 @@ Node_t *primary(Token_t **token){
 	}else if( (*token)-> kind == TK_IDENT  ){
 
 
-		node = new_node_indent(expect_ident(token));
+		node = new_node_ident(expect_ident(token));
+	
+	}else{
+
+
+		node = new_node_num(expect_num(token));
 	}
 
-	return new_node_num( expect_num(token) );
+	return node;
 }
 
 
