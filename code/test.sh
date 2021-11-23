@@ -19,12 +19,23 @@ else
 }
 #error assert
 assert_e(){
-	
+	rm -i test.log
 	input="$1"
 	echo -n "Input : "
 	echo $input
+	echo $input >> test.log
+	echo -e "    ^数ではありません" >> test.log
 	./cc "$input" 1>tmp.s 2>error.log
-	cat error.log
+	diff -q  error.log test.log	
+	if [ $? -eq 0 ];then
+		echo "=>"
+		cat error.log
+		echo -e "\e[32mlooks ok.\e[m"
+	else
+		echo  -e "\e[31minvaild error messages\e[m"
+		exit 1
+	fi
+
 
 }
 
