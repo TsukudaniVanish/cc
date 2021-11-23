@@ -1,9 +1,26 @@
 #include "cc.h"
-#include<stdlib.h>
-#include<ctype.h>
+//#include<stdio.h>
 #include<stdarg.h>
-#include<stdio.h>
-#include<string.h>
+//#include<stdbool.h>
+//#include<string.h>
+
+
+
+//変数を名前で検索する
+Lvar *find_lvar(Token_t **token,Lvar **locals){
+	
+
+	for(Lvar *var = *locals; var;var = var -> next){
+
+
+		if( var -> length == (*token)-> length && !memcmp( (*token)-> str, var ->name,var -> length )  ){
+
+
+			return var; 
+		}
+	}
+	return NULL;
+}
 
 
 //グローバル変数 エラー出力用
@@ -120,97 +137,11 @@ bool at_eof(Token_t **token){
 
 
 
-//新しいtokenを作り　cur->nextに代入するtoken
-//Token_kind KIND_OF_Token_t , Token_t *CURRENT_TOKEN,char *STRING -> Token_t 
-Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
 
 
-	Token_t *token = calloc(1,sizeof(Token_t));
-	token ->kind = kind;
-	token -> str = str;
-	cur ->next = token;
-	return token;
-};
-
-/*
- * tokenize function
- * 演算子:
- * 		算術演算子:
- * 				+,-,*,/
- * 		比較演算子:
- * 				==,!=,<=,>=,<,>
- * 		単項演算子:
- * 				+,-,=
- *	変数名: a~z
- * 	演算子は長さの順にtokenizeすること
- *
- */
-
-/*
- * tokenize funcion 
- */
-
-//char * -> Token_t
-Token_t *tokenize(char *p){//入力文字列
 
 
-	Token_t head;
-	head.next = NULL;
-	Token_t *cur = &head;
 
-	while(*p){
-
-
-		if( isspace(*p) ){//空白の時はスキップ
-
-
-			p++;
-			continue;
-
-		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ // 2文字の演算子をtokenize
-
-			
-			cur = new_token(TK_OPERATOR,cur,p);
-			cur -> length =2;
-			p+=2;
-			continue;
-
-		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>' | *p == '=' ){//単項の演算子をtokenize
-
-			
-			cur = new_token(TK_OPERATOR,cur,p);
-			cur -> length =1;
-			p++;
-			continue;
-
-		}else if(isdigit(*p)){
-
-
-			cur = new_token(TK_DIGIT,cur,p);
-			cur -> val = strtol(p,&p,10);
-			continue;
-		
-		}else if('a' <= *p && *p <= 'z'){
-			
-
-			cur = new_token(TK_IDENT,cur,p);
-			p++;
-			cur -> length = 1;
-			continue;
-		
-		}else if(*p == ';'){
-		
-			cur = new_token(TK_OPERATOR,cur,p++);
-			cur -> length =1;
-			continue;
-		}
-
-		error_at(cur -> str,"tokenizeできません。");
-	}
-
-	new_token(TK_EOF,cur,p);
-	return head.next;
-};
 
 int main(int argc, char **argv){
 	
@@ -221,12 +152,17 @@ int main(int argc, char **argv){
 		return 1;
 	}
 
-//グローバル変数に代入　エラー出力用
+	//グローバル変数に代入　エラー出力用
 	user_input = argv[1];
-
-	Node_t *code[100];// ';'で区切った文
 	
-	Token_t *token = tokenize(argv[1]);//tokenize
+	//ローカル変数
+	Lvar *locals;
+
+	// ';'で区切った文
+	Node_t *code[100];
+	
+	//入力をトークン列に変換
+	Token_t *token = tokenize(argv[1]);
 
 
 	//token を抽象構文木に変換
@@ -241,7 +177,7 @@ int main(int argc, char **argv){
 	
 
 	//prologue
-	//変数26こ分の領域を確保
+	//変数26個分の領域を確保
 	printf("	push rbp\n");
 	printf("	mov rbp, rsp\n");
 	printf("	sub rsp, 208\n");//26*8 = 208

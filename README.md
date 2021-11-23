@@ -9,14 +9,18 @@ cc is a my c compiler making project.
 ### cc.h
 header file
 
+### tokenize.c
+a tokenizer function and token making functions 
+
 ### main.c 
 
-expect functions and a tokenizer and a main function are written in this file.
+expect functions and  a main function are written in this file.
 
 ### parse.c
-a parser function 
+a parser function and node making functions 
 
 ### codegenerator.c
+a generate local variable function
 a generator function which convert an abstract syntax tree into  assembly codes 
 
 
