@@ -44,6 +44,62 @@ Node_t *new_node_num(int val){
 	return node;
 }
 
+Node_t *new_node_keyword(Token_kind kind,Token_t **token){
+
+	(*token) = (*token) -> next;
+
+	Node_t *node = calloc(1,sizeof(Node_t));
+
+	switch(kind){
+	case TK_IF:
+
+		node -> kind = ND_IF;
+
+		expect("(",token);
+
+		node -> left = assign(token);
+
+		expect(")",token);
+
+		node -> right = stmt(token);
+		
+		if( (*token)->kind == TK_ELSE ){
+
+			Node_t *nodeup = calloc(1,sizeof(Node_t));
+			nodeup ->kind = ND_ELSE;
+			nodeup -> left = node;
+			node -> kind = ND_IFE;
+
+			(*token) = (*token)->next;
+
+			nodeup -> right = stmt(token);
+			
+			
+			return nodeup;
+
+		}else{
+			
+
+			return node;
+		}
+	
+	case TK_WHILE:
+
+		return node;
+	
+	case TK_FOR:
+		
+		return node;
+	
+	case TK_RETURN:
+
+		node -> kind = ND_RETURN;
+		node -> left = assign(token);
+		expect(";",token);
+		return node;
+	}
+}
+
 /*
  * token から構文木を生成 
  */
@@ -51,7 +107,12 @@ Node_t *new_node_num(int val){
  * 生成文法
  *
  * program = stmt*
- * stmt = assign";" | "return" assign ";"
+ * stmt = assign";" 
+ * 		| "if" "(" assign  ")" stmt ( "else" stmt  )?
+ * 		| "while"  "(" assign ")" stmt
+ * 		| "for"  "(" assign?; assign? ; assign? ")"stmt
+ * 		| "return" assign ";"
+ * 		| ...
  * assign = equality ("=" assign )?
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
@@ -92,21 +153,23 @@ Node_t *stmt(Token_t **token){
 
 	Node_t *node;
 
-	if( (*token)->kind == TK_RETURN ){
+	if( (*token) -> kind == TK_IF ){
 
-		*token = (*token)->next;
+		
+		node = new_node_keyword(TK_IF,token);
 
-		node = calloc(1,sizeof(Node_t));
-		node -> kind = ND_RETURN;
-		node -> left = assign(token);
-	
+	}else if( (*token)->kind == TK_RETURN ){
+
+		
+		node =new_node_keyword(TK_RETURN,token);	
 	}else{
 
 
 		node = assign(token);
+		expect(";",token);
 	}
 
-	expect(";",token);
+	
 	return node;
 }
 
@@ -316,16 +379,4 @@ Node_t *primary(Token_t **token){
 
 	return node;
 }
-
-
-
-
-//トークン列から抽象構文木を生成
-Node_t *expr(Token_t **token){
-
-
-	return equality(token);
-}
-
-
 

@@ -43,7 +43,14 @@ typedef enum{
 	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
 	ND_LVAL, // ローカル変数
-	ND_RETURN, //return key word
+	// key word=========================
+	ND_RETURN,
+	ND_IF,// else なしのif
+	ND_ELSE,
+	ND_IFE, //if ... else
+	ND_WHILE,
+	ND_FOR,
+	//=========================
 
 }Node_kind;
 
@@ -66,7 +73,13 @@ struct Node {
 typedef enum{
 
 	TK_OPERATOR, //記号
-	TK_RETURN, // return keyword
+	//key words=====================================================
+	TK_RETURN,
+	TK_IF,
+	TK_ELSE,
+	TK_WHILE,
+	TK_FOR,
+	//=====================================================
 	TK_IDENT, //識別子
 	TK_DIGIT, //整数
 	TK_EOF, //終了記号
@@ -88,6 +101,10 @@ struct Token {
 
 
 
+/*
+ * assert find <- main.c=====================================================
+ */
+
 //変数を名前で検索する
 Lvar *find_lvar(Token_t **token,Lvar **locals);
 
@@ -101,14 +118,18 @@ void error_at(char *loc,char *fmt,...);
 // char OPERATOR,Token_t TOKEN -> bool
 bool find(char *operator,Token_t **token);
 
-/*
- *expect function
- */
-
 void expect(char *string ,Token_t **token);
 char expect_ident(Token_t **);
 int expect_num(Token_t **token);
 bool at_eof(Token_t **token);
+//=====================================================
+
+
+
+
+/*
+ * tokenize.c=====================================================
+ */
 
 //新しいtokenを作り　cur->nextに代入するtoken
 //Token_kind KIND_OF_Token_t , Token_t *CURRENT_TOKEN,char *STRING -> Token_t 
@@ -148,35 +169,25 @@ bool isoperator(char *);
 
 //tokenize funcion char * -> Token_t
 Token_t *tokenize(char *p);
+//=====================================================
+
+
+
+
+
+/*
+ * parse.c=====================================================
+ */
+
+Token_t *consume_ident(Token_t **token);
 
 //Node_t を作る関数
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r);
 Node_t *new_node_num(int val);
 Node_t *new_node_ident(char alpha);
+Node_t *new_node_keyword(Token_kind kind,Token_t **token);
 
-/*
- * token から構文木を生成 
- */
-/*
- * 生成文法
- *
- * program = stmt*
- * stmt = assign";"
- * assign = equality ("=" assign )?
- * equality = relational("==" relational | "!=" relational)*
- * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
- * add = mul( "+"mul | "-"mul)* 
- * mul = unitary ("*" unitary | "/" unitary )*
- * unitary = ('+' | '-' )? primary
- * primary = num | indent | "(" assign ")"
- *
- * 終端記号:
- * 		num
- * 		indent
- *
- *
- */
-
+//parser 本体
 void program(Token_t **,Node_t **);
 Node_t *stmt(Token_t**);
 Node_t *assign(Token_t **);
@@ -186,9 +197,17 @@ Node_t *add(Token_t **);
 Node_t *mul(Token_t **);
 Node_t *unitary(Token_t **);
 Node_t *primary(Token_t **);
+//=====================================================
 
-//トークン列から抽象構文木を生成
-Node_t *expr(Token_t **token);
+
+
+/*
+ * codegenerator.c=====================================================
+ */
+
+void gen_lval(Node_t *node);
+
 
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node);
+//=====================================================
