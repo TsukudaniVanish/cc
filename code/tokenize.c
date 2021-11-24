@@ -27,6 +27,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
  * 				+,-,=
  *	変数名: a~z
  * 	演算子は長さの順にtokenizeすること
+ * 	演算子か判定後にlocal variable として読み込むこと
  *
  */
 
@@ -75,12 +76,28 @@ Token_t *tokenize(char *p){//入力文字列
 			cur -> val = strtol(p,&p,10);
 			continue;
 		
-		}else if('a' <= *p && *p <= 'z'){
+		}else if(*p != ';'){
 			
 
 			cur = new_token(TK_IDENT,cur,p);
-			p++;
-			cur -> length = 1;
+			//length 取得
+			//空白か次の演算子まで名前だと思う
+			char *q = p;
+			
+			while(1){
+			
+				if( isspace(*q)  || !( strncmp(q,"!=",2) && strncmp(q,"!=",2) && strncmp(q,"<=",2) && strncmp(q,">=",2) && *q != '+' && *q != '-' && *q != '*' && *q != '/' && *q != '(' && *q != ')'&& *q != '<' && *q != '>' && *q != '=' && *q != ';'   ) ){//q が演算子をさしたらやめる
+
+
+					cur -> length = q-p;
+					p =q;
+					break;
+				}
+
+				q++;
+
+			}
+			
 			continue;
 		
 		}else if(*p == ';'){

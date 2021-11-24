@@ -155,8 +155,7 @@ int main(int argc, char **argv){
 	//グローバル変数に代入　エラー出力用
 	user_input = argv[1];
 	
-	//ローカル変数
-	Lvar *locals;
+	
 
 	// ';'で区切った文
 	Node_t *code[100];
@@ -177,10 +176,12 @@ int main(int argc, char **argv){
 	
 
 	//prologue
-	//変数26個分の領域を確保
+	//変数分の領域を確保
 	printf("	push rbp\n");
 	printf("	mov rbp, rsp\n");
-	printf("	sub rsp, 208\n");//26*8 = 208
+	if(locals){
+		printf("	sub rsp, %d\n",locals -> offset);//26*8 = 208
+	}
 
 	//先頭の式からコード生成
 	//抽象構文木を降りてコード生成
