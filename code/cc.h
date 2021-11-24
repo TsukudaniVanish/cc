@@ -20,7 +20,8 @@ struct lvar{
 	int offset;
 };
 
-
+//local変数
+Lvar *locals;
 
 
 //抽象構文木のノード型

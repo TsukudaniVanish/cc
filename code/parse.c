@@ -1,6 +1,19 @@
 #include "cc.h"
 //#include<stdlib.h>
 
+
+
+
+Token_t *consume_ident(Token_t **token){
+	Token_t *tok = *token;
+	*token = (*token)-> next;
+	return tok;
+
+}
+
+
+
+
 //Node_t を作る関数
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 
@@ -244,11 +257,42 @@ Node_t *primary(Token_t **token){
 		node = assign(token);
 		expect(")",token);// ')'かcheck
 		return node;
+
 	}else if( (*token)-> kind == TK_IDENT  ){
 
 
-		node = new_node_ident(expect_ident(token));
-	
+		Token_t *ident = consume_ident(token);
+		
+		if(ident){
+			
+
+			node = calloc(1,sizeof(Node_t));
+			node -> kind = ND_LVAL;
+
+			Lvar *lvar = find_lvar(&ident,&locals);
+
+			if(lvar){
+
+
+				node -> offset = lvar -> offset;
+			}else{
+
+
+				lvar = calloc(1,sizeof(Lvar));
+				lvar -> next = locals;
+				lvar -> name = ident -> str;
+				lvar -> length = ident -> length;
+				if(locals){
+					lvar -> offset = locals -> offset +8;
+				}else{
+					lvar -> offset = 8;
+				}
+				node -> offset = lvar -> offset;
+				locals = lvar;
+			}
+			return node;
+		}
+
 	}else{
 
 
@@ -267,3 +311,6 @@ Node_t *expr(Token_t **token){
 
 	return equality(token);
 }
+
+
+
