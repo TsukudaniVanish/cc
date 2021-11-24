@@ -77,6 +77,11 @@ assert 1 '11 >= 2'
 
 echo "local var test"
 assert 14 'a=3;b =5*6- 8 ; a+b/2'
+assert 14 'foo =3; baa = 5 * 6-8;foo+baa/2'
+
+echo "return test"
+assert 14 'a = 1;return a+13'
+assert 8 'return 8; return 15'
 
 echo  "Error test"
 assert_e 20+++3

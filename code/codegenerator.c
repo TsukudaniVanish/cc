@@ -52,6 +52,15 @@ void generate(Node_t *node){
 		printf("	mov rax, [rax]\n");
 		printf("	push rax\n");
 		return;
+
+	case ND_RETURN:
+
+		generate(node -> left);
+		printf("	pop rax\n");
+		printf("	mov rsp, rbp\n");
+		printf("	pop rbp\n");
+		printf("	ret\n");
+		return;
 	}
 	
 
