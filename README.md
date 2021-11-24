@@ -20,7 +20,7 @@ expect functions and  a main function are written in this file.
 a parser function and node making functions 
 
 ### codegenerator.c
-a generate local variable function
+a generating local variable function  
 a generator function which convert an abstract syntax tree into  assembly codes 
 
 
