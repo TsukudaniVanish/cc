@@ -51,7 +51,7 @@ Node_t *new_node_num(int val){
  * 生成文法
  *
  * program = stmt*
- * stmt = assign";"
+ * stmt = assign";" | "return" assign ";"
  * assign = equality ("=" assign )?
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
@@ -90,7 +90,22 @@ void program(Token_t **token,Node_t **code){
 Node_t *stmt(Token_t **token){
 
 
-	Node_t * node = assign(token);
+	Node_t *node;
+
+	if( (*token)->kind == TK_RETURN ){
+
+		*token = (*token)->next;
+
+		node = calloc(1,sizeof(Node_t));
+		node -> kind = ND_RETURN;
+		node -> left = assign(token);
+	
+	}else{
+
+
+		node = assign(token);
+	}
+
 	expect(";",token);
 	return node;
 }

@@ -1,6 +1,44 @@
 #include "cc.h"
 //#include<string.h>
+//#include<stdbool.h>
 #include<ctype.h>
+
+
+
+
+bool is_alnum(char c){
+
+	
+	return ('a' <= c && c <= 'z' ) ||
+		   ('A' <= c && c <= 'Z' ) ||
+		   ('0' <= c && c <= '9' ) ||
+		   (c == '_');
+}
+
+
+
+
+bool isoperator(char *p){
+
+	
+	char *operators[] ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")",NULL};
+
+	for(char **str = operators ; *str ; str++ ){
+		
+		int len = strlen(*str);
+
+		if( !strncmp(p,*str,len) ){
+
+
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+
 
 
 //新しいtokenを作り　cur->nextに代入するtoken
@@ -53,6 +91,13 @@ Token_t *tokenize(char *p){//入力文字列
 			p++;
 			continue;
 
+		}else if( !( strncmp(p,"return",6) || is_alnum(p[6]) ) ){
+
+
+			cur = new_token(TK_RETURN,cur,p);
+			p+=6;
+			continue;
+
 		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ // 2文字の演算子をtokenize
 
 			
@@ -86,7 +131,9 @@ Token_t *tokenize(char *p){//入力文字列
 			
 			while(1){
 			
-				if( isspace(*q)  || !( strncmp(q,"!=",2) && strncmp(q,"!=",2) && strncmp(q,"<=",2) && strncmp(q,">=",2) && *q != '+' && *q != '-' && *q != '*' && *q != '/' && *q != '(' && *q != ')'&& *q != '<' && *q != '>' && *q != '=' && *q != ';'   ) ){//q が演算子をさしたらやめる
+				if( isspace(*q)  || isoperator(q)){ 
+				//q が演算子をさしたらやめる
+
 
 
 					cur -> length = q-p;

@@ -8,6 +8,10 @@
 
 
 
+//operators ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")",NULL}
+
+
+
 
 //local変数の実装
 typedef struct lvar Lvar;
@@ -39,6 +43,7 @@ typedef enum{
 	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
 	ND_LVAL, // ローカル変数
+	ND_RETURN, //return key word
 
 }Node_kind;
 
@@ -61,6 +66,7 @@ struct Node {
 typedef enum{
 
 	TK_OPERATOR, //記号
+	TK_RETURN, // return keyword
 	TK_IDENT, //識別子
 	TK_DIGIT, //整数
 	TK_EOF, //終了記号
@@ -75,7 +81,7 @@ struct Token {
 	Token_t *next;
 	int val;//if kind == TK_DIGIT　-> val = the number
 	char *str;//string of token
-	int length;//length of token
+	int length;//length of operator or length of local variable name 
 
 };
 
@@ -116,11 +122,30 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
  * 		比較演算子:
  * 				==,!=,<=,>=,<,>
  * 		単項演算子:
- * 				+,-
+ * 				(,),+,-,=,;
  *
  * 	演算子は長さの順にtokenizeすること
  *
  */
+
+
+
+
+//文字が英数字か_か判定する
+bool is_alnum(char c);
+
+//string が上記のoperatorに一致するか見る.
+/* 
+ * isoperator(q) =
+ * !( strncmp(q,"!=",2) && strncmp(q,"!=",2) && 
+ *  strncmp(q,"<=",2) && strncmp(q,">=",2) && 
+ *  *q != '+' && *q != '-' && *q != '*' && 
+ *  *q != '/' && *q != '(' && *q != ')'&& 
+ *  *q != '<' && *q != '>' && *q != '=' && 
+ *  *q != ';'   )   
+ */
+bool isoperator(char *);
+
 //tokenize funcion char * -> Token_t
 Token_t *tokenize(char *p);
 
