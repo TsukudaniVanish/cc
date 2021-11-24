@@ -4,6 +4,11 @@
 
 
 
+
+
+
+
+
 void gen_lval(Node_t *node){
 
 
@@ -23,11 +28,12 @@ void gen_lval(Node_t *node){
 }
 
 
-
+int filenumber =0;//制御構文で使用する
 
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node){
 
+	
 	
 	switch(node -> kind) {
 	case ND_NUM:
@@ -60,6 +66,53 @@ void generate(Node_t *node){
 		printf("	mov rsp, rbp\n");
 		printf("	pop rbp\n");
 		printf("	ret\n");
+		return;
+
+	case ND_IF:
+		generate(node -> left);
+		printf("	pop rax\n");
+		printf("	cmp rax, 0\n");
+		printf("	je  .Lend%d\n",filenumber);
+
+		generate(node -> right);
+
+		printf(".Lend%d:\n",filenumber);
+		
+		filenumber ++;
+		return;
+
+	case ND_ELSE:
+		
+		if(node -> left -> kind = ND_IFE){
+			
+			
+			generate(node -> left);
+			generate(node -> right);
+			printf(".Lend%d:\n",filenumber);
+			filenumber++;
+			return;
+		
+		}else{
+			
+
+			fprintf(stderr,"elseはif(...)...の後に続きます");
+			exit(1);
+		}
+
+	case ND_IFE:
+
+		generate(node -> left);
+		
+		printf("	pop rax\n");
+		printf("	cmp rax, 0\n");
+		printf("	je  .Lelse%d\n",filenumber);
+
+		filenumber++;
+
+		generate(node -> right);
+		
+		printf("	jmp .Lend%d\n",filenumber);
+		printf(".Lelse%d:\n",filenumber -1);
 		return;
 	}
 	

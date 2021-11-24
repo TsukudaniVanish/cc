@@ -98,6 +98,34 @@ Token_t *tokenize(char *p){//入力文字列
 			p+=6;
 			continue;
 
+		}else if( !( strncmp(p,"while",5) || is_alnum(p[5]) ) ){
+
+
+			cur = new_token(TK_WHILE,cur,p);
+			p+=5;
+			continue;
+
+		}else if( !(strncmp(p,"else",4) || is_alnum(p[4]) ) ){
+		
+
+			cur = new_token(TK_ELSE,cur,p);
+			p+= 4;
+			continue;
+		
+		}else if( !( strncmp(p,"for",3) || is_alnum(p[3]) ) ){
+
+
+			cur = new_token(TK_FOR,cur,p);
+			p += 3;
+			continue;
+
+		}else if( !( strncmp(p,"if",2) || is_alnum(p[2]) ) ) {
+
+
+			cur = new_token(TK_IF,cur,p);
+			p +=2;
+			continue;
+
 		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ // 2文字の演算子をtokenize
 
 			

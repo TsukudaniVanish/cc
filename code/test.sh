@@ -83,6 +83,10 @@ echo "return test"
 assert 14 'a = 1;return a+13'
 assert 8 'return 8; return 15'
 
+echo "if test"
+assert 1 'if(1)return 1'
+assert 10 'if(0)return 0; else return 10'
+
 echo  "Error test"
 assert_e 20+++3
 
