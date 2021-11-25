@@ -84,7 +84,10 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 		}
 	
 	case TK_WHILE:
-
+		
+		node -> kind = ND_WHILE;
+		node-> left = assign(token);
+		node ->right =stmt(token);
 		return node;
 	
 	case TK_FOR:
@@ -158,10 +161,16 @@ Node_t *stmt(Token_t **token){
 		
 		node = new_node_keyword(TK_IF,token);
 
+	}else if( (*token)->kind == TK_WHILE ){
+	
+
+		node = new_node_keyword(TK_WHILE,token);
+	
 	}else if( (*token)->kind == TK_RETURN ){
 
 		
-		node =new_node_keyword(TK_RETURN,token);	
+		node =new_node_keyword(TK_RETURN,token);
+
 	}else{
 
 

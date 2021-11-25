@@ -114,6 +114,22 @@ void generate(Node_t *node){
 		printf("	jmp .Lend%d\n",filenumber);
 		printf(".Lelse%d:\n",filenumber -1);
 		return;
+
+	case ND_WHILE:
+
+		printf(".Lbegin%d:\n",filenumber);
+
+		generate(node -> left);
+
+		printf("	pop rax\n");
+		printf("	cmp rax, 0\n");
+		printf("	je	.Lend%d\n",filenumber);
+		
+		generate(node -> right);
+		printf("	pop rax\n");
+		printf("	jmp .Lbegin%d\n",filenumber);
+		printf(".Lend%d:",filenumber);
+		return;
 	}
 	
 

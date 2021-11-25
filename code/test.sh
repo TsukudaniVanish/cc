@@ -87,6 +87,9 @@ echo "if test"
 assert 1 'if(1)return 1'
 assert 10 'if(0)return 0; else return 10'
 
+echo "while test"
+assert 0 'a=10;b=0;while(a) a=a-1; return a '
+
 echo  "Error test"
 assert_e 20+++3
 
