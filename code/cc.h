@@ -52,6 +52,8 @@ typedef enum{
 	ND_FOR,
 	ND_FORINITCONDITION,
 	ND_FORUPDATE,
+	ND_BLOCK, // <-> { ... }
+	ND_BLOCKEND,// { ... } end marker
 	//=========================
 
 }Node_kind;

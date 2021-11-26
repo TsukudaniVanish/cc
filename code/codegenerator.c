@@ -167,6 +167,19 @@ void generate(Node_t *node){
 
 		}
 		return;
+
+	case ND_BLOCK:
+
+		while (node->right ->kind != ND_BLOCKEND)
+		{
+			
+			generate(node -> left);
+			node = node ->right;
+
+		}
+		generate(node ->left);
+		
+		return;
 	}
 	
 
