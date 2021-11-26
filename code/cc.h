@@ -50,6 +50,8 @@ typedef enum{
 	ND_IFE, //if ... else
 	ND_WHILE,
 	ND_FOR,
+	ND_FORINITCONDITION,
+	ND_FORUPDATE,
 	//=========================
 
 }Node_kind;

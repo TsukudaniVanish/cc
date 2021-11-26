@@ -130,6 +130,43 @@ void generate(Node_t *node){
 		printf("	jmp .Lbegin%d\n",filenumber);
 		printf(".Lend%d:",filenumber);
 		return;
+
+	case ND_FOR:
+
+		if(node -> left == NULL){//loop will go on
+
+
+			fprintf(stderr,"for(;;)は無効です");
+			exit(1);
+		
+		}else{
+
+
+			Node_t *conditions = node -> left;
+			Node_t *init_condition = conditions -> left;
+			Node_t *update = conditions -> right;
+
+			generate(init_condition -> left);
+
+			printf(".Lbegin%d:\n",filenumber++);
+			
+			generate(init_condition -> right);
+
+			printf("	pop rax\n");
+			printf("	cmp rax, 0\n");
+			printf("	je .Lend%d\n",filenumber);
+
+			generate(node -> right);
+
+			generate(update);
+
+			printf("	jmp .Lbegin%d\n",filenumber -1);
+			printf(".Lend%d:\n",filenumber);
+
+
+
+		}
+		return;
 	}
 	
 
