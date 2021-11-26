@@ -90,6 +90,9 @@ assert 10 'if(0)return 0; else return 10'
 echo "while test"
 assert 0 'a=10;b=0;while(a) a=a-1; return a '
 
+echo "For test"
+assert 10 'for(i = 0; i <10; i = i+1) 0; return i'
+
 echo  "Error test"
 assert_e 20+++3
 

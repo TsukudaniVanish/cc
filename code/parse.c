@@ -91,6 +91,38 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 		return node;
 	
 	case TK_FOR:
+
+		node -> kind = ND_FOR;
+
+		if((*token)-> str[0] != ';'){// no conditons
+			
+			
+			expect("(",token);
+
+			Node_t *conditions = calloc(1,sizeof(Node_t));
+			conditions -> kind = ND_FORUPDATE;
+			
+			Node_t *init_condition = calloc(1,sizeof(Node_t));
+			init_condition -> kind = ND_FORINITCONDITION;
+			init_condition ->left = assign(token);
+
+			expect(";",token);
+
+			init_condition -> right = assign(token);
+
+			expect(";",token);
+
+			conditions -> left = init_condition;// first two conditions 
+			conditions ->right = assign(token);// last update segment
+
+			expect(")",token);
+
+			node -> left = conditions;
+
+		}
+
+		node -> right = stmt(token);
+		
 		
 		return node;
 	
@@ -165,6 +197,11 @@ Node_t *stmt(Token_t **token){
 	
 
 		node = new_node_keyword(TK_WHILE,token);
+	
+	
+	}else if( (*token) -> kind == TK_FOR ) {
+
+		node = new_node_keyword(TK_FOR,token);
 	
 	}else if( (*token)->kind == TK_RETURN ){
 
