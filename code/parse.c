@@ -143,6 +143,7 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
  *
  * program = stmt*
  * stmt = assign";" 
+ * 		| "{" stmt* "}"
  * 		| "if" "(" assign  ")" stmt ( "else" stmt  )?
  * 		| "while"  "(" assign ")" stmt
  * 		| "for"  "(" assign?; assign? ; assign? ")"stmt
@@ -207,6 +208,34 @@ Node_t *stmt(Token_t **token){
 
 		
 		node =new_node_keyword(TK_RETURN,token);
+
+	}else if( find("{",token) ){
+		
+
+		node -> kind = ND_BLOCK;
+
+		node -> left = stmt(token);
+
+		Node_t *node_top = node;
+
+		while (!find("}",token))
+		{
+			
+			Node_t *right = calloc(1,sizeof(Node_t));
+
+			node -> right = right;
+
+			node = right;
+			node -> kind = ND_BLOCK;
+			node -> left = stmt(token);
+		}
+
+		Node_t *end = calloc(1,sizeof(Node_t));
+		end -> kind = ND_BLOCKEND;
+		
+		node -> right = end;
+		return node_top;
+		
 
 	}else{
 

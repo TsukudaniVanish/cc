@@ -93,6 +93,10 @@ assert 0 'a=10;b=0;while(a) a=a-1; return a '
 echo "For test"
 assert 10 'for(i = 0; i <10; i = i+1) 0; return i'
 
+echo "block test"
+assert 1 ' a = 0; i = 0; { i = 4 ; i = 3 ; i = 2; i=1;  } return i'
+assert 1 'a = 1; for( i=0 ; i < 10 ; i = i+1 ){ a = a +i ; a = a -i ; } return 1'
+
 echo  "Error test"
 assert_e 20+++3
 
