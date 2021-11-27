@@ -72,7 +72,8 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 
 			(*token) = (*token)->next;
 
-			nodeup -> right = stmt(token);
+			nodeup -> right = calloc(1,sizeof(Node_t));
+			nodeup -> right =stmt(token);
 			
 			
 			return nodeup;
@@ -85,6 +86,9 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 	
 	case TK_WHILE:
 		
+		node -> left = calloc(1,sizeof(Node_t));
+		node ->right = calloc(1,sizeof(Node_t));
+
 		node -> kind = ND_WHILE;
 		node-> left = assign(token);
 		node ->right =stmt(token);
@@ -211,7 +215,8 @@ Node_t *stmt(Token_t **token){
 
 	}else if( find("{",token) ){
 		
-
+		node = calloc(1,sizeof(Node_t));
+		
 		node -> kind = ND_BLOCK;
 
 		node -> left = stmt(token);
