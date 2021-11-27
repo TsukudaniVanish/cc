@@ -73,10 +73,11 @@ void generate(Node_t *node){
 		printf("	pop rax\n");
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lend%d\n",filenumber);
+		int endnumber_if = filenumber;
 
 		generate(node -> right);
 
-		printf(".Lend%d:\n",filenumber);
+		printf(".Lend%d:\n",endnumber_if);
 		
 		filenumber ++;
 		return;
@@ -87,8 +88,11 @@ void generate(Node_t *node){
 			
 			
 			generate(node -> left);
+			int endnumber_else = filenumber;
+			
 			generate(node -> right);
-			printf(".Lend%d:\n",filenumber);
+			
+			printf(".Lend%d:\n",endnumber_else);
 			filenumber++;
 			return;
 		
@@ -106,29 +110,33 @@ void generate(Node_t *node){
 		printf("	pop rax\n");
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lelse%d\n",filenumber);
-
+		int elsenumber = filenumber;
 		filenumber++;
 
 		generate(node -> right);
 		
 		printf("	jmp .Lend%d\n",filenumber);
-		printf(".Lelse%d:\n",filenumber -1);
+
+		printf(".Lelse%d:\n",elsenumber);
 		return;
 
 	case ND_WHILE:
 
 		printf(".Lbegin%d:\n",filenumber);
-
+		int beginnumber_while = filenumber;
+		
 		generate(node -> left);
 
 		printf("	pop rax\n");
 		printf("	cmp rax, 0\n");
 		printf("	je	.Lend%d\n",filenumber);
-		
+		int endnumber_while = filenumber;
+
 		generate(node -> right);
 		printf("	pop rax\n");
-		printf("	jmp .Lbegin%d\n",filenumber);
-		printf(".Lend%d:",filenumber);
+		printf("	jmp .Lbegin%d\n",beginnumber_while);
+		printf(".Lend%d:\n",endnumber_while);
+		filenumber++;
 		return;
 
 	case ND_FOR:
@@ -149,21 +157,23 @@ void generate(Node_t *node){
 			generate(init_condition -> left);
 
 			printf(".Lbegin%d:\n",filenumber++);
+			int beginnumber_for = filenumber -1;
+			int endnumber_for = filenumber;
 			
 			generate(init_condition -> right);
 
 			printf("	pop rax\n");
 			printf("	cmp rax, 0\n");
-			printf("	je .Lend%d\n",filenumber);
+			printf("	je .Lend%d\n",endnumber_for);
 
 			generate(node -> right);
 
 			generate(update);
 
-			printf("	jmp .Lbegin%d\n",filenumber -1);
-			printf(".Lend%d:\n",filenumber);
+			printf("	jmp .Lbegin%d\n",beginnumber_for);
+			printf(".Lend%d:\n",endnumber_for);
 
-
+			filenumber++;
 
 		}
 		return;
