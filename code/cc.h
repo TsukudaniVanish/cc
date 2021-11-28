@@ -13,6 +13,16 @@
 
 
 
+//変数型
+typedef enum{
+
+	TP_INT,//int 型 4bite
+
+}Type;
+
+
+
+
 //local変数の実装
 typedef struct lvar Lvar;
 
@@ -22,6 +32,7 @@ struct lvar{
 	char *name;
 	int length;
 	int offset;
+	Type tp;
 };
 
 //local変数
@@ -42,6 +53,7 @@ typedef enum{
 	ND_DIV, // <-> /
 	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
+	//変数型=========================
 	ND_LVAL, // ローカル変数
 	// key word=========================
 	ND_RETURN,
@@ -68,6 +80,7 @@ struct Node {
 	Node_t *right;
 	int val;
 	int offset;
+	Type tp;
 
 };
 
@@ -83,6 +96,8 @@ typedef enum{
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
+	//type=====================================================
+	TK_Type,
 	//=====================================================
 	TK_IDENT, //識別子
 	TK_DIGIT, //整数
@@ -98,7 +113,9 @@ struct Token {
 	Token_t *next;
 	int val;//if kind == TK_DIGIT　-> val = the number
 	char *str;//string of token
-	int length;//length of operator or length of local variable name 
+	int length;//length of operator or length of local variable name
+	Type tp;
+
 
 };
 
@@ -170,6 +187,21 @@ bool is_alnum(char c);
  *  *q != ';'   )   
  */
 bool isoperator(char *);
+
+//key word または 型と一致するか見る
+/*
+* key word===============
+* 
+* return , if(...)... , if(...)...else... , while(...)... , for(...)...
+*
+* ===============
+* 型名===============
+*
+* int
+*
+*===============*/
+
+bool is_assign(char *,Token_t **);
 
 //tokenize funcion char * -> Token_t
 Token_t *tokenize(char *p);
