@@ -19,24 +19,45 @@ else
 }
 #error assert
 assert_e(){
-	rm -i test.log
+	
 	input="$1"
 	echo -n "Input : "
 	echo $input
 	echo $input >> test.log
-	echo -e "    ^数ではありません" >> test.log
+	echo -e "    ^数ではありません" > test.log
 	./cc "$input" 1>tmp.s 2>error.log
 	diff -q  error.log test.log	
+	echo " =>"
+	cat error.log
 	if [ $? -eq 0 ];then
-		echo "=>"
-		cat error.log
+		
 		echo -e "\e[32mlooks ok.\e[m"
 	else
+		
 		echo  -e "\e[31minvaild error messages\e[m"
 		exit 1
 	fi
+}
+
+assert_type (){
 
 
+	input="$1"
+	echo -n "Input : "
+	echo $input
+	echo -e "型宣言がありません"> test.log
+	./cc "$input" 1>tmp.s 2>error.log
+	diff -q error.log test.log
+	result="$?"
+	echo " =>"
+	cat error.log
+	if [ "$result" == 0 ];then
+		
+		echo -e "\e[32mlooks ok.\e["
+	else
+		echo -e "\e[31minvaild error messages\e[m"
+		exit 1
+	fi
 }
 
 
@@ -76,11 +97,11 @@ assert 1 '11 <= 11'
 assert 1 '11 >= 2'
 
 echo "local var test"
-assert 14 'a=3;b =5*6- 8 ; a+b/2'
-assert 14 'foo =3; baa = 5 * 6-8;foo+baa/2'
+assert 14 'int a=3;int b =5*6- 8 ; a+b/2'
+assert 14 'int foo =3; int baa = 5 * 6-8;foo+baa/2'
 
 echo "return test"
-assert 14 'a = 1;return a+13'
+assert 14 'int a = 1;return a+13'
 assert 8 'return 8; return 15'
 
 echo "if test"
@@ -88,15 +109,17 @@ assert 1 'if(1)return 1'
 assert 10 'if(0)return 0; else return 10'
 
 echo "while test"
-assert 0 'a=10;b=0;while(a) a=a-1; return a '
+assert 0 'int a=10;int b=0;while(a) a=a-1; return a '
 
 echo "For test"
-assert 10 'for(i = 0; i <10; i = i+1) 0; return i'
+assert 10 'for(int i = 0; i <10; i = i+1) 0; return i'
 
 echo "block test"
-assert 1 ' a = 0; i = 0; { i = 4 ; i = 3 ; i = 2; i=1;  } return i'
-assert 1 'a = 1; for( i=0 ; i < 10 ; i = i+1 ){ a = a +i ; a = a -i ; } return 1'
+assert 1 ' int a = 0; int i = 0; { i = 4 ; i = 3 ; i = 2; i=1;  } return i'
+assert 1 'int a = 1; for(  int i=0 ; i < 10 ; i = i+1 ){ a = a +i ; a = a -i ; } return 1'
 
 echo  "Error test"
-assert_e 20+++3
+assert_e '20+++3;'
+
+assert_type 'a = 0;return a;'
 

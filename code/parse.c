@@ -445,7 +445,7 @@ Node_t *primary(Token_t **token){
 				if( flag_def == 0 ){
 
 
-					fprintf(stderr,"型宣言がありません");
+					fprintf(stderr,"型宣言がありません\n");
 					exit(1);
 				}
 				lvar = calloc(1,sizeof(Lvar));
