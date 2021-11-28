@@ -159,7 +159,7 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
  * add = mul( "+"mul | "-"mul)* 
  * mul = unitary ("*" unitary | "/" unitary )*
  * unitary = ('+' | '-' )? primary
- * primary = num | indent | "(" assign ")"
+ * primary = num | type? indent | "(" assign ")"
  *
  * 終端記号:
  * 		num
@@ -416,8 +416,15 @@ Node_t *primary(Token_t **token){
 		expect(")",token);// ')'かcheck
 		return node;
 
-	}else if( (*token)-> kind == TK_IDENT  ){
+	}else if( (*token)-> kind == TK_IDENT || (*token) -> kind == TK_Type  ){
 
+		int flag_def = 0;// 0 : 型宣言なし
+		Type tp;
+		if((*token)-> kind == TK_Type){
+			tp = (*token) -> tp;
+			flag_def = 1;//型宣言あり
+			(*token) = (*token)->next; 
+		}
 
 		Token_t *ident = consume_ident(token);
 		
@@ -435,7 +442,12 @@ Node_t *primary(Token_t **token){
 				node -> offset = lvar -> offset;
 			}else{
 
+				if( flag_def == 0 ){
 
+
+					fprintf(stderr,"型宣言がありません");
+					exit(1);
+				}
 				lvar = calloc(1,sizeof(Lvar));
 				lvar -> next = locals;
 				lvar -> name = ident -> str;
@@ -445,7 +457,9 @@ Node_t *primary(Token_t **token){
 				}else{
 					lvar -> offset = 8;
 				}
+				lvar -> tp = tp;
 				node -> offset = lvar -> offset;
+				node ->tp = lvar -> tp;
 				locals = lvar;
 			}
 			return node;

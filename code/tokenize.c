@@ -38,6 +38,44 @@ bool isoperator(char *p){
 
 
 
+//key word or 型名と一致するか判定する
+
+bool is_assign(char *p,Token_t **cur){
+
+	
+	char *assign[] = { "return","while","else","for","if","int",NULL};
+	Token_kind assign_kind[] = {TK_RETURN,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_Type};
+
+	Token_kind *v = assign_kind;
+	for( char **q = assign; *q ; q++ ){
+
+
+		int len = strlen(*q);
+
+		if(!( strncmp(p,*q,len) || is_alnum(p[len]) ) ){
+
+
+			*cur = new_token( *v,*cur,p);
+			(*cur) -> length = len;
+			if( *v == TK_Type  && isoperator(p+len +1)){
+
+
+				fprintf(stderr,"識別子が必要です。\n");
+				exit(1);
+			}
+			if(*v == TK_Type)
+				(*cur) -> tp = q - assign -5;
+			return true;
+		}
+		if(*v != TK_Type)
+			v++;
+	}
+	return false;	
+}
+
+
+
+
 
 
 
@@ -90,43 +128,14 @@ Token_t *tokenize(char *p){//入力文字列
 
 			p++;
 			continue;
+		}
+		else if ( is_assign(p,&cur) ){
+			
 
-		}else if( !( strncmp(p,"return",6) || is_alnum(p[6]) ) ){
-
-
-			cur = new_token(TK_RETURN,cur,p);
-			p+=6;
+			p+= cur -> length;
 			continue;
-
-		}else if( !( strncmp(p,"while",5) || is_alnum(p[5]) ) ){
-
-
-			cur = new_token(TK_WHILE,cur,p);
-			p+=5;
-			continue;
-
-		}else if( !(strncmp(p,"else",4) || is_alnum(p[4]) ) ){
-		
-
-			cur = new_token(TK_ELSE,cur,p);
-			p+= 4;
-			continue;
-		
-		}else if( !( strncmp(p,"for",3) || is_alnum(p[3]) ) ){
-
-
-			cur = new_token(TK_FOR,cur,p);
-			p += 3;
-			continue;
-
-		}else if( !( strncmp(p,"if",2) || is_alnum(p[2]) ) ) {
-
-
-			cur = new_token(TK_IF,cur,p);
-			p +=2;
-			continue;
-
-		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ // 2文字の演算子をtokenize
+		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ 
+			// 2文字の演算子をtokenize
 
 			
 			cur = new_token(TK_OPERATOR,cur,p);
