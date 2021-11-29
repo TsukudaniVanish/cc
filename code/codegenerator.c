@@ -56,6 +56,21 @@ void generate(Node_t *node){
 		rsp_counter++;
 		return;
 	
+	case ND_ADDR:
+		gen_lval(node -> left);
+		return;
+
+	case ND_DEREF:
+
+		gen_lval(node -> left);
+		
+		printf("	pop rax\n");
+		printf("	mov rax, [rax]\n");
+		printf("	mov rax, [rax]\n");
+		printf("	push rax\n");
+		return;
+
+	
 	case ND_LVAL:
 
 		gen_lval(node);

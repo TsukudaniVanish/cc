@@ -21,7 +21,7 @@ bool is_alnum(char c){
 bool isoperator(char *p){
 
 	
-	char *operators[] ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")","{","}",NULL};
+	char *operators[] ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")","{","}","&",NULL};
 
 	for(char **str = operators ; *str ; str++ ){
 		
@@ -101,7 +101,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
  * 				==,!=,<=,>=,<,>
  * 		単項演算子:
  * 				+,-,=
- *	変数名: a~z
+ *	変数(または関数)名
  * 	演算子は長さの順にtokenizeすること
  * 	演算子か判定後にlocal variable として読み込むこと
  *
@@ -128,12 +128,13 @@ Token_t *tokenize(char *p){//入力文字列
 
 			p++;
 			continue;
-		}
-		else if ( is_assign(p,&cur) ){
+
+		}else if ( is_assign(p,&cur) ){
 			
 
 			p+= cur -> length;
 			continue;
+
 		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ 
 			// 2文字の演算子をtokenize
 
@@ -143,7 +144,7 @@ Token_t *tokenize(char *p){//入力文字列
 			p+=2;
 			continue;
 
-		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>' | *p == '=' | *p =='{'  | *p == '}'  ){//単項の演算子をtokenize
+		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>' | *p == '=' | *p =='{'  | *p == '}' | *p == '&'  ){//単項の演算子をtokenize
 
 			
 			cur = new_token(TK_OPERATOR,cur,p);
@@ -171,29 +172,23 @@ Token_t *tokenize(char *p){//入力文字列
 				if( isspace(*q) || q[0] == ','  || isoperator(q)){ 
 				//q が演算子をさしたらやめる
 
-
-
 					cur -> length = q-p;
 					p =q;
 					break;
 				}
-
 				q++;
-
 			}
-			
 			continue;
 		
 		}else if(*p == ';'){
 		
+
 			cur = new_token(TK_OPERATOR,cur,p++);
 			cur -> length =1;
 			continue;
 		}
-
 		error_at(cur -> str,"tokenizeできません。");
 	}
-
 	new_token(TK_EOF,cur,p);
 	return head.next;
 };

@@ -53,6 +53,8 @@ typedef enum{
 	ND_DIV, // <-> /
 	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
+	ND_ADDR, //<-> * pointer
+	ND_DEREF,// <-> & dereference
 	//型=========================
 	ND_LVAL, // ローカル変数
 	ND_FUNCTIONCALL,//関数呼び出し
