@@ -172,16 +172,8 @@ int main(int argc, char **argv){
 //アセンブリ前半を出力
 	printf(".intel_syntax noprefix\n");
 	printf(".global main\n");
-	printf("main:\n");
 	
 
-	//prologue
-	//変数分の領域を確保
-	printf("	push rbp\n");
-	printf("	mov rbp, rsp\n");
-	if(locals){
-		printf("	sub rsp, %d\n",locals -> offset);//26*8 = 208
-	}
 
 	//先頭の式からコード生成
 	//抽象構文木を降りてコード生成
@@ -189,15 +181,7 @@ int main(int argc, char **argv){
 	for(int i =0;code[i];i++){
 		generate(code[i]);
 
-		//式評価の結果がスタックに残っているので
-		//ポップしておく
-		printf("	pop rax\n");
 	}
 
-	//epilogue
-	//スタックトップとりだしてraxの値を返す
-	printf("	mov rsp, rbp\n");
-	printf("	pop rbp\n");
-	printf("	ret\n");
 	return 0;
 }

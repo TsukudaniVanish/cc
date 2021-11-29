@@ -123,7 +123,7 @@ Token_t *tokenize(char *p){//入力文字列
 	while(*p){
 
 
-		if( isspace(*p) ){//空白の時はスキップ
+		if( isspace(*p) || *p == ',' ){//空白 ',' の時はスキップ
 
 
 			p++;
@@ -168,7 +168,7 @@ Token_t *tokenize(char *p){//入力文字列
 			
 			while(1){
 			
-				if( isspace(*q)  || isoperator(q)){ 
+				if( isspace(*q) || q[0] == ','  || isoperator(q)){ 
 				//q が演算子をさしたらやめる
 
 

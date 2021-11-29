@@ -4,7 +4,7 @@
 
 
 
-
+int rsp_counter = 0;
 
 
 
@@ -24,6 +24,7 @@ void gen_lval(Node_t *node){
 		printf("	mov rax, rbp\n");
 		printf("	sub rax, %d\n", node -> offset);
 		printf("	push rax\n");
+		rsp_counter++;
 	}
 }
 
@@ -39,6 +40,7 @@ void generate(Node_t *node){
 	case ND_NUM:
 
 		printf("	push %d\n",node ->val);
+		rsp_counter++;
 		return;
 	case ND_ASSIGN:
 
@@ -46,31 +48,148 @@ void generate(Node_t *node){
 		generate(node -> right);
 
 		printf("	pop rdi\n");
+		rsp_counter--;
 		printf("	pop rax\n");
+		rsp_counter--;
 		printf("	mov [rax], rdi\n");
 		printf("	push rdi\n");
+		rsp_counter++;
 		return;
 	
 	case ND_LVAL:
 
 		gen_lval(node);
 		printf("	pop rax\n");
+		rsp_counter--;
 		printf("	mov rax, [rax]\n");
 		printf("	push rax\n");
+		rsp_counter++;
+		return;
+
+	case ND_FUNCTIONDEF:
+
+		printf("%s:",node -> name);
+		int return_rsp_number = rsp_counter;
+
+		//prologue
+		printf("	push rbp\n");
+		rsp_counter++;
+		printf("	mov rbp ,rsp\n");
+		if(locals){
+			printf("	sub rsp, %d\n",locals -> offset);
+			rsp_counter += locals->offset /8;
+		}
+		//引数代入
+		switch (node->val)
+		{
+		case 6:
+			
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %d\n",node->offset + 48);
+			printf("	mov [rax], r9\n");
+		
+		case 5:
+			
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %d\n",node->offset + 40);
+			printf("	mov [rax], r8\n");
+
+		case 4:
+
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %d\n",node->offset + 32);
+			printf("	mov [rax], rcx\n");
+
+		case 3:
+
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %d\n",node->offset + 24);
+			printf("	mov [rax], rdx\n");
+
+		case 2:
+
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %d\n",node->offset + 16);
+			printf("	mov [rax], rsi\n");
+
+		case 1:
+
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %d\n",node->offset + 8);
+			printf("	mov [rax], rdi\n");	
+			break;
+		}
+		
+
+		generate(node -> right);
+
+		//epilogue
+		printf("	pop rax\n");
+		printf("	mov rsp, rbp\n");
+		printf("	pop rbp\n");
+		printf("	ret\n");
+
+		return;
+	
+	case ND_FUNCTIONCALL://function call abi -> System V AMD64 ABI (Lunix)
+
+		{//引数読み込み
+			Node_t *node_arg = node -> left;
+			while (node_arg ->kind != ND_BLOCKEND)
+			{
+				
+				generate(node_arg -> left);
+				node_arg = node_arg -> right;
+
+			}
+		}
+
+		switch(node ->val){
+		case 6:
+			printf("	pop r9\n");
+
+		case 5:
+			printf("	pop r8\n");
+
+		case 4:
+			printf("	pop rcx\n");
+
+		case 3:
+			printf("	pop rdx\n");
+
+		case 2:
+			printf("	pop rsi\n");
+
+		case 1:
+			printf("	pop rdi\n");
+		}
+		rsp_counter -= node -> val;
+
+		
+		if(rsp_counter%2 ==1)
+			printf("	sub rsp , 8");
+		printf("	call foo\n");
+		rsp_counter ++;
+		printf("	push rax\n");
+		rsp_counter++;
 		return;
 
 	case ND_RETURN:
 
 		generate(node -> left);
 		printf("	pop rax\n");
+		rsp_counter--;
 		printf("	mov rsp, rbp\n");
+		rsp_counter =1;
 		printf("	pop rbp\n");
+		rsp_counter --;
 		printf("	ret\n");
 		return;
 
 	case ND_IF:
 		generate(node -> left);
 		printf("	pop rax\n");
+		rsp_counter --;
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lend%d\n",filenumber);
 		int endnumber_if = filenumber;
@@ -108,6 +227,7 @@ void generate(Node_t *node){
 		generate(node -> left);
 		
 		printf("	pop rax\n");
+		rsp_counter--;
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lelse%d\n",filenumber);
 		int elsenumber = filenumber;
@@ -128,12 +248,14 @@ void generate(Node_t *node){
 		generate(node -> left);
 
 		printf("	pop rax\n");
+		rsp_counter--;
 		printf("	cmp rax, 0\n");
 		printf("	je	.Lend%d\n",filenumber);
 		int endnumber_while = filenumber;
 
 		generate(node -> right);
 		printf("	pop rax\n");
+		rsp_counter--;
 		printf("	jmp .Lbegin%d\n",beginnumber_while);
 		printf(".Lend%d:\n",endnumber_while);
 		filenumber++;
@@ -163,6 +285,7 @@ void generate(Node_t *node){
 			generate(init_condition -> right);
 
 			printf("	pop rax\n");
+			rsp_counter --;
 			printf("	cmp rax, 0\n");
 			printf("	je .Lend%d\n",endnumber_for);
 
@@ -199,6 +322,7 @@ void generate(Node_t *node){
 	
 	printf("	pop rdi\n");
 	printf("	pop rax\n");
+	rsp_counter-=2;
 
 	switch (node -> kind){
 	case ND_EQL:
@@ -251,4 +375,5 @@ void generate(Node_t *node){
 		break;
 	}
 	printf("	push rax\n");
+	rsp_counter++;
 }

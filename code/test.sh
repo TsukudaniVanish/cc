@@ -4,7 +4,7 @@ assert(){
     expected="$1"
     input="$2"
 
-    ./cc "$input;" > tmp.s
+    ./cc "main(){$input;}" > tmp.s
 	gcc -o tmp tmp.s
 	./tmp
 	actual="$?"
@@ -25,7 +25,7 @@ assert_e(){
 	echo $input
 	echo $input >> test.log
 	echo -e "    ^数ではありません" > test.log
-	./cc "$input" 1>tmp.s 2>error.log
+	./cc "main(){$input}" 1>tmp.s 2>error.log
 	diff -q  error.log test.log	
 	echo " =>"
 	cat error.log
@@ -46,7 +46,7 @@ assert_type (){
 	echo -n "Input : "
 	echo $input
 	echo -e "型宣言がありません"> test.log
-	./cc "$input" 1>tmp.s 2>error.log
+	./cc "main(){$input}" 1>tmp.s 2>error.log
 	diff -q error.log test.log
 	result="$?"
 	echo " =>"
@@ -57,6 +57,23 @@ assert_type (){
 	else
 		echo -e "\e[31minvaild error messages\e[m"
 		exit 1
+	fi
+}
+
+assert_function (){
+
+	expected="$1"
+	input="$2"
+	echo -n "$2 => "
+	./cc "$2" > tmp.s
+	cc -o tmp tmp.s
+	./tmp
+	actual=$?
+	if [ "$actual" -eq "$expected" ];then
+
+		echo -e " $actual : \e[32mlooks ok.\e[m"
+	else
+		echo -e " $expected ,\e[31m but got $actual\e[m"
 	fi
 }
 
@@ -118,8 +135,11 @@ echo "block test"
 assert 1 ' int a = 0; int i = 0; { i = 4 ; i = 3 ; i = 2; i=1;  } return i'
 assert 1 'int a = 1; for(  int i=0 ; i < 10 ; i = i+1 ){ a = a +i ; a = a -i ; } return 1'
 
+echo "function call test"
+
+assert_function 16 'foo(int a,int b,int c){ while(c){ a = a+b; c = c-1;} return a; }main(){int x = 10;int y = 2;return foo(x,y,3);}'
+
 echo  "Error test"
 assert_e '20+++3;'
 
 assert_type 'a = 0;return a;'
-
