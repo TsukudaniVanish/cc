@@ -1,5 +1,6 @@
 #include "cc.h"
 //#include<stdlib.h>
+//#inclide<string.h>
 
 
 
@@ -145,7 +146,8 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 /*
  * 生成文法
  *
- * program = stmt*
+ * program = func*
+ * func = ident "(" (type? ident)*  ")"  stmt 
  * stmt = assign";" 
  * 		| "{" stmt* "}"
  * 		| "if" "(" assign  ")" stmt ( "else" stmt  )?
@@ -159,7 +161,7 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
  * add = mul( "+"mul | "-"mul)* 
  * mul = unitary ("*" unitary | "/" unitary )*
  * unitary = ('+' | '-' )? primary
- * primary = num | type? indent | "(" assign ")"
+ * primary = num | type? indent  ( "(" ")" )? | "(" assign ")"
  *
  * 終端記号:
  * 		num
@@ -182,10 +184,67 @@ void program(Token_t **token,Node_t **code){
 	while(!at_eof(token)){
 
 
-		code[i] = stmt(token);
+		code[i] = func(token);
 		i++;
 	}
 	code[i] = NULL;
+}
+
+Node_t *func(Token_t **token){
+
+
+	Node_t *node;
+	
+	if( (*token) -> kind != TK_IDENT ){
+
+
+		fprintf(stderr,"関数名が必要です");
+		exit(1);
+	
+	}else{
+
+
+		node = calloc(1,sizeof(Node_t));
+		node -> kind = ND_FUNCTIONDEF;
+
+		//名前読み込み
+		node -> name = calloc(((*token)->length),sizeof(char));
+		memcpy(node -> name,(*token)->str,(*token)-> length );
+
+		consume_ident(token);
+
+		node -> val = 0; // 引数の個数
+		if(locals){
+			node -> offset = locals -> offset;//top offset
+		}else{
+			node -> offset = 0;
+		}
+		expect("(",token);
+		Node_t *left_argnames = calloc(1,sizeof(Node_t));
+		node -> left = left_argnames;
+		while (!find(")",token) && node -> val < 7)
+		{
+			
+			node -> val ++;
+			left_argnames -> kind = ND_ARGMENT;
+			left_argnames ->left = primary(token);
+			Node_t *node_rightend = calloc(1,sizeof(Node_t));
+			left_argnames -> right = node_rightend;
+			left_argnames = node_rightend;
+		}
+
+		if( node -> val > 6)
+		{
+
+			fprintf(stderr,"引数の個数が6個より大きいです");
+			exit(1);
+		}
+		left_argnames -> kind = ND_BLOCKEND;
+		node -> right = stmt(token);
+		return node;
+		
+
+	}
 }
 
 Node_t *stmt(Token_t **token){
@@ -427,6 +486,36 @@ Node_t *primary(Token_t **token){
 		}
 
 		Token_t *ident = consume_ident(token);
+
+		if( find("(",token) ){// function call
+
+
+			node = calloc(1,sizeof(Node_t));
+			node -> kind = ND_FUNCTIONCALL;
+			node -> val = 0; // 引数の個数
+
+			//名前読み込み
+			node -> name = calloc( ((*token)->length),sizeof(char));
+			memcpy(node -> name,ident,(*token)-> length );
+
+			Node_t *node_end = calloc(1,sizeof(Node_t));
+			node -> left = node_end;
+
+			while (!find(")",token))
+			{
+
+				node -> val++;
+				node_end -> kind = ND_ARGMENT;
+				Node_t *node_rightend = calloc(1,sizeof(Node_t));
+				node_end ->left = primary(token);
+				node_end ->right = node_rightend;
+				node_end = node_rightend;
+			}
+			node_end -> kind = ND_BLOCKEND;
+
+			return node;
+		}
+
 		
 		if(ident){
 			

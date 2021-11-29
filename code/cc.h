@@ -53,8 +53,11 @@ typedef enum{
 	ND_DIV, // <-> /
 	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
-	//変数型=========================
+	//型=========================
 	ND_LVAL, // ローカル変数
+	ND_FUNCTIONCALL,//関数呼び出し
+	ND_FUNCTIONDEF,//関数定義
+	ND_ARGMENT,//関数の引数
 	// key word=========================
 	ND_RETURN,
 	ND_IF,// else なしのif
@@ -81,6 +84,7 @@ struct Node {
 	int val;
 	int offset;
 	Type tp;
+	char *name;
 
 };
 
@@ -225,6 +229,7 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token);
 
 //parser 本体
 void program(Token_t **,Node_t **);
+Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
 Node_t *assign(Token_t **);
 Node_t *equality(Token_t **);
