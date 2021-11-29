@@ -161,6 +161,8 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
  * add = mul( "+"mul | "-"mul)* 
  * mul = unitary ("*" unitary | "/" unitary )*
  * unitary = ('+' | '-' )? primary
+ * 			| '*' unitary
+ * 			| '&' unitary
  * primary = num | type? indent  ( "(" ")" )? | "(" assign ")"
  *
  * 終端記号:
@@ -456,9 +458,35 @@ Node_t *unitary(Token_t **token){
 
 		node = new_node(ND_SUB,new_node_num(0),primary(token));
 		
+	}else if( (*token) -> kind == TK_OPERATOR && ( (*token) -> str[0] == '*' || (*token) -> str[0] == '&' )   ){
+
+
+		
+		switch ((*token)->str[0])
+		{
+		case '*':
+
+			(*token) = (*token) -> next;
+
+			node = calloc(1,sizeof(Node_t));
+			node -> kind = ND_DEREF;
+			node -> left = unitary(token);
+			break;
+		
+		case '&':
+
+			(*token) = (*token) -> next;
+
+			node = calloc(1,sizeof(Node_t));
+			node -> kind = ND_ADDR;
+			node -> left = unitary(token);
+			break;
+		}
+		
+	
 	}else{
-
-
+		
+		
 		node = primary(token);
 	}
 	return node;

@@ -5,12 +5,10 @@ assert(){
     input="$2"
 
     ./cc "main(){$input;}" > tmp.s
-	gcc -o tmp tmp.s
+	cc -g -o tmp tmp.s
 	./tmp
 	actual="$?"
-
-	if [ "$actual" == "$expected" ]
-then
+	if [ "$actual" == "$expected" ];then
 	    echo -e ": $input =>$actual : \e[32mlooks ok.\e[m"
 else
 	    echo -e ": $input => $expected expected, but got \e[31m$actual\e[m"
@@ -97,6 +95,8 @@ echo -n "unit '+' test"
 assert 30 '+10+20'
 echo -n "unit '-' test"
 assert 10 '-10+20'
+echo -n "unit *,& test"
+assert 3 "int x = 3;int y = &x; *y"
 echo -n "equality test"
 assert 0 '1==11'
 assert 0 '1 != 1'
