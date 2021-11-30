@@ -4,7 +4,7 @@ assert(){
     expected="$1"
     input="$2"
 
-    ./cc "main(){$input;}" > tmp.s
+    ./cc "int main(){$input;}" > tmp.s
 	cc -g -o tmp tmp.s
 	./tmp
 	actual="$?"
@@ -23,7 +23,7 @@ assert_e(){
 	echo $input
 	echo $input >> test.log
 	echo -e "    ^数ではありません" > test.log
-	./cc "main(){$input}" 1>tmp.s 2>error.log
+	./cc "int main(){$input}" 1>tmp.s 2>error.log
 	diff -q  error.log test.log	
 	echo " =>"
 	cat error.log
@@ -43,8 +43,9 @@ assert_type (){
 	input="$1"
 	echo -n "Input : "
 	echo $input
-	echo -e "型宣言がありません"> test.log
-	./cc "main(){$input}" 1>tmp.s 2>error.log
+	echo "int main(){$input}" > test.log
+	echo -e "             ^型宣言がありません\n">> test.log
+	./cc "int main(){$input}" 1>tmp.s 2>error.log
 	diff -q error.log test.log
 	result="$?"
 	echo " =>"
@@ -96,7 +97,7 @@ assert 30 '+10+20'
 echo -n "unit '-' test"
 assert 10 '-10+20'
 echo -n "unit *,& test"
-assert 3 "int x = 3;int y = &x; *y"
+assert 3 "int x = 3;int y = &x; return *y"
 echo -n "equality test"
 assert 0 '1==11'
 assert 0 '1 != 1'
@@ -137,7 +138,11 @@ assert 1 'int a = 1; for(  int i=0 ; i < 10 ; i = i+1 ){ a = a +i ; a = a -i ; }
 
 echo "function call test"
 
-assert_function 16 'foo(int a,int b,int c){ while(c){ a = a+b; c = c-1;} return a; }main(){int x = 10;int y = 2;return foo(x,y,3);}'
+assert_function 16 'int gagaga(int a,int b,int c){ while(c){ a = a+b; c = c-1;} return a; }int main(){int x = 10;int y = 2;return gagaga(x,y,3);}'
+
+echo "pointer test"
+
+assert 3 'int x;int *y;y = &x;*y = 3;return x'
 
 echo  "Error test"
 assert_e '20+++3;'

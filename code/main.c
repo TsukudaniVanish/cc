@@ -167,6 +167,9 @@ int main(int argc, char **argv){
 	//token を抽象構文木に変換
 	program(&token,code);
 
+	//関数スコープ変数コンテナを先頭にセット
+	funclocal = funclocal -> head;
+
 	
 
 //アセンブリ前半を出力
@@ -180,6 +183,8 @@ int main(int argc, char **argv){
 	//スタックトップには式の結果が入っている
 	for(int i =0;code[i];i++){
 		generate(code[i]);
+		if(funclocal -> next)
+			funclocal = funclocal -> next;
 
 	}
 

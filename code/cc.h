@@ -14,11 +14,19 @@
 
 
 //変数型
-typedef enum{
+typedef struct type Type;
 
-	TP_INT,//int 型 4bite
+struct type{
+	enum{
 
-}Type;
+		TP_INT,//int 型 4bite
+		TP_POINTER,
+
+	}Type_label;
+
+	Type *pointer_to;
+
+};
 
 
 
@@ -32,12 +40,24 @@ struct lvar{
 	char *name;
 	int length;
 	int offset;
-	Type tp;
+	Type *tp;
 };
 
 //local変数
 Lvar *locals;
 
+// function ごとにlocal 変数を管理するコンテナ
+typedef struct functionlocal Funcvar;
+
+struct functionlocal{
+
+	Funcvar *head;
+	Funcvar *next;
+	Lvar *locals;
+};
+
+//関数ごとのlocal 変数
+Funcvar *funclocal;
 
 //抽象構文木のノード型
 
@@ -85,7 +105,7 @@ struct Node {
 	Node_t *right;
 	int val;
 	int offset;
-	Type tp;
+	Type *tp;
 	char *name;
 
 };
@@ -120,7 +140,7 @@ struct Token {
 	int val;//if kind == TK_DIGIT　-> val = the number
 	char *str;//string of token
 	int length;//length of operator or length of local variable name
-	Type tp;
+	Type *tp;
 
 
 };
@@ -248,6 +268,7 @@ Node_t *primary(Token_t **);
  * codegenerator.c=====================================================
  */
 
+//変数情報をコンパイルする
 void gen_lval(Node_t *node);
 
 

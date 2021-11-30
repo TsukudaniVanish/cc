@@ -185,6 +185,17 @@ void program(Token_t **token,Node_t **code){
 	int i = 0;
 	while(!at_eof(token)){
 
+		if(funclocal == 0){//関数の変数情報更新
+
+			funclocal = calloc(1,sizeof(Funcvar));
+			funclocal -> head = funclocal;
+		}else{
+
+			funclocal ->next = calloc(1,sizeof(Funcvar));
+			funclocal -> next -> head = funclocal -> head;
+			funclocal = funclocal -> next;
+
+		}
 
 		code[i] = func(token);
 		i++;
@@ -192,10 +203,19 @@ void program(Token_t **token,Node_t **code){
 	code[i] = NULL;
 }
 
-Node_t *func(Token_t **token){
+Node_t *func(Token_t **token){// function def
 
 
 	Node_t *node;
+
+	if ((*token) -> kind != TK_Type){
+
+			fprintf(stderr,"型宣言がありません");
+			exit(1);
+
+	}
+
+	(*token) = (*token) -> next;
 	
 	if( (*token) -> kind != TK_IDENT ){
 
@@ -216,12 +236,14 @@ Node_t *func(Token_t **token){
 		consume_ident(token);
 
 		node -> val = 0; // 引数の個数
-		if(locals){
-			node -> offset = locals -> offset;//top offset
-		}else{
-			node -> offset = 0;
-		}
+		// if(funclocal ->locals){
+		// 	node -> offset = locals -> offset;//top offset
+		// }else{
+		// 	node -> offset = 0;
+		// }
+
 		expect("(",token);
+		
 		Node_t *left_argnames = calloc(1,sizeof(Node_t));
 		node -> left = left_argnames;
 		while (!find(")",token) && node -> val < 7)
@@ -506,7 +528,7 @@ Node_t *primary(Token_t **token){
 	}else if( (*token)-> kind == TK_IDENT || (*token) -> kind == TK_Type  ){
 
 		int flag_def = 0;// 0 : 型宣言なし
-		Type tp;
+		Type *tp;
 		if((*token)-> kind == TK_Type){
 			tp = (*token) -> tp;
 			flag_def = 1;//型宣言あり
@@ -524,7 +546,7 @@ Node_t *primary(Token_t **token){
 
 			//名前読み込み
 			node -> name = calloc( ((*token)->length),sizeof(char));
-			memcpy(node -> name,ident,(*token)-> length );
+			memcpy(node -> name,ident->str,ident -> length );
 
 			Node_t *node_end = calloc(1,sizeof(Node_t));
 			node -> left = node_end;
@@ -533,9 +555,10 @@ Node_t *primary(Token_t **token){
 			{
 
 				node -> val++;
+
 				node_end -> kind = ND_ARGMENT;
 				Node_t *node_rightend = calloc(1,sizeof(Node_t));
-				node_end ->left = primary(token);
+				node_end ->left = unitary(token);
 				node_end ->right = node_rightend;
 				node_end = node_rightend;
 			}
@@ -551,33 +574,32 @@ Node_t *primary(Token_t **token){
 			node = calloc(1,sizeof(Node_t));
 			node -> kind = ND_LVAL;
 
-			Lvar *lvar = find_lvar(&ident,&locals);
+			Lvar *lvar = find_lvar(&ident,&(funclocal->locals) );
 
 			if(lvar){
 
-
+				node -> tp = lvar -> tp;
 				node -> offset = lvar -> offset;
 			}else{
 
 				if( flag_def == 0 ){
 
 
-					fprintf(stderr,"型宣言がありません\n");
-					exit(1);
+					error_at((*token)-> str,"型宣言がありません\n");
 				}
 				lvar = calloc(1,sizeof(Lvar));
-				lvar -> next = locals;
+				lvar -> next = funclocal-> locals;
 				lvar -> name = ident -> str;
 				lvar -> length = ident -> length;
-				if(locals){
-					lvar -> offset = locals -> offset +8;
+				if(funclocal ->locals){
+					lvar -> offset = funclocal-> locals -> offset +8;
 				}else{
 					lvar -> offset = 8;
 				}
 				lvar -> tp = tp;
 				node -> offset = lvar -> offset;
 				node ->tp = lvar -> tp;
-				locals = lvar;
+				funclocal -> locals = lvar;
 			}
 			return node;
 		}
