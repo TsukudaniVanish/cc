@@ -47,6 +47,7 @@ bool is_assign(char *p,Token_t **cur){
 	Token_kind assign_kind[] = {TK_RETURN,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_Type};
 
 	Token_kind *v = assign_kind;
+
 	for( char **q = assign; *q ; q++ ){
 
 
@@ -57,14 +58,38 @@ bool is_assign(char *p,Token_t **cur){
 
 			*cur = new_token( *v,*cur,p);
 			(*cur) -> length = len;
-			if( *v == TK_Type  && isoperator(p+len +1)){
+			
+			if(*v == TK_Type){//ポインタ型か判定
 
 
-				fprintf(stderr,"識別子が必要です。\n");
-				exit(1);
+				(*cur) -> tp = calloc(1,sizeof(Type));
+				(*cur) -> tp -> Type_label = TP_INT;
+				char *r = p + len;
+
+				while ( isspace(*r) || *r=='*' )
+				{
+					
+					if(isspace(*r)){
+						
+						r++;
+						(*cur) -> length++;
+						continue;
+					}
+					(*cur) -> length++;
+					Type *pointerto = calloc(1,sizeof(Type));
+					pointerto -> Type_label = TP_POINTER;
+					pointerto -> pointer_to = (*cur) ->tp;
+					(*cur) -> tp = pointerto;
+					r++;
+				}//rには識別子の名前があるはず
+			
+				if( *v == TK_Type  && isoperator(p+( (*cur) -> length) ) ){//識別子があるか判定
+
+
+					fprintf(stderr,"識別子が必要です。\n");
+					exit(1);
+				}
 			}
-			if(*v == TK_Type)
-				(*cur) -> tp = q - assign -5;
 			return true;
 		}
 		if(*v != TK_Type)
