@@ -9,9 +9,9 @@ assert(){
 	./tmp
 	actual="$?"
 	if [ "$actual" == "$expected" ];then
-	    echo -e ": $input =>$actual : \e[32mlooks ok.\e[m"
+	    echo -e ": int main(){$input;} =>$actual : \e[32mlooks ok.\e[m"
 else
-	    echo -e ": $input => $expected expected, but got \e[31m$actual\e[m"
+	    echo -e ": int main(){$input;} => $expected expected, but got \e[31m$actual\e[m"
 	    exit 1
 	fi
 }
@@ -44,7 +44,7 @@ assert_type (){
 	echo -n "Input : "
 	echo $input
 	echo "int main(){$input}" > test.log
-	echo -e "             ^型宣言がありません\n">> test.log
+	echo -e "           ^型宣言がありません\n">> test.log
 	./cc "int main(){$input}" 1>tmp.s 2>error.log
 	diff -q error.log test.log
 	result="$?"
@@ -96,8 +96,10 @@ echo -n "unit '+' test"
 assert 30 '+10+20'
 echo -n "unit '-' test"
 assert 10 '-10+20'
+
 echo -n "unit *,& test"
-assert 3 "int x = 3;int *y = &x; return *y"
+assert 3 "int x = 3;int y = 5;int *z = &y + 1;return *z"
+
 echo -n "equality test"
 assert 0 '1==11'
 assert 0 '1 != 1'
@@ -147,6 +149,13 @@ assert 3 'int x;int *y;y = &x;*y = 3;return x'
 echo "sizeof test"
 assert 4 'int x; sizeof x'
 assert 8 'int *y; sizeof(y)'
+
+echo "array sizeof test"
+assert 16 'int *a[2];sizeof a'
+
+echo "array type chast test"
+
+assert 3 'int a[2];*a = 1;*(a + 1) = 2;int *p;p = a;return *p + *(p + 1)'
 
 echo  "Error test"
 assert_e '20+++3;'

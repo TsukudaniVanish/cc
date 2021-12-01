@@ -36,8 +36,28 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	}
 	if (l -> tp -> Type_label != r -> tp -> Type_label){
 
-		fprintf(stderr,"型が一致しません\n");
-		exit(1);
+		if( l -> tp -> Type_label == TP_POINTER || r -> tp -> Type_label == TP_POINTER){
+
+		
+			if(l -> tp -> Type_label == TP_INT || r -> tp -> Type_label == TP_INT ){
+
+
+				if( l -> tp -> Type_label == TP_POINTER){
+					
+					node -> tp = l -> tp;
+				
+				}else{
+
+					node -> tp = r -> tp;
+				}
+				return node;
+			}
+
+		}else{
+
+			fprintf(stderr,"型が一致しません\n");
+			exit(1);
+		}
 	}
 	node -> tp = l -> tp;
 
@@ -498,14 +518,49 @@ Node_t *unitary(Token_t **token){
 
 
 		(*token) = (*token) -> next;
-		if( unitary(token) -> tp -> Type_label == TP_INT ){
+		node = unitary(token);
+		Type *tp = node -> tp;
+
+		if( tp -> Type_label == TP_POINTER && node -> val == 1 ){
+			
+			
+			tp -> Type_label = TP_ARRAY;
+		}
+		
+		if(  tp -> Type_label == TP_INT ){
 
 
 			node = new_node_num(4);
 
-		}else{
+		}else if( tp -> Type_label == TP_ARRAY ){
+
+
+			if( tp -> pointer_to -> Type_label == TP_INT ){
+
+
+				node = new_node_num( 4 * ( tp -> size) );
+
+			}else if(tp -> pointer_to -> Type_label == TP_POINTER ){
+
+
+				node = new_node_num( 8 * ( tp -> size )  );
+
+			}else{
+
+
+				fprintf(stderr,"不明な型名");
+				exit(1);
+			}
+		}else if( tp -> Type_label == TP_POINTER ){
+
 
 			node = new_node_num(8);
+		
+		}else{
+
+
+			fprintf(stderr,"不明な型名");
+			exit(1);
 		}
 	}else if( find("+",token) ){
 
@@ -531,14 +586,16 @@ Node_t *unitary(Token_t **token){
 
 			node = calloc(1,sizeof(Node_t));
 			node -> kind = ND_DEREF;
+			
 			node -> left = unitary(token);
+
 			if( node -> left -> tp -> Type_label != TP_POINTER ){
 
 
 				error_at((*token)->str,"ポインタ型ではありません\n");
 			}
 			node -> tp = node -> left -> tp -> pointer_to;
-			break;
+			return node;
 		
 		case '&':
 
@@ -550,7 +607,7 @@ Node_t *unitary(Token_t **token){
 			node -> tp = calloc(1,sizeof(Type));
 			node -> tp -> Type_label = TP_POINTER;
 			node -> tp -> pointer_to = node -> left -> tp;
-			break;
+			return node;
 		}
 		
 	
@@ -588,7 +645,10 @@ Node_t *primary(Token_t **token){
 
 		Token_t *ident = consume_ident(token);
 
-		if( find("(",token) ){// function call
+		/**
+		 * function call ====================================================
+		 */
+		if( find("(",token) ){
 
 
 			node = calloc(1,sizeof(Node_t));
@@ -618,6 +678,9 @@ Node_t *primary(Token_t **token){
 
 			return node;
 		}
+		/*
+		 *	end function call ==================================================== 
+		 */
 
 		
 		if(ident){
@@ -631,36 +694,68 @@ Node_t *primary(Token_t **token){
 			if(lvar){
 
 				node -> tp = lvar -> tp;
+				//配列型かどうか====================================================
+				if ( lvar -> tp -> Type_label == TP_ARRAY ){
+					node -> tp -> Type_label = TP_POINTER;
+					node -> val = 1;// 元は配列でした
+				}
+				//====================================================
+
 				node -> offset = lvar -> offset;
 
-			}else{
+			}else{// local var def =========================
 
 
 				if( flag_def == 0 ){
 
 
-					error_at((*token)-> str,"型宣言がありません\n");
+					error_at(ident-> str,"型宣言がありません\n");
 				}
 				lvar = calloc(1,sizeof(Lvar));
 				lvar -> next = funclocal-> locals;
 				lvar -> name = ident -> str;
 				lvar -> length = ident -> length;
 				
-				if(funclocal ->locals){
+				//配列型かどうか====================================================
+				if ( find("[",token)){
 
 
-					lvar -> offset = funclocal-> locals -> offset +8;
+					lvar -> tp = calloc(1,sizeof(Type));
+					lvar -> tp -> Type_label = TP_ARRAY;
+					lvar -> tp -> pointer_to = tp;
+					lvar -> tp -> size = expect_num(token);
+					expect("]",token);
 
 				}else{
 
 
-					lvar -> offset = 8;
+					lvar -> tp = tp;
+					lvar -> tp -> size =1;
 				}
-				lvar -> tp = tp;
+				//====================================================
+
+				//offset の計算
+				int type_size = 8;
+
+				if(tp -> Type_label == TP_INT){
+					//type_size =4; 8の倍数でoffset は考える
+				}
+
+				if(funclocal ->locals){
+
+
+					lvar -> offset = (funclocal-> locals -> offset) +type_size*(lvar -> tp -> size);
+
+				}else{
+
+
+					lvar -> offset = type_size*(lvar -> tp->size);
+				}
+				node -> val = -1;
 				node -> offset = lvar -> offset;
 				node ->tp = lvar -> tp;
 				funclocal -> locals = lvar;
-			}
+			}//=========================
 			return node;
 		}
 	}else{
