@@ -43,8 +43,8 @@ bool isoperator(char *p){
 bool is_assign(char *p,Token_t **cur){
 
 	
-	char *assign[] = { "return","while","else","for","if","int",NULL};
-	Token_kind assign_kind[] = {TK_RETURN,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_Type};
+	char *assign[] = { "return","sizeof","while","else","for","if","int",NULL};
+	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_Type};
 
 	Token_kind *v = assign_kind;
 

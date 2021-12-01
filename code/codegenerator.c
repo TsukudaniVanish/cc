@@ -98,10 +98,8 @@ void generate(Node_t *node){
 
 		gen_lval(node);
 		printf("	pop rax\n");
-		rsp_counter--;
 		printf("	mov rax, [rax]\n");
 		printf("	push rax\n");
-		rsp_counter++;
 		return;
 
 	case ND_FUNCTIONDEF:
@@ -163,8 +161,10 @@ void generate(Node_t *node){
 
 		//epilogue return に書く
 		printf("	pop rax\n");
+		rsp_counter --;
 		printf("	mov rsp, rbp\n");
 		printf("	pop rbp\n");
+		rsp_counter --;
 		printf("	ret\n");
 
 		return;

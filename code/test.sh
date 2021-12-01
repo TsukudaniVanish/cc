@@ -97,7 +97,7 @@ assert 30 '+10+20'
 echo -n "unit '-' test"
 assert 10 '-10+20'
 echo -n "unit *,& test"
-assert 3 "int x = 3;int y = &x; return *y"
+assert 3 "int x = 3;int *y = &x; return *y"
 echo -n "equality test"
 assert 0 '1==11'
 assert 0 '1 != 1'
@@ -143,6 +143,10 @@ assert_function 16 'int gagaga(int a,int b,int c){ while(c){ a = a+b; c = c-1;} 
 echo "pointer test"
 
 assert 3 'int x;int *y;y = &x;*y = 3;return x'
+
+echo "sizeof test"
+assert 4 'int x; sizeof x'
+assert 8 'int *y; sizeof(y)'
 
 echo  "Error test"
 assert_e '20+++3;'
