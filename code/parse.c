@@ -23,6 +23,24 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	node ->kind = kind;
 	node -> left = l;
 	node -> right =r;
+	if( ! l -> tp){
+
+
+		fprintf(stderr,"型が未定義です\n");
+		exit(1);
+	}else if (! r -> tp){
+
+
+		fprintf(stderr,"型が未定義です\n");
+		exit(1);
+	}
+	if (l -> tp -> Type_label != r -> tp -> Type_label){
+
+		fprintf(stderr,"型が一致しません\n");
+		exit(1);
+	}
+	node -> tp = l -> tp;
+
 	return node;
 }
 
@@ -42,6 +60,8 @@ Node_t *new_node_num(int val){
 	Node_t *node=calloc(1,sizeof( Node_t ));
 	node -> kind = ND_NUM;
 	node -> val = val;
+	node -> tp = calloc(1,sizeof(Type));
+	node -> tp -> Type_label = TP_INT;
 	return node;
 }
 
@@ -160,7 +180,8 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
  * add = mul( "+"mul | "-"mul)* 
  * mul = unitary ("*" unitary | "/" unitary )*
- * unitary = ('+' | '-' )? primary
+ * unitary = "sizeof" unitary
+ * 			| ('+' | '-' )? primary
  * 			| '*' unitary
  * 			| '&' unitary
  * primary = num | type? indent  ( "(" ")" )? | "(" assign ")"
@@ -215,9 +236,8 @@ Node_t *func(Token_t **token){// function def
 
 	}
 
-	(*token) = (*token) -> next;
 	
-	if( (*token) -> kind != TK_IDENT ){
+	if( !( (*token) ->next ) && (*token) -> next -> kind != TK_IDENT ){
 
 
 		fprintf(stderr,"関数名が必要です");
@@ -228,6 +248,10 @@ Node_t *func(Token_t **token){// function def
 
 		node = calloc(1,sizeof(Node_t));
 		node -> kind = ND_FUNCTIONDEF;
+
+		node -> tp = (*token) -> tp;
+
+		(*token) = (*token) ->next;
 
 		//名前読み込み
 		node -> name = calloc(((*token)->length),sizeof(char));
@@ -470,7 +494,20 @@ Node_t *mul(Token_t **token){
 Node_t *unitary(Token_t **token){
 
 	Node_t *node;
-	if( find("+",token) ){
+	if( (*token)-> kind == TK_SIZEOF ){
+
+
+		(*token) = (*token) -> next;
+		if( unitary(token) -> tp -> Type_label == TP_INT ){
+
+
+			node = new_node_num(4);
+
+		}else{
+
+			node = new_node_num(8);
+		}
+	}else if( find("+",token) ){
 
 
 		node = primary(token);
@@ -479,6 +516,8 @@ Node_t *unitary(Token_t **token){
 
 
 		node = new_node(ND_SUB,new_node_num(0),primary(token));
+		node -> tp = calloc(1,sizeof(Type));
+		node -> tp = node -> right -> tp;
 		
 	}else if( (*token) -> kind == TK_OPERATOR && ( (*token) -> str[0] == '*' || (*token) -> str[0] == '&' )   ){
 
@@ -493,6 +532,12 @@ Node_t *unitary(Token_t **token){
 			node = calloc(1,sizeof(Node_t));
 			node -> kind = ND_DEREF;
 			node -> left = unitary(token);
+			if( node -> left -> tp -> Type_label != TP_POINTER ){
+
+
+				error_at((*token)->str,"ポインタ型ではありません\n");
+			}
+			node -> tp = node -> left -> tp -> pointer_to;
 			break;
 		
 		case '&':
@@ -502,6 +547,9 @@ Node_t *unitary(Token_t **token){
 			node = calloc(1,sizeof(Node_t));
 			node -> kind = ND_ADDR;
 			node -> left = unitary(token);
+			node -> tp = calloc(1,sizeof(Type));
+			node -> tp -> Type_label = TP_POINTER;
+			node -> tp -> pointer_to = node -> left -> tp;
 			break;
 		}
 		
@@ -529,7 +577,10 @@ Node_t *primary(Token_t **token){
 
 		int flag_def = 0;// 0 : 型宣言なし
 		Type *tp;
+
 		if((*token)-> kind == TK_Type){
+
+
 			tp = (*token) -> tp;
 			flag_def = 1;//型宣言あり
 			(*token) = (*token)->next; 
@@ -553,6 +604,7 @@ Node_t *primary(Token_t **token){
 
 			while (!find(")",token))
 			{
+
 
 				node -> val++;
 
@@ -580,7 +632,9 @@ Node_t *primary(Token_t **token){
 
 				node -> tp = lvar -> tp;
 				node -> offset = lvar -> offset;
+
 			}else{
+
 
 				if( flag_def == 0 ){
 
@@ -591,9 +645,15 @@ Node_t *primary(Token_t **token){
 				lvar -> next = funclocal-> locals;
 				lvar -> name = ident -> str;
 				lvar -> length = ident -> length;
+				
 				if(funclocal ->locals){
+
+
 					lvar -> offset = funclocal-> locals -> offset +8;
+
 				}else{
+
+
 					lvar -> offset = 8;
 				}
 				lvar -> tp = tp;
@@ -603,13 +663,11 @@ Node_t *primary(Token_t **token){
 			}
 			return node;
 		}
-
 	}else{
 
 
 		node = new_node_num(expect_num(token));
 	}
-
 	return node;
 }
 
