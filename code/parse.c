@@ -44,11 +44,14 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 
 				if( l -> tp -> Type_label == TP_POINTER){
 					
+					
 					node -> tp = l -> tp;
+					node -> right -> val = node -> right -> val * 8;
 				
 				}else{
 
 					node -> tp = r -> tp;
+					node -> left -> val = node -> right -> val * 8;
 				}
 				return node;
 			}
@@ -518,50 +521,8 @@ Node_t *unitary(Token_t **token){
 
 
 		(*token) = (*token) -> next;
-		node = unitary(token);
-		Type *tp = node -> tp;
-
-		if( tp -> Type_label == TP_POINTER && node -> val == 1 ){
-			
-			
-			tp -> Type_label = TP_ARRAY;
-		}
-		
-		if(  tp -> Type_label == TP_INT ){
-
-
-			node = new_node_num(4);
-
-		}else if( tp -> Type_label == TP_ARRAY ){
-
-
-			if( tp -> pointer_to -> Type_label == TP_INT ){
-
-
-				node = new_node_num( 4 * ( tp -> size) );
-
-			}else if(tp -> pointer_to -> Type_label == TP_POINTER ){
-
-
-				node = new_node_num( 8 * ( tp -> size )  );
-
-			}else{
-
-
-				fprintf(stderr,"不明な型名");
-				exit(1);
-			}
-		}else if( tp -> Type_label == TP_POINTER ){
-
-
-			node = new_node_num(8);
-		
-		}else{
-
-
-			fprintf(stderr,"不明な型名");
-			exit(1);
-		}
+		node = new_node_num(  unitary(token) -> tp -> size );
+				
 	}else if( find("+",token) ){
 
 
@@ -723,33 +684,27 @@ Node_t *primary(Token_t **token){
 					lvar -> tp = calloc(1,sizeof(Type));
 					lvar -> tp -> Type_label = TP_ARRAY;
 					lvar -> tp -> pointer_to = tp;
-					lvar -> tp -> size = expect_num(token);
+					lvar -> tp -> size = expect_num(token) *8;
 					expect("]",token);
 
 				}else{
 
 
 					lvar -> tp = tp;
-					lvar -> tp -> size =1;
+					lvar -> tp -> size =8;
 				}
 				//====================================================
 
-				//offset の計算
-				int type_size = 8;
-
-				if(tp -> Type_label == TP_INT){
-					//type_size =4; 8の倍数でoffset は考える
-				}
 
 				if(funclocal ->locals){
 
 
-					lvar -> offset = (funclocal-> locals -> offset) +type_size*(lvar -> tp -> size);
+					lvar -> offset = (funclocal-> locals -> offset) +(lvar -> tp -> size);
 
 				}else{
 
 
-					lvar -> offset = type_size*(lvar -> tp->size);
+					lvar -> offset = (lvar -> tp->size);
 				}
 				node -> val = -1;
 				node -> offset = lvar -> offset;

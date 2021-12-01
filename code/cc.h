@@ -27,6 +27,13 @@ struct type{
 
 	Type *pointer_to;
 
+	/**
+	 * 		type 	|	 	size
+	 *  
+	 * 		int 	|		8
+	 * 		pointer |		8
+	 */
+
 	size_t size;
 
 };

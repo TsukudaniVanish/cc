@@ -147,7 +147,7 @@ echo "pointer test"
 assert 3 'int x;int *y;y = &x;*y = 3;return x'
 
 echo "sizeof test"
-assert 4 'int x; sizeof x'
+assert 8 'int x; sizeof x'
 assert 8 'int *y; sizeof(y)'
 
 echo "array sizeof test"

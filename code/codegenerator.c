@@ -24,10 +24,6 @@ void gen_lval(Node_t *node){
 		printf("	mov rax, rbp\n");
 		printf("	sub rax, %ld\n",  node -> offset  );
 
-		// if( node -> tp -> Type_label == TP_POINTER){
-
-		// 	printf("	mov [rax] ,rax\n");
-		// }
 		printf("	push rax\n");
 		rsp_counter++;
 	}
@@ -84,7 +80,6 @@ void generate(Node_t *node){
 		
 		printf("	pop rax\n");
 		printf("	mov rax, [rax]\n");
-		//printf("	mov rax, [rax]\n");
 		printf("	push rax\n");
 		return;
 
@@ -106,7 +101,10 @@ void generate(Node_t *node){
 		printf("	push rbp\n");
 		rsp_counter++;
 		printf("	mov rbp ,rsp\n");
+
 		if(funclocal ->locals){
+
+
 			printf("	sub rsp, %ld\n",funclocal ->locals -> offset);
 			rsp_counter += funclocal ->locals->offset /8;
 		}
@@ -168,6 +166,7 @@ void generate(Node_t *node){
 
 		{//引数読み込み
 			Node_t *node_arg = node -> left;
+
 			while (node_arg ->kind != ND_BLOCKEND)
 			{
 				
@@ -179,28 +178,36 @@ void generate(Node_t *node){
 
 		switch(node ->val){
 		case 6:
+
 			printf("	pop r9\n");
 
 		case 5:
+
 			printf("	pop r8\n");
 
 		case 4:
+
 			printf("	pop rcx\n");
 
 		case 3:
+
 			printf("	pop rdx\n");
 
 		case 2:
+
 			printf("	pop rsi\n");
 
 		case 1:
+
 			printf("	pop rdi\n");
 		}
 		rsp_counter -= node -> val;
 
-		
-		if(rsp_counter%2 ==1)
+		if(rsp_counter%2 ==1){
+
+
 			printf("	sub rsp , 8\n");
+		}
 		printf("	call %s\n",node -> name);
 		rsp_counter ++;
 		printf("	push rax\n");
@@ -220,6 +227,7 @@ void generate(Node_t *node){
 		return;
 
 	case ND_IF:
+	
 		generate(node -> left);
 		printf("	pop rax\n");
 		rsp_counter --;
@@ -336,8 +344,8 @@ void generate(Node_t *node){
 
 	case ND_BLOCK:
 
-		while (node->right ->kind != ND_BLOCKEND)
-		{
+		while (node->right ->kind != ND_BLOCKEND){
+			
 			
 			generate(node -> left);
 			node = node ->right;
@@ -348,23 +356,6 @@ void generate(Node_t *node){
 		return;
 	}
 	
-	if( node ->left ->tp ->Type_label == TP_POINTER ){
-
-
-		if(node -> left -> tp -> pointer_to -> Type_label == TP_INT){
-			pointer_calc = PointerToIntL;
-		}else{
-			pointer_calc = PointerToPointerL;
-		}
-	}else if( node ->right -> tp ->Type_label == TP_POINTER){
-
-
-		if(node ->right -> tp -> pointer_to -> Type_label == TP_INT){
-			pointer_calc = PointerToIntR;
-		}else{
-			pointer_calc = PointerToPointerR;
-		}
-	}
 
 	//以下は式のコンパイル===================
 	generate(node -> left);
@@ -374,32 +365,6 @@ void generate(Node_t *node){
 	printf("	pop rdi\n");// right side of operator
 	printf("	pop rax\n");// left side of operator
 
-
-	//ポインター計算用
-	switch (pointer_calc)
-		{
-		case PointerToIntL:
-			
-			printf("	imul rdi, 8\n");
-			break;
-		
-		case PointerToPointerL:
-
-			printf("	imul rdi, 8\n");
-			break;
-
-		case PointerToIntR:
-
-			printf("	imul rax, 8\n");
-			break;
-
-		case PointerToPointerR:
-
-			printf("	imul rax, 8\n");
-			break;
-		}
-	
-	
 	
 	rsp_counter-=2;
 
