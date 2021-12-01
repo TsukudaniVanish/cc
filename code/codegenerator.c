@@ -17,12 +17,17 @@ void gen_lval(Node_t *node){
 		
 		fprintf(stderr,"代入の左辺値が変数ではありません");
 		exit(1);
-	
+
 	}else{
 
 
 		printf("	mov rax, rbp\n");
-		printf("	sub rax, %d\n", node -> offset);
+		printf("	sub rax, %ld\n",  node -> offset  );
+
+		// if( node -> tp -> Type_label == TP_POINTER){
+
+		// 	printf("	mov [rax] ,rax\n");
+		// }
 		printf("	push rax\n");
 		rsp_counter++;
 	}
@@ -47,17 +52,16 @@ void generate(Node_t *node){
 		rsp_counter++;
 		return;
 	case ND_ASSIGN:
+		if(node -> left ->  kind != ND_DEREF){
 
-		if( node -> left -> kind != ND_DEREF ){
-			
-			
+
 			gen_lval(node->left);
 		
-		}else{//*がついているときは右辺値としてコンパイル
-
+		}else{
 			
-			generate(node -> left);	
-		}
+			generate(node -> left -> left);
+		}	
+		
 		generate(node -> right);
 
 		printf("	pop rdi\n");
@@ -75,17 +79,8 @@ void generate(Node_t *node){
 
 	case ND_DEREF:
 
-		if(node -> left -> kind != ND_DEREF){
-
-
-			gen_lval(node -> left);
-
-		}else{
-
-
-			generate(node -> right);
-			return;
-		}
+		generate(node -> left);
+			
 		
 		printf("	pop rax\n");
 		printf("	mov rax, [rax]\n");
@@ -112,7 +107,7 @@ void generate(Node_t *node){
 		rsp_counter++;
 		printf("	mov rbp ,rsp\n");
 		if(funclocal ->locals){
-			printf("	sub rsp, %d\n",funclocal ->locals -> offset);
+			printf("	sub rsp, %ld\n",funclocal ->locals -> offset);
 			rsp_counter += funclocal ->locals->offset /8;
 		}
 		//引数代入
@@ -215,11 +210,6 @@ void generate(Node_t *node){
 	case ND_RETURN:
 		
 		generate(node -> left);
-		if(node -> left -> kind == ND_DEREF){
-			printf("	pop rax\n");
-			printf("	mov rax, [rax]\n");
-			printf("	push rax\n");
-		}
 		printf("	pop rax\n");
 		rsp_counter--;
 		printf("	mov rsp, rbp\n");
@@ -358,7 +348,7 @@ void generate(Node_t *node){
 		return;
 	}
 	
-	if(node -> left -> kind == ND_LVAL && node ->left ->tp ->Type_label == TP_POINTER ){
+	if( node ->left ->tp ->Type_label == TP_POINTER ){
 
 
 		if(node -> left -> tp -> pointer_to -> Type_label == TP_INT){
@@ -366,7 +356,7 @@ void generate(Node_t *node){
 		}else{
 			pointer_calc = PointerToPointerL;
 		}
-	}else if( node->right -> kind == ND_LVAL && node ->right -> tp ->Type_label == TP_POINTER){
+	}else if( node ->right -> tp ->Type_label == TP_POINTER){
 
 
 		if(node ->right -> tp -> pointer_to -> Type_label == TP_INT){
@@ -390,7 +380,7 @@ void generate(Node_t *node){
 		{
 		case PointerToIntL:
 			
-			printf("	imul rdi, 4\n");
+			printf("	imul rdi, 8\n");
 			break;
 		
 		case PointerToPointerL:
@@ -400,7 +390,7 @@ void generate(Node_t *node){
 
 		case PointerToIntR:
 
-			printf("	imul rax, 4\n");
+			printf("	imul rax, 8\n");
 			break;
 
 		case PointerToPointerR:

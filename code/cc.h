@@ -21,10 +21,13 @@ struct type{
 
 		TP_INT,//int 型 4bite
 		TP_POINTER,
+		TP_ARRAY,
 
 	}Type_label;
 
 	Type *pointer_to;
+
+	size_t size;
 
 };
 
@@ -39,7 +42,7 @@ struct lvar{
 	Lvar *next;
 	char *name;
 	int length;
-	int offset;
+	long int offset;
 	Type *tp;
 };
 
@@ -103,8 +106,14 @@ struct Node {
 	Node_kind kind;
 	Node_t *left;
 	Node_t *right;
-	int val;
-	int offset;
+	/**
+	 * ND_FUNCTION... -> 引数の個数
+	 * ND_IDENT -> value
+	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 元が配列なら 1 他は0
+	 * 
+	 */
+	int val;//  	, 
+	long int offset;
 	Type *tp;
 	char *name;
 

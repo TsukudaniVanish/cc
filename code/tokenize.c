@@ -21,7 +21,7 @@ bool is_alnum(char c){
 bool isoperator(char *p){
 
 	
-	char *operators[] ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")","{","}","&",NULL};
+	char *operators[] ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")","{","}","&","[","]",NULL};
 
 	for(char **str = operators ; *str ; str++ ){
 		
@@ -169,7 +169,7 @@ Token_t *tokenize(char *p){//入力文字列
 			p+=2;
 			continue;
 
-		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>' | *p == '=' | *p =='{'  | *p == '}' | *p == '&'  ){//単項の演算子をtokenize
+		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>' | *p == '=' | *p =='{'  | *p == '}' | *p == '&' | *p == '[' | *p == ']'  ){//単項の演算子をtokenize
 
 			
 			cur = new_token(TK_OPERATOR,cur,p);
