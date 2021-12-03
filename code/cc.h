@@ -133,10 +133,10 @@ typedef enum{
  * @param Type tp : kind がND_LVALの時に使用する
  * @param char_* name : kind がND_LVAL の時に使用する
  */
-typedef struct Node Node_t;
+typedef struct node Node_t;
 
 
-struct Node {
+struct node {
 	
 	Node_kind kind;
 	Node_t *left;
@@ -189,22 +189,22 @@ typedef enum{
 	TK_OPERATOR=2, // 演算子
 	TK_PUNCTUATOR=3,// 区切り文字
 	//key words=====================================================
-	TK_RETURN=100,
-	TK_IF,
+	TK_IF=100,//制御構文
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
-	TK_SIZEOF,
+	TK_RETURN,
+	TK_SIZEOF=200,// 演算子としてふるまうので別にする
 	//type of variable =====================================================
-	TK_Type=200,//変数の型名
+	TK_Type=300,//変数の型名
 	//=====================================================
 	TK_EOF=999, //終了記号
 
 }Token_kind;
 
-typedef struct Token Token_t;
+typedef struct token Token_t;
 
-struct Token {
+struct token {
 
 	Token_kind kind;
 	Token_t *next;
@@ -219,19 +219,7 @@ struct Token {
 
 
 
-/*
- * assert find <- main.c=====================================================
- */
-
-/**
- * @b
- * table から 識別子を検索する
- * @param Token_t_** token 
- * @param Lvar_** locals 
- * @return Lvar* 
- */
-Lvar *find_lvar(Token_t **token,Lvar **locals);
-
+//main.c=====================================================
 
 /**
  * @b
@@ -241,50 +229,6 @@ Lvar *find_lvar(Token_t **token,Lvar **locals);
  * @param ... 
  */
 void error_at(char *,char *,...);
-
-
-/**
- * @b
- * token -> strとstring が一致するか見る
- * @param char_* string
- * @param Token_t_** token 
- * @return bool
- */
-bool find(char *,Token_t **);
-
-/**
- * @fn
- * @brief 
- * token -> strとstring が一致するか確認 一致しない場合はエラーをはく
- * @sa error_at
- * @param char_* string 
- * @param Token_t token
- * @return void
- * @sa error_at
- */
-void expect(char *string ,Token_t **token);
-/**
- * @brief 
- * 識別子か確認する　識別子ではない場合はエラーを吐く
- * @sa error_at
- * @param Token_t token
- * @return char 
- */
-char expect_ident(Token_t **);
-/**
- * @brief 
- * 数字があるか確認する 数字でない場合はエラーをはく
- * @param Token_t_** token 
- * @return int 
- */
-int expect_num(Token_t **token);
-/**
- * @brief 
- * token が末端か判定する
- * @param Token_t_** token 
- * @return bool 
- */
-bool at_eof(Token_t **token);
 //=====================================================
 
 
@@ -362,6 +306,57 @@ Token_t *tokenize(char *p);
  */
 
 /**
+ * @b
+ * table から 識別子を検索する
+ * @param Token_t_** token 
+ * @param Lvar_** locals 
+ * @return Lvar* 
+ */
+Lvar *find_lvar(Token_t **token,Lvar **locals);
+
+/**
+ * @b
+ * token -> strとstring が一致するか見る
+ * @param char_* string
+ * @param Token_t_** token 
+ * @return bool
+ */
+bool find(char *,Token_t **);
+
+/**
+ * @brief 
+ * token -> strとstring が一致するか確認 一致しない場合はエラーをはく
+ * @sa error_at
+ * @param char_* string 
+ * @param Token_t token
+ * @return void
+ * @sa error_at
+ */
+void expect(char *string ,Token_t **token);
+/**
+ * @brief 
+ * 識別子か確認する　識別子ではない場合はエラーを吐く
+ * @sa error_at
+ * @param Token_t token
+ * @return char 
+ */
+char expect_ident(Token_t **);
+/**
+ * @brief 
+ * 数字があるか確認する 数字でない場合はエラーをはく
+ * @param Token_t_** token 
+ * @return int 
+ */
+int expect_num(Token_t **token);
+/**
+ * @brief 
+ * token が末端か判定する
+ * @param Token_t_** token 
+ * @return bool 
+ */
+bool at_eof(Token_t **token);
+
+/**
  * @brief 
  * 識別子を読み込んで token を次に送る
  * @param token 
@@ -388,10 +383,10 @@ Node_t *new_node_num(int val);
 /**
  * @brief 識別子の末端ノードを作る
  * 
- * @param char alpha 
+ * @param Token_t** token
  * @return Node_t* 
  */
-Node_t *new_node_ident(char alpha);
+Node_t *new_node_ident(Token_t **);
 /**
  * @brief keyword の末端ノードを作る
  * 
@@ -405,6 +400,21 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token);
  * @param Token_t**
  */
 Node_t *new_function(Token_t **);
+
+/**
+ * @brief block の構文木を作成
+ * @param Token_t** token
+ * @return Node_t*
+ * 
+ */
+Node_t *new_node_block(Token_t **);
+
+/**
+ * @brief '*' または '&'をパースする
+ * @param Token_t** token
+ * @return Node_t*
+ */
+Node_t *new_node_ref_deref(Token_t **);
 
 /**
  * @brief パーサ本体

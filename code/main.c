@@ -6,20 +6,7 @@
 
 
 
-Lvar *find_lvar(Token_t **token,Lvar **locals){
-	
 
-	for(Lvar *var = *locals; var;var = var -> next){
-
-
-		if( var -> length == (*token)-> length && !memcmp( (*token)-> str, var ->name,var -> length )  ){
-
-
-			return var; 
-		}
-	}
-	return NULL;
-}
 
 
 char *user_input;
@@ -46,85 +33,7 @@ void error_at(char *loc,char *fmt,...){
 
 
 
-bool find(char *string,Token_t **token){
 
-	if( (*token) -> kind > 100 | strlen(string) != (*token) -> length | memcmp( (*token) -> str,string,(*token)-> length ) != 0  ){
-
-
-		return false;
-
-	}else{
-
-
-		*token = (*token) -> next;
-		return true;
-	}
-}
-
-
-
-
-void expect(char *string ,Token_t **token){
-
-
-	if( (*token) -> kind > 100 | (*token) -> length != strlen(string) | memcmp( (*token) -> str,string,(*token) -> length ) ){
-		
-		error_at( (*token) -> str ,"不正な文字");
-	
-	}else{
-	
-		(*token) = (*token) -> next;
-		
-	}
-}
-
-char expect_ident(Token_t **token){
-
-
-	if( (*token)->kind != TK_IDENT ){
-
-
-		error_at( (*token)-> str,"無効な変数名" );
-	
-	}else{
-
-
-		char name = (*token)-> str[0];
-		(*token) = (*token) -> next;
-		return name;
-	}
-}
-
-int expect_num(Token_t **token){
-
-	
-	if( (*token) -> kind != TK_CONST  ){
-
-
-		error_at( (*token) -> str ,"数ではありません");
-	
-	}else{
-		
-		int v = (*token) -> val;	
-		(*token) = (*token) -> next;
-		return v;
-	}
-}
-
-bool at_eof(Token_t **token){
-
-
-	if( (*token)-> kind != TK_EOF ){
-
-
-		return false;
-	
-	}else{
-
-
-		return true;
-	}
-}
 
 
 
