@@ -447,6 +447,15 @@ Node_t *primary(Token_t **);
 //変数情報をコンパイルする
 void gen_lval(Node_t *node);
 
+//関数呼びたしをコンパイル
+void gen_function_call(Node_t *node);
+
+//関数定義をコンパイル
+void gen_function_def(Node_t *node);
+
+//配列自身の先頭をさすポインタをセット
+void set_array_header();
+
 
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node);

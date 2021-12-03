@@ -87,7 +87,7 @@ bool at_eof(Token_t **token){
 
 
 
-Lvar *find_lvar(Token_t **token,Lvar **locals){
+Lvar *find_lvar(Token_t **token,Lvar **locals){//array は飛ばす
 	
 
 	for(Lvar *var = *locals; var;var = var -> next){
@@ -124,18 +124,18 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	node -> left = l;
 	node -> right =r;
 	//型チェック
-	if( ! l -> tp){
+	if( l && ! l -> tp){
 
 
 		fprintf(stderr,"型が未定義です\n");
 		exit(1);
-	}else if (! r -> tp){
+	}else if ( r  && ! r -> tp){
 
 
 		fprintf(stderr,"型が未定義です\n");
 		exit(1);
 	}
-	if (l -> tp -> Type_label != r -> tp -> Type_label){// 数値型とポインタの演算は許す
+	if ( l && r &&l -> tp -> Type_label != r -> tp -> Type_label){// 数値型とポインタの演算は許す
 
 		if( l -> tp -> Type_label == TP_POINTER || r -> tp -> Type_label == TP_POINTER){
 
@@ -163,7 +163,8 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 			exit(1);
 		}
 	}
-	node -> tp = l -> tp;
+	if(l)
+		node -> tp = l -> tp;
 
 	return node;
 }
@@ -233,14 +234,17 @@ Node_t *new_node_ident(Token_t**token){
 		if(lvar){
 
 			node -> tp = lvar -> tp;
-			//配列型かどうか====================================================
+			//is array? ====================================================
 			if ( lvar -> tp -> Type_label == TP_ARRAY ){
+				
+				
 				node -> tp -> Type_label = TP_POINTER;
 				node -> val = 1;// 元は配列でした
 			}
 			//====================================================
 
 			node -> offset = lvar -> offset;
+			return node;
 
 		}else{// local var def =========================
 
@@ -255,15 +259,37 @@ Node_t *new_node_ident(Token_t**token){
 			lvar -> name = ident -> str;
 			lvar -> length = ident -> length;
 			
-			//配列型かどうか====================================================
+			//is array?====================================================
 			if ( find("[",token)){
 
 
-				lvar -> tp = calloc(1,sizeof(Type));
-				lvar -> tp -> Type_label = TP_ARRAY;
-				lvar -> tp -> pointer_to = tp;
-				lvar -> tp -> size = expect_num(token) *8;
+				Lvar *array_top = calloc(1,sizeof(Lvar));
+				array_top -> next = nametable -> locals;
+				array_top -> name = ident -> str;
+				array_top -> length = ident -> length;
+				array_top -> tp = calloc(1,sizeof(Type));
+				array_top -> tp -> Type_label = TP_ARRAY;
+				array_top -> tp -> pointer_to = tp;
+				array_top -> tp -> size = expect_num(token) *8;
+				if(nametable ->locals){
+
+
+					array_top -> offset = (nametable-> locals -> offset) +(array_top -> tp -> size);
+
+				}else{
+
+
+					array_top -> offset = (array_top -> tp->size);
+				}
 				expect("]",token);
+				lvar -> next = array_top;
+				lvar -> tp = calloc(1,sizeof(Type));
+				lvar -> tp -> Type_label = TP_POINTER;
+				lvar -> tp -> pointer_to = tp;
+				lvar -> tp -> size = array_top -> tp -> size +8;
+
+
+				
 
 			}else{
 
@@ -284,12 +310,16 @@ Node_t *new_node_ident(Token_t**token){
 
 				lvar -> offset = (lvar -> tp->size);
 			}
-			node -> val = -1;
+			nametable -> locals = lvar;
+			node -> val = 0;
 			node -> offset = lvar -> offset;
 			node ->tp = lvar -> tp;
-			nametable -> locals = lvar;
+			if( (*token) -> kind != TK_OPERATOR ){
+				Node_t *top = new_node(ND_ASSIGN,node,node);
+				return top;
+			}
+			return node;
 		}//=========================
-		return node;
 	}
 }
 
@@ -801,6 +831,20 @@ Node_t *primary(Token_t **token){
 
 
 		node = new_node_num(expect_num(token));
+	}
+	if(find("[",token)){// a[...] -> *(a + ...)
+
+
+		Node_t *node_top = calloc(1,sizeof(Node_t));
+		node_top -> kind = ND_DEREF;
+		node_top -> tp = node -> tp -> pointer_to;
+		node_top -> val = -1;
+		node_top -> left = new_node(ND_ADD,node,mul(token));
+
+		expect("]",token);
+
+		return node_top;
+
 	}
 	return node;
 }

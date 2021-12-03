@@ -152,11 +152,15 @@ assert 8 'int x; sizeof x'
 assert 8 'int *y; sizeof(y)'
 
 echo "array sizeof test"
-assert 16 'int *a[2];sizeof a'
+assert 24 'int *a[2];sizeof a'
 
 echo "array type chast test"
 
-assert 3 'int a[2];*a = 1;*(a + 1) = 2;int *p;p = a;return *p + *(p + 1)'
+assert 2 'int a[2];*(a + 1) = 2;int *p;p = a;return *(p + 1)'
+
+echo "array index acsess test"
+
+assert 3 'int a[2];  a[1] = 3; return a[1]'
 
 echo  "Error test"
 assert_e '20+++3;'

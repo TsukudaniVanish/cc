@@ -10,6 +10,26 @@ int filenumber =0;//制御構文のラベル指定で使用する
 
 
 
+void set_array_header(){
+
+	for( Lvar *var = (nametable -> locals) ; var ; var = var -> next ){
+
+
+		if (var -> next  &&(var -> next -> tp -> Type_label == TP_ARRAY)){
+
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %ld\n",var -> next -> offset);
+			printf("	mov rdi, rax\n");
+			printf("	sub rax, 8\n");
+			printf("	mov [rax], rdi\n");
+		}
+	}
+	return;
+}
+
+
+
+
 void gen_lval(Node_t *node){
 
 
@@ -21,10 +41,8 @@ void gen_lval(Node_t *node){
 
 	}else{
 
-
 		printf("	mov rax, rbp\n");
 		printf("	sub rax, %ld\n",  node -> offset  );
-
 		printf("	push rax\n");
 		rsp_counter++;
 	}
@@ -106,40 +124,42 @@ void gen_function_def(Node_t *node){
 	case 6:
 		
 		printf("	mov rax, rbp\n");
-		printf("	sub rax, %d\n",48);
+		printf("	sub rax, %d\n",48 );
 		printf("	mov [rax], r9\n");
 	
 	case 5:
 		
 		printf("	mov rax, rbp\n");
-		printf("	sub rax, %d\n",40);
+		printf("	sub rax, %d\n",40 );
 		printf("	mov [rax], r8\n");
 
 	case 4:
 
 		printf("	mov rax, rbp\n");
-		printf("	sub rax, %d\n",32);
+		printf("	sub rax, %d\n",32 );
 		printf("	mov [rax], rcx\n");
 
 	case 3:
 
 		printf("	mov rax, rbp\n");
-		printf("	sub rax, %d\n",24);
+		printf("	sub rax, %d\n",24 );
 		printf("	mov [rax], rdx\n");
 
 	case 2:
 
 		printf("	mov rax, rbp\n");
-		printf("	sub rax, %d\n",16);
+		printf("	sub rax, %d\n",16 );
 		printf("	mov [rax], rsi\n");
 
 	case 1:
 
 		printf("	mov rax, rbp\n");
-		printf("	sub rax, %d\n",8);
+		printf("	sub rax, %d\n",8 );
 		printf("	mov [rax], rdi\n");	
 		break;
 	}
+
+	set_array_header();
 	
 
 	generate(node -> right);//定義本文をコンパイル
@@ -161,6 +181,9 @@ void gen_function_def(Node_t *node){
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node){
 
+	if(!node)
+		return;
+
 	
 	//ノード末端付近
 	switch(node -> kind) {
@@ -171,7 +194,7 @@ void generate(Node_t *node){
 		return;
 	case ND_ASSIGN:
 
-		if(node -> left ->  kind != ND_DEREF){
+		if( node -> left && node -> left ->  kind != ND_DEREF){
 
 
 			gen_lval(node->left);
@@ -274,7 +297,7 @@ void generate(Node_t *node){
 
 	case ND_ELSE:
 		
-		if(node -> left -> kind = ND_IFE){
+		if( node -> left && node -> left -> kind == ND_IFE){
 			
 			
 			generate(node -> left);
@@ -334,7 +357,7 @@ void generate(Node_t *node){
 
 	case ND_FOR:
 
-		if(node -> left == NULL){//loop will go on
+		if(!node -> left ){//loop will go on
 
 
 			fprintf(stderr,"for(;;)は無効です");
