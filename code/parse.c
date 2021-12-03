@@ -207,7 +207,7 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
  * 			| ('+' | '-' )? primary
  * 			| '*' unitary
  * 			| '&' unitary
- * primary = num | type? indent  ( "(" ")" )? | "(" assign ")"
+ * primary = num | type? indent  ( "["add"]" )? | "(" assign ")"
  *
  * 終端記号:
  * 		num
@@ -229,15 +229,15 @@ void program(Token_t **token,Node_t **code){
 	int i = 0;
 	while(!at_eof(token)){
 
-		if(funclocal == 0){//関数の変数情報更新
+		if(nametable == 0){//関数の変数情報更新
 
-			funclocal = calloc(1,sizeof(Funcvar));
-			funclocal -> head = funclocal;
+			nametable = calloc(1,sizeof(Tables));
+			nametable -> head = nametable;
 		}else{
 
-			funclocal ->next = calloc(1,sizeof(Funcvar));
-			funclocal -> next -> head = funclocal -> head;
-			funclocal = funclocal -> next;
+			nametable ->next = calloc(1,sizeof(Tables));
+			nametable -> next -> head = nametable -> head;
+			nametable = nametable -> next;
 
 		}
 
@@ -283,7 +283,7 @@ Node_t *func(Token_t **token){// function def
 		consume_ident(token);
 
 		node -> val = 0; // 引数の個数
-		// if(funclocal ->locals){
+		// if(nametable ->locals){
 		// 	node -> offset = locals -> offset;//top offset
 		// }else{
 		// 	node -> offset = 0;
@@ -650,7 +650,7 @@ Node_t *primary(Token_t **token){
 			node = calloc(1,sizeof(Node_t));
 			node -> kind = ND_LVAL;
 
-			Lvar *lvar = find_lvar(&ident,&(funclocal->locals) );
+			Lvar *lvar = find_lvar(&ident,&(nametable->locals) );
 
 			if(lvar){
 
@@ -673,7 +673,7 @@ Node_t *primary(Token_t **token){
 					error_at(ident-> str,"型宣言がありません\n");
 				}
 				lvar = calloc(1,sizeof(Lvar));
-				lvar -> next = funclocal-> locals;
+				lvar -> next = nametable-> locals;
 				lvar -> name = ident -> str;
 				lvar -> length = ident -> length;
 				
@@ -696,10 +696,10 @@ Node_t *primary(Token_t **token){
 				//====================================================
 
 
-				if(funclocal ->locals){
+				if(nametable ->locals){
 
 
-					lvar -> offset = (funclocal-> locals -> offset) +(lvar -> tp -> size);
+					lvar -> offset = (nametable-> locals -> offset) +(lvar -> tp -> size);
 
 				}else{
 
@@ -709,7 +709,7 @@ Node_t *primary(Token_t **token){
 				node -> val = -1;
 				node -> offset = lvar -> offset;
 				node ->tp = lvar -> tp;
-				funclocal -> locals = lvar;
+				nametable -> locals = lvar;
 			}//=========================
 			return node;
 		}

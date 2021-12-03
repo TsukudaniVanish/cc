@@ -8,32 +8,34 @@
 
 
 
-//operators ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")",NULL}
-
-
-
-
-//変数型
+/**
+ * @brief 
+ * 変数型
+ * @param Type_label 変数の型ラベル
+ * @param Type_* pointer_to : ポインタの示す先
+ * @param size_t size : メモリでのサイズ
+ * 
+ */
 typedef struct type Type;
 
 struct type{
 	enum{
 
-		TP_INT,//int 型 4bite
-		TP_POINTER,
-		TP_ARRAY,
+		TP_INT,//int 型 8bite
+		TP_POINTER,// pointer 型 8bite
+		TP_ARRAY,// 配列型
 
 	}Type_label;
 
-	Type *pointer_to;
+	Type *pointer_to;// 配列型or pinter 型の時に意味があるメンバ変数
 
 	/**
-	 * 		type 	|	 	size
-	 *  
-	 * 		int 	|		8
-	 * 		pointer |		8
-	 */
-
+	 * @b
+	 * 変数のメモリサイズ
+	 * 		
+	 * @param int 8
+	 * @param pointer 8
+	 **/
 	size_t size;
 
 };
@@ -41,7 +43,15 @@ struct type{
 
 
 
-//local変数の実装
+/**
+ * @brief 
+ * local varの実装
+ * @param Lvar_* next
+ * @param char_* name
+ * @param int length : length of name
+ * @param long_int offset
+ * @param Type_* tp : Type of local variable
+ */
 typedef struct lvar Lvar;
 
 struct lvar{
@@ -53,26 +63,33 @@ struct lvar{
 	Type *tp;
 };
 
-//local変数
-Lvar *locals;
 
-// function ごとにlocal 変数を管理するコンテナ
-typedef struct functionlocal Funcvar;
+/**
+ * @brief 
+ * function scope で管理する識別子テーブル
+ * @param Tables_* head
+ * @param Tables_* next
+ * @param Lvar_* locals
+ *
+ * */
+typedef struct NameSpace Tables;
 
-struct functionlocal{
+struct NameSpace{
 
-	Funcvar *head;
-	Funcvar *next;
+	Tables *head;
+	Tables *next;
 	Lvar *locals;
 };
 
 //関数ごとのlocal 変数
-Funcvar *funclocal;
+Tables *nametable;
 
-//抽象構文木のノード型
 
+//========================= Node =========================
+
+//抽象構文木のノードの識別に使用する
 typedef enum{
-	
+	//operator =========================
 	ND_EQL,// <-> ==
 	ND_NEQ,// <-> !=
 	ND_LES,// <-> <
@@ -83,8 +100,8 @@ typedef enum{
 	ND_DIV, // <-> /
 	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
-	ND_ADDR, //<-> * pointer
-	ND_DEREF,// <-> & dereference
+	ND_ADDR, //<-> * dereference
+	ND_DEREF,// <-> & reference
 	//型=========================
 	ND_LVAL, // ローカル変数
 	ND_FUNCTIONCALL,//関数呼び出し
@@ -105,6 +122,17 @@ typedef enum{
 
 }Node_kind;
 
+/**
+ * @brief 
+ * 抽象構文木の実装に使用する
+ * @param Node_kind
+ * @param Node_t_* left
+ * @param Node_t_* right
+ * @param int val : kind が ND_FUNCTION..,ND_IDENT,ND_LVALの時に使用する
+ * @param long_int offset
+ * @param Type tp : kind がND_LVALの時に使用する
+ * @param char_* name : kind がND_LVAL の時に使用する
+ */
 typedef struct Node Node_t;
 
 
@@ -114,13 +142,15 @@ struct Node {
 	Node_t *left;
 	Node_t *right;
 	/**
+	 * 
+	 * bref of member variavle : val 
 	 * ND_FUNCTION... -> 引数の個数
 	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 元が配列なら 1 他は0
+	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 配列が暗黙にキャストされたなら 1 他は-1
 	 * 
 	 */
-	int val;//  	, 
-	long int offset;
+	int val;
+	long int offset;// offset from rbp
 	Type *tp;
 	char *name;
 
@@ -128,10 +158,36 @@ struct Node {
 
 
 
-
+// =========================Token =========================
+/**
+ * @b
+ * Tokeen の種類を列挙する
+ * 
+ *
+ * tokens:
+ * 		operator:
+ * 				"==","!=","<=",">=",
+ * 				"<",">","+","-","*","/","&","=",
+ * 		key word:
+ * 				return ...
+ * 				if(...)...
+ * 				if(...)...else...
+ * 				while(...)...
+ * 				for(...)...
+ * 				sizeof ...
+ * 				int
+ * 		punctutator:
+ * 					"{","}","[","]",";",","
+ * 		identifier
+ * 		constant
+ * 		string-literal
+ */
 typedef enum{
-
-	TK_OPERATOR, //記号
+	// token ====================================================
+	TK_IDENT, //識別子
+	TK_CONST, //整数
+	TK_OPERATOR, // 演算子
+	TK_PUNCTUATOR,// 区切り文字
 	//key words=====================================================
 	TK_RETURN,
 	TK_IF,
@@ -139,11 +195,9 @@ typedef enum{
 	TK_WHILE,
 	TK_FOR,
 	TK_SIZEOF,
-	//type=====================================================
-	TK_Type,
+	//type of variable =====================================================
+	TK_Type,//変数の型名
 	//=====================================================
-	TK_IDENT, //識別子
-	TK_DIGIT, //整数
 	TK_EOF, //終了記号
 
 }Token_kind;
@@ -169,22 +223,67 @@ struct Token {
  * assert find <- main.c=====================================================
  */
 
-//変数を名前で検索する
+/**
+ * @b
+ * table から 識別子を検索する
+ * @param Token_t_** token 
+ * @param Lvar_** locals 
+ * @return Lvar* 
+ */
 Lvar *find_lvar(Token_t **token,Lvar **locals);
 
 
-// //エラーをはく関数
-//void error(char *fmt,...){//printf と同じ引数をとる
-//user_input を読み込んでエラー個所を示す関数
-void error_at(char *loc,char *fmt,...);
+/**
+ * @b
+ * エラーをはく関数 printfと同じ引数をとる
+ * @param char_* location
+ * @param char_* format
+ * @param ... 
+ */
+void error_at(char *,char *,...);
 
-//token.kindが'op'か判定してtoken = token.next
-// char OPERATOR,Token_t TOKEN -> bool
-bool find(char *operator,Token_t **token);
 
+/**
+ * @b
+ * token -> strとstring が一致するか見る
+ * @param char_* string
+ * @param Token_t_** token 
+ * @return bool
+ */
+bool find(char *,Token_t **);
+
+/**
+ * @fn
+ * @brief 
+ * token -> strとstring が一致するか確認 一致しない場合はエラーをはく
+ * @sa error_at
+ * @param char_* string 
+ * @param Token_t token
+ * @return void
+ * @sa error_at
+ */
 void expect(char *string ,Token_t **token);
+/**
+ * @brief 
+ * 識別子か確認する　識別子ではない場合はエラーを吐く
+ * @sa error_at
+ * @param Token_t token
+ * @return char 
+ */
 char expect_ident(Token_t **);
+/**
+ * @brief 
+ * 数字があるか確認する 数字でない場合はエラーをはく
+ * @param Token_t_** token 
+ * @return int 
+ */
 int expect_num(Token_t **token);
+/**
+ * @brief 
+ * token が末端か判定する
+ * @param Token_t_** token 
+ * @return bool 
+ */
 bool at_eof(Token_t **token);
 //=====================================================
 
@@ -195,58 +294,62 @@ bool at_eof(Token_t **token);
  * tokenize.c=====================================================
  */
 
-//新しいtokenを作り　cur->nextに代入するtoken
-//Token_kind KIND_OF_Token_t , Token_t *CURRENT_TOKEN,char *STRING -> Token_t 
+/**
+ * @b
+ * 新しいtokenを作り　cur->nextに代入する 代入後 cur を次のtoken に送る
+ * @param Token_kind kind
+ * @param Token_t_* cur
+ * @param char_* str
+ * @return Token_t_*
+ * */
 Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 
-/*
- * tokenize function
- * 演算子:
- * 		算術演算子:
- * 				+,-,*,/
- * 		比較演算子:
- * 				==,!=,<=,>=,<,>
- * 		単項演算子:
- * 				(,),+,-,=,;
- *
- * 	演算子は長さの順にtokenizeすること
- *
+
+/**
+ * @brief 
+ * 英数字かどうか判定する
+ * @param char  
+ * @return bool 
  */
-
-
-
-
-//文字が英数字か_か判定する
 bool is_alnum(char c);
 
 //string が上記のoperatorに一致するか見る.
-/* 
- * isoperator(q) =
- * !( strncmp(q,"!=",2) && strncmp(q,"!=",2) && 
- *  strncmp(q,"<=",2) && strncmp(q,">=",2) && 
- *  *q != '+' && *q != '-' && *q != '*' && 
- *  *q != '/' && *q != '(' && *q != ')'&& 
- *  *q != '<' && *q != '>' && *q != '=' && 
- *  *q != ';'   )   
+/**
+ * 
+ * @b
+ * operator か punctuatorのどちらかであるか判定する
+ * @param char_*
+ * @return int
+ * */
+int is_ope_or_pun(char *);
+
+
+/**
+ * @b
+ * key word と一致するか見る 一致したらその種類　一致しないならTK_EOFを出す
+ * @param char_*
+ * @param Token_t_**
+ * @return bool
+ * @sa  new_token
+ * */
+Token_kind is_keyword(char *);
+/**
+ * @brief 
+ * key word を受け取ってトークンを生成する
+ * @param Token_kind
+ * @param 
+ * @return Token_t* 
  */
-bool isoperator(char *);
+Token_t *new_keyword(Token_kind,Token_t *,char *);
 
-//key word または 型と一致するか見る
-/*
-* key word===============
-* 
-* return , if(...)... , if(...)...else... , while(...)... , for(...)...
-*
-* ===============
-* 型名===============
-*
-* int
-*
-*===============*/
-
-bool is_assign(char *,Token_t **);
-
-//tokenize funcion char * -> Token_t
+/**
+ * @fn 
+ * tokenize function
+ * 演算子は長さの順にtokenizeすること
+ * @sa new_token
+ * 
+ * @return Token_t_*
+ * */
 Token_t *tokenize(char *p);
 //=====================================================
 

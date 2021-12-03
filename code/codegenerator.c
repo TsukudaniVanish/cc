@@ -102,11 +102,11 @@ void generate(Node_t *node){
 		rsp_counter++;
 		printf("	mov rbp ,rsp\n");
 
-		if(funclocal ->locals){
+		if(nametable ->locals){
 
 
-			printf("	sub rsp, %ld\n",funclocal ->locals -> offset);
-			rsp_counter += funclocal ->locals->offset /8;
+			printf("	sub rsp, %ld\n",nametable ->locals -> offset);
+			rsp_counter += nametable ->locals->offset /8;
 		}
 		//引数代入
 		switch (node->val)

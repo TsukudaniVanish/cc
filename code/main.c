@@ -48,11 +48,10 @@ void error_at(char *loc,char *fmt,...){
 
 
 
-//token.kindが'op'か判定してtoken = token.next
-// char OPERATOR,Token_t TOKEN -> bool
-bool find(char *operator,Token_t **token){
 
-	if( (*token) -> kind != TK_OPERATOR | strlen(operator) != (*token) -> length | memcmp( (*token) -> str,operator,(*token)-> length ) != 0  ){
+bool find(char *string,Token_t **token){
+
+	if( (*token) -> kind != TK_OPERATOR | strlen(string) != (*token) -> length | memcmp( (*token) -> str,string,(*token)-> length ) != 0  ){
 
 
 		return false;
@@ -106,7 +105,7 @@ char expect_ident(Token_t **token){
 int expect_num(Token_t **token){
 
 	
-	if( (*token) -> kind != TK_DIGIT  ){
+	if( (*token) -> kind != TK_CONST  ){
 
 
 		error_at( (*token) -> str ,"数ではありません");
@@ -168,7 +167,7 @@ int main(int argc, char **argv){
 	program(&token,code);
 
 	//関数スコープ変数コンテナを先頭にセット
-	funclocal = funclocal -> head;
+	nametable = nametable -> head;
 
 	
 
@@ -183,8 +182,8 @@ int main(int argc, char **argv){
 	//スタックトップには式の結果が入っている
 	for(int i =0;code[i];i++){
 		generate(code[i]);
-		if(funclocal -> next)
-			funclocal = funclocal -> next;
+		if(nametable -> next)
+			nametable = nametable -> next;
 
 	}
 
