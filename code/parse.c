@@ -123,6 +123,7 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	node ->kind = kind;
 	node -> left = l;
 	node -> right =r;
+	//型チェック
 	if( ! l -> tp){
 
 
@@ -134,7 +135,7 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 		fprintf(stderr,"型が未定義です\n");
 		exit(1);
 	}
-	if (l -> tp -> Type_label != r -> tp -> Type_label){
+	if (l -> tp -> Type_label != r -> tp -> Type_label){// 数値型とポインタの演算は許す
 
 		if( l -> tp -> Type_label == TP_POINTER || r -> tp -> Type_label == TP_POINTER){
 

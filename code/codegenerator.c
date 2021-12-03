@@ -4,7 +4,8 @@
 
 
 
-int rsp_counter = 0;
+int rsp_counter = 0;//rsp/8 の値 function callの時 rspを16の倍数にそろえるため
+int filenumber =0;//制御構文のラベル指定で使用する
 
 
 
@@ -29,152 +30,19 @@ void gen_lval(Node_t *node){
 	}
 }
 
-
-int filenumber =0;//制御構文で使用する
-
-//抽象構文木からアセンブリコードを生成する
-void generate(Node_t *node){
-
-	//pointer 加減算フラグ
-	enum { FALSE,PointerToIntL,PointerToPointerL,PointerToIntR,PointerToPointerR}pointer_calc;
-	pointer_calc = FALSE;
-
-	
-	
-	switch(node -> kind) {
-	case ND_NUM:
-
-		printf("	push %d\n",node ->val);
-		rsp_counter++;
-		return;
-	case ND_ASSIGN:
-		if(node -> left ->  kind != ND_DEREF){
+void gen_function_call(Node_t *node){
 
 
-			gen_lval(node->left);
+	//引数読み込み
+	Node_t *node_arg = node -> left;
+
+	while (node_arg ->kind != ND_BLOCKEND){
 		
-		}else{
-			
-			generate(node -> left -> left);
-		}	
+		generate(node_arg -> left);
+		node_arg = node_arg -> right;
+
+	}//読み込み終了
 		
-		generate(node -> right);
-
-		printf("	pop rdi\n");
-		rsp_counter--;
-		printf("	pop rax\n");
-		rsp_counter--;
-		printf("	mov [rax], rdi\n");
-		printf("	push rdi\n");
-		rsp_counter++;
-		return;
-	
-	case ND_ADDR:
-		gen_lval(node -> left);
-		return;
-
-	case ND_DEREF:
-
-		generate(node -> left);
-			
-		
-		printf("	pop rax\n");
-		printf("	mov rax, [rax]\n");
-		printf("	push rax\n");
-		return;
-
-	
-	case ND_LVAL:
-
-		gen_lval(node);
-		printf("	pop rax\n");
-		printf("	mov rax, [rax]\n");
-		printf("	push rax\n");
-		return;
-
-	case ND_FUNCTIONDEF:
-
-		printf("%s:",node -> name);
-		int return_rsp_number = rsp_counter;
-
-		//prologue
-		printf("	push rbp\n");
-		rsp_counter++;
-		printf("	mov rbp ,rsp\n");
-
-		if(nametable ->locals){
-
-
-			printf("	sub rsp, %ld\n",nametable ->locals -> offset);
-			rsp_counter += nametable ->locals->offset /8;
-		}
-		//引数代入
-		switch (node->val)
-		{
-		case 6:
-			
-			printf("	mov rax, rbp\n");
-			printf("	sub rax, %d\n",48);
-			printf("	mov [rax], r9\n");
-		
-		case 5:
-			
-			printf("	mov rax, rbp\n");
-			printf("	sub rax, %d\n",40);
-			printf("	mov [rax], r8\n");
-
-		case 4:
-
-			printf("	mov rax, rbp\n");
-			printf("	sub rax, %d\n",32);
-			printf("	mov [rax], rcx\n");
-
-		case 3:
-
-			printf("	mov rax, rbp\n");
-			printf("	sub rax, %d\n",24);
-			printf("	mov [rax], rdx\n");
-
-		case 2:
-
-			printf("	mov rax, rbp\n");
-			printf("	sub rax, %d\n",16);
-			printf("	mov [rax], rsi\n");
-
-		case 1:
-
-			printf("	mov rax, rbp\n");
-			printf("	sub rax, %d\n",8);
-			printf("	mov [rax], rdi\n");	
-			break;
-		}
-		
-
-		generate(node -> right);
-
-		//epilogue return に書く
-		printf("	pop rax\n");
-		rsp_counter --;
-		printf("	mov rsp, rbp\n");
-		printf("	pop rbp\n");
-		rsp_counter --;
-		printf("	ret\n");
-
-		return;
-	
-	case ND_FUNCTIONCALL://function call abi -> System V AMD64 ABI (Lunix)
-
-		{//引数読み込み
-			Node_t *node_arg = node -> left;
-
-			while (node_arg ->kind != ND_BLOCKEND)
-			{
-				
-				generate(node_arg -> left);
-				node_arg = node_arg -> right;
-
-			}
-		}
 
 		switch(node ->val){
 		case 6:
@@ -213,6 +81,145 @@ void generate(Node_t *node){
 		printf("	push rax\n");
 		rsp_counter++;
 		return;
+}
+
+void gen_function_def(Node_t *node){
+
+
+	printf("%s:",node -> name);
+	int return_rsp_number = rsp_counter;
+
+	//prologue=======================================
+	printf("	push rbp\n");
+	rsp_counter++;
+	printf("	mov rbp ,rsp\n");
+
+	if(nametable ->locals){
+
+
+		printf("	sub rsp, %ld\n",nametable ->locals -> offset);
+		rsp_counter += nametable ->locals->offset /8;
+	}//=======================================
+	//引数代入
+	switch (node->val)
+	{
+	case 6:
+		
+		printf("	mov rax, rbp\n");
+		printf("	sub rax, %d\n",48);
+		printf("	mov [rax], r9\n");
+	
+	case 5:
+		
+		printf("	mov rax, rbp\n");
+		printf("	sub rax, %d\n",40);
+		printf("	mov [rax], r8\n");
+
+	case 4:
+
+		printf("	mov rax, rbp\n");
+		printf("	sub rax, %d\n",32);
+		printf("	mov [rax], rcx\n");
+
+	case 3:
+
+		printf("	mov rax, rbp\n");
+		printf("	sub rax, %d\n",24);
+		printf("	mov [rax], rdx\n");
+
+	case 2:
+
+		printf("	mov rax, rbp\n");
+		printf("	sub rax, %d\n",16);
+		printf("	mov [rax], rsi\n");
+
+	case 1:
+
+		printf("	mov rax, rbp\n");
+		printf("	sub rax, %d\n",8);
+		printf("	mov [rax], rdi\n");	
+		break;
+	}
+	
+
+	generate(node -> right);//定義本文をコンパイル
+
+	//epilogue return に書く
+	printf("	pop rax\n");
+	rsp_counter --;
+	printf("	mov rsp, rbp\n");
+	printf("	pop rbp\n");
+	rsp_counter --;
+	printf("	ret\n");
+
+	return;
+}
+
+
+
+
+//抽象構文木からアセンブリコードを生成する
+void generate(Node_t *node){
+
+	
+	//ノード末端付近
+	switch(node -> kind) {
+	case ND_NUM:
+
+		printf("	push %d\n",node ->val);
+		rsp_counter++;
+		return;
+	case ND_ASSIGN:
+
+		if(node -> left ->  kind != ND_DEREF){
+
+
+			gen_lval(node->left);
+		
+		}else{
+			
+			generate(node -> left -> left);
+		}	
+		
+		generate(node -> right);
+
+		printf("	pop rdi\n");
+		rsp_counter--;
+		printf("	pop rax\n");
+		rsp_counter--;
+		printf("	mov [rax], rdi\n");
+		printf("	push rdi\n");
+		rsp_counter++;
+		return;
+	
+	case ND_ADDR:
+
+		gen_lval(node -> left);
+		return;
+
+	case ND_DEREF:
+
+		generate(node -> left);
+			
+		
+		printf("	pop rax\n");
+		printf("	mov rax, [rax]\n");
+		printf("	push rax\n");
+		return;
+
+	
+	case ND_LVAL:
+
+		gen_lval(node);
+		printf("	pop rax\n");
+		printf("	mov rax, [rax]\n");
+		printf("	push rax\n");
+		return;
+
+	case ND_FUNCTIONCALL://function call abi -> System V AMD64 ABI (Lunix)
+
+		gen_function_call(node);
+		return;
 
 	case ND_RETURN:
 		
@@ -225,6 +232,29 @@ void generate(Node_t *node){
 		rsp_counter --;
 		printf("	ret\n");
 		return;
+
+	}
+
+	//ノード先端付近
+	switch(node -> kind){
+	case ND_FUNCTIONDEF:
+
+		gen_function_def(node);
+		return;
+
+	case ND_BLOCK:
+
+		while (node->right ->kind != ND_BLOCKEND){
+			
+			
+			generate(node -> left);
+			node = node ->right;
+
+		}
+		generate(node ->left);
+		
+		return;
+
 
 	case ND_IF:
 	
@@ -342,22 +372,10 @@ void generate(Node_t *node){
 		}
 		return;
 
-	case ND_BLOCK:
-
-		while (node->right ->kind != ND_BLOCKEND){
-			
-			
-			generate(node -> left);
-			node = node ->right;
-
-		}
-		generate(node ->left);
-		
-		return;
 	}
 	
 
-	//以下は式のコンパイル===================
+	//以下は単項でないoperatorのコンパイル===================
 	generate(node -> left);
 	generate(node -> right);
 
