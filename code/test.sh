@@ -73,6 +73,7 @@ assert_function (){
 		echo -e " $actual : \e[32mlooks ok.\e[m"
 	else
 		echo -e " $expected ,\e[31m but got $actual\e[m"
+		exit 1
 	fi
 }
 
@@ -147,15 +148,19 @@ echo "pointer test"
 assert 3 'int x;int *y;y = &x;*y = 3;return x'
 
 echo "sizeof test"
-assert 4 'int x; sizeof x'
+assert 8 'int x; sizeof x'
 assert 8 'int *y; sizeof(y)'
 
 echo "array sizeof test"
-assert 16 'int *a[2];sizeof a'
+assert 24 'int *a[2];sizeof a'
 
 echo "array type chast test"
 
-assert 3 'int a[2];*a = 1;*(a + 1) = 2;int *p;p = a;return *p + *(p + 1)'
+assert 2 'int a[2];*(a + 1) = 2;int *p;p = a;return *(p + 1)'
+
+echo "array index acsess test"
+
+assert 3 'int a[2];  a[1] = 3; return a[1]'
 
 echo  "Error test"
 assert_e '20+++3;'

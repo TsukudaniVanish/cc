@@ -18,19 +18,20 @@ bool is_alnum(char c){
 
 
 
-bool isoperator(char *p){
+int is_ope_or_pun(char *p){
 
 	
-	char *operators[] ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")","{","}","&","[","]",NULL};
+	char *tokens[] ={"==","!=","<=",">=","<",">","+","-","*","/","=","&",";","(",")","{","}","[","]",",",NULL};
 
-	for(char **str = operators ; *str ; str++ ){
+	for(char **str = tokens ; *str ; str++ ){
 		
 		int len = strlen(*str);
 
 		if( !strncmp(p,*str,len) ){
 
-
-			return true;
+			if(str - tokens < 12)
+				return len;
+			return len + 1000;
 		}
 	}
 	return false;
@@ -38,64 +39,69 @@ bool isoperator(char *p){
 
 
 
-//key word or 型名と一致するか判定する
-
-bool is_assign(char *p,Token_t **cur){
+Token_kind is_keyword(char *p){
 
 	
 	char *assign[] = { "return","sizeof","while","else","for","if","int",NULL};
-	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_Type};
+	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_Type,TK_EOF};
 
 	Token_kind *v = assign_kind;
 
 	for( char **q = assign; *q ; q++ ){
 
 
-		int len = strlen(*q);
-
-		if(!( strncmp(p,*q,len) || is_alnum(p[len]) ) ){
+		if(!( strncmp(p,*q,strlen(*q)) || is_alnum(p[strlen(*q)]) ) ){
 
 
-			*cur = new_token( *v,*cur,p);
-			(*cur) -> length = len;
-			
-			if(*v == TK_Type){//ポインタ型か判定
-
-
-				(*cur) -> tp = calloc(1,sizeof(Type));
-				(*cur) -> tp -> Type_label = TP_INT;
-				char *r = p + len;
-
-				while ( isspace(*r) || *r=='*' )
-				{
-					
-					if(isspace(*r)){
-						
-						r++;
-						(*cur) -> length++;
-						continue;
-					}
-					(*cur) -> length++;
-					Type *pointerto = calloc(1,sizeof(Type));
-					pointerto -> Type_label = TP_POINTER;
-					pointerto -> pointer_to = (*cur) ->tp;
-					(*cur) -> tp = pointerto;
-					r++;
-				}//rには識別子の名前があるはず
-			
-				if( *v == TK_Type  && isoperator(p+( (*cur) -> length) ) ){//識別子があるか判定
-
-
-					fprintf(stderr,"識別子が必要です。\n");
-					exit(1);
-				}
-			}
-			return true;
+			return *v;
 		}
-		if(*v != TK_Type)
+		if(*v != TK_EOF)
 			v++;
 	}
-	return false;	
+	return *v;
+}
+
+Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
+
+	cur = new_token( kind,cur,p);
+	// keywordのlength を計算 TK_Typeの時はポインタ型の読み取りに使用する
+	char *q = p;
+	while (!(is_ope_or_pun(q) || isspace(*q))){
+		q++;
+	}
+	
+	(cur) -> length = q -p;
+	
+	if(kind == TK_Type){//変数の型名か判定
+
+
+		(cur) -> tp = calloc(1,sizeof(Type));
+		(cur) -> tp -> Type_label = TP_INT;
+
+		while (isspace(*q) || *q=='*'){
+			
+			if(isspace(*q)){
+				
+				q++;
+				(cur) -> length++;
+				continue;
+			}
+			(cur) -> length++;
+			Type *pointerto = calloc(1,sizeof(Type));
+			pointerto -> Type_label = TP_POINTER;
+			pointerto -> pointer_to = (cur) ->tp;
+			(cur) -> tp = pointerto;
+			q++;
+		}//qには識別子の名前があるはず
+	
+		if( kind == TK_Type  && is_ope_or_pun(q)  ){//識別子があるか判定
+
+
+			fprintf(stderr,"識別子が必要です。\n");
+			exit(1);
+		}
+	}
+	return cur;
 }
 
 
@@ -104,8 +110,6 @@ bool is_assign(char *p,Token_t **cur){
 
 
 
-//新しいtokenを作り　cur->nextに代入するtoken
-//Token_kind KIND_OF_Token_t , Token_t *CURRENT_TOKEN,char *STRING -> Token_t 
 Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
 
 
@@ -117,27 +121,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
 };
 
 
-/*
- * tokenize function
- * 演算子:
- * 		算術演算子:
- * 				+,-,*,/
- * 		比較演算子:
- * 				==,!=,<=,>=,<,>
- * 		単項演算子:
- * 				+,-,=
- *	変数(または関数)名
- * 	演算子は長さの順にtokenizeすること
- * 	演算子か判定後にlocal variable として読み込むこと
- *
- */
 
-
-/*
- * tokenize funcion 
- */
-
-//char * -> Token_t
 Token_t *tokenize(char *p){//入力文字列
 
 
@@ -148,39 +132,33 @@ Token_t *tokenize(char *p){//入力文字列
 	while(*p){
 
 
-		if( isspace(*p) || *p == ',' ){//空白 ',' の時はスキップ
+		if( isspace(*p)  ){//空白 の時はスキップ
 
 
 			p++;
 			continue;
 
-		}else if ( is_assign(p,&cur) ){
+		}else if ( is_keyword(p) !=TK_EOF ){
 			
-
+			cur = new_keyword(is_keyword(p),cur,p);
 			p+= cur -> length;
 			continue;
 
-		}else if( strncmp(p,"==",2) == 0  | strncmp(p,"!=",2) == 0 | strncmp(p,"<=",2) == 0 | strncmp(p,">=",2) == 0 ){ 
-			// 2文字の演算子をtokenize
-
+		}else if(is_ope_or_pun(p)){
 			
 			cur = new_token(TK_OPERATOR,cur,p);
-			cur -> length =2;
-			p+=2;
-			continue;
-
-		}else if( *p == '+' | *p == '-' | *p == '*' | *p == '/' | *p == '(' | *p == ')'| *p == '<' | *p == '>' | *p == '=' | *p =='{'  | *p == '}' | *p == '&' | *p == '[' | *p == ']'  ){//単項の演算子をtokenize
-
-			
-			cur = new_token(TK_OPERATOR,cur,p);
-			cur -> length =1;
-			p++;
+			cur -> length =is_ope_or_pun(p);
+			if(cur -> length > 1000){
+				cur -> kind = TK_PUNCTUATOR;
+				cur -> length -= 1000;
+			}
+			p += cur -> length;
 			continue;
 
 		}else if(isdigit(*p)){
 
 
-			cur = new_token(TK_DIGIT,cur,p);
+			cur = new_token(TK_CONST,cur,p);
 			cur -> val = strtol(p,&p,10);
 			continue;
 		
@@ -194,7 +172,7 @@ Token_t *tokenize(char *p){//入力文字列
 			
 			while(1){
 			
-				if( isspace(*q) || q[0] == ','  || isoperator(q)){ 
+				if( isspace(*q) || q[0] == ','  || is_ope_or_pun(q)){ 
 				//q が演算子をさしたらやめる
 
 					cur -> length = q-p;
@@ -208,7 +186,7 @@ Token_t *tokenize(char *p){//入力文字列
 		}else if(*p == ';'){
 		
 
-			cur = new_token(TK_OPERATOR,cur,p++);
+			cur = new_token(TK_PUNCTUATOR,cur,p++);
 			cur -> length =1;
 			continue;
 		}
