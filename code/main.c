@@ -6,7 +6,6 @@
 
 
 
-//変数を名前で検索する
 Lvar *find_lvar(Token_t **token,Lvar **locals){
 	
 
@@ -23,13 +22,11 @@ Lvar *find_lvar(Token_t **token,Lvar **locals){
 }
 
 
-//グローバル変数 エラー出力用
 char *user_input;
 
 
 
 
-//user_input を読み込んでエラー個所を示す関数
 void error_at(char *loc,char *fmt,...){
 
 
@@ -43,7 +40,7 @@ void error_at(char *loc,char *fmt,...){
 	fprintf(stderr,"\n");
 	exit(1);
 
-};
+}
 
 
 
@@ -51,7 +48,7 @@ void error_at(char *loc,char *fmt,...){
 
 bool find(char *string,Token_t **token){
 
-	if( (*token) -> kind != TK_OPERATOR | strlen(string) != (*token) -> length | memcmp( (*token) -> str,string,(*token)-> length ) != 0  ){
+	if( (*token) -> kind > 100 | strlen(string) != (*token) -> length | memcmp( (*token) -> str,string,(*token)-> length ) != 0  ){
 
 
 		return false;
@@ -62,19 +59,15 @@ bool find(char *string,Token_t **token){
 		*token = (*token) -> next;
 		return true;
 	}
-};
+}
 
 
 
-
-/*
- *expect function
- */
 
 void expect(char *string ,Token_t **token){
 
 
-	if( (*token) -> kind != TK_OPERATOR | (*token) -> length != strlen(string) | memcmp( (*token) -> str,string,(*token) -> length ) ){
+	if( (*token) -> kind > 100 | (*token) -> length != strlen(string) | memcmp( (*token) -> str,string,(*token) -> length ) ){
 		
 		error_at( (*token) -> str ,"不正な文字");
 	
@@ -83,7 +76,7 @@ void expect(char *string ,Token_t **token){
 		(*token) = (*token) -> next;
 		
 	}
-};
+}
 
 char expect_ident(Token_t **token){
 
@@ -100,7 +93,7 @@ char expect_ident(Token_t **token){
 		(*token) = (*token) -> next;
 		return name;
 	}
-};
+}
 
 int expect_num(Token_t **token){
 
@@ -116,7 +109,7 @@ int expect_num(Token_t **token){
 		(*token) = (*token) -> next;
 		return v;
 	}
-};
+}
 
 bool at_eof(Token_t **token){
 
@@ -131,13 +124,7 @@ bool at_eof(Token_t **token){
 
 		return true;
 	}
-};
-
-
-
-
-
-
+}
 
 
 
@@ -156,7 +143,7 @@ int main(int argc, char **argv){
 	
 	
 
-	// ';'で区切った文
+	// fuction ごとのコード
 	Node_t *code[100];
 	
 	//入力をトークン列に変換
@@ -166,7 +153,7 @@ int main(int argc, char **argv){
 	//token を抽象構文木に変換
 	program(&token,code);
 
-	//関数スコープ変数コンテナを先頭にセット
+	//関数スコープ識別子テーブルを先頭にセット
 	nametable = nametable -> head;
 
 	

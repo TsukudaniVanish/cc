@@ -125,7 +125,7 @@ typedef enum{
 /**
  * @brief 
  * 抽象構文木の実装に使用する
- * @param Node_kind
+ * @param Node_kind kind
  * @param Node_t_* left
  * @param Node_t_* right
  * @param int val : kind が ND_FUNCTION..,ND_IDENT,ND_LVALの時に使用する
@@ -184,21 +184,21 @@ struct Node {
  */
 typedef enum{
 	// token ====================================================
-	TK_IDENT, //識別子
-	TK_CONST, //整数
-	TK_OPERATOR, // 演算子
-	TK_PUNCTUATOR,// 区切り文字
+	TK_IDENT=0, //識別子
+	TK_CONST=1, //整数
+	TK_OPERATOR=2, // 演算子
+	TK_PUNCTUATOR=3,// 区切り文字
 	//key words=====================================================
-	TK_RETURN,
+	TK_RETURN=100,
 	TK_IF,
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
 	TK_SIZEOF,
 	//type of variable =====================================================
-	TK_Type,//変数の型名
+	TK_Type=200,//変数の型名
 	//=====================================================
-	TK_EOF, //終了記号
+	TK_EOF=999, //終了記号
 
 }Token_kind;
 
@@ -313,13 +313,13 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
  */
 bool is_alnum(char c);
 
-//string が上記のoperatorに一致するか見る.
+
 /**
  * 
  * @b
  * operator か punctuatorのどちらかであるか判定する
  * @param char_*
- * @return int
+ * @return int : len of operator
  * */
 int is_ope_or_pun(char *);
 
@@ -328,7 +328,7 @@ int is_ope_or_pun(char *);
  * @b
  * key word と一致するか見る 一致したらその種類　一致しないならTK_EOFを出す
  * @param char_*
- * @param Token_t_**
+ * @param Token_t**
  * @return bool
  * @sa  new_token
  * */
@@ -348,7 +348,7 @@ Token_t *new_keyword(Token_kind,Token_t *,char *);
  * 演算子は長さの順にtokenizeすること
  * @sa new_token
  * 
- * @return Token_t_*
+ * @return Token_t*
  * */
 Token_t *tokenize(char *p);
 //=====================================================
@@ -361,16 +361,62 @@ Token_t *tokenize(char *p);
  * parse.c=====================================================
  */
 
+/**
+ * @brief 
+ * 識別子を読み込んで token を次に送る
+ * @param token 
+ * @return Token_t* 
+ */
 Token_t *consume_ident(Token_t **token);
 
-//Node_t を作る関数
+/**
+ * @brief 
+ * 新しいノードを作る
+ * @param Node_kind kind 
+ * @param Node_t l : left
+ * @param Node_t r : right
+ * @return Node_t* 
+ */
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r);
+/**
+ * @brief 
+ * 定数の末端ノードを作る
+ * @param int val 
+ * @return Node_t* 
+ */
 Node_t *new_node_num(int val);
+/**
+ * @brief 識別子の末端ノードを作る
+ * 
+ * @param char alpha 
+ * @return Node_t* 
+ */
 Node_t *new_node_ident(char alpha);
+/**
+ * @brief keyword の末端ノードを作る
+ * 
+ * @param Token_kind kind 
+ * @param Token_t** token 
+ * @return Node_t* 
+ */
 Node_t *new_node_keyword(Token_kind kind,Token_t **token);
+/**
+ * @brief 関数定義の構文木を作成
+ * @param Token_t**
+ */
+Node_t *new_function(Token_t **);
 
-//parser 本体
+/**
+ * @brief パーサ本体
+ * @param Token_t_** token
+ * @param Node_t_** code
+ */
 void program(Token_t **,Node_t **);
+/**
+ * @brief 関数をパース
+ * 
+ * @return Node_t* 
+ */
 Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
 Node_t *assign(Token_t **);

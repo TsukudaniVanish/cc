@@ -21,7 +21,7 @@ bool is_alnum(char c){
 int is_ope_or_pun(char *p){
 
 	
-	char *tokens[] ={"==","!=","<=",">=","<",">","+","-","*","/","=",";","(",")","{","}","&","[","]",NULL};
+	char *tokens[] ={"==","!=","<=",">=","<",">","+","-","*","/","=","&",";","(",")","{","}","[","]",",",NULL};
 
 	for(char **str = tokens ; *str ; str++ ){
 		
@@ -29,8 +29,9 @@ int is_ope_or_pun(char *p){
 
 		if( !strncmp(p,*str,len) ){
 
-
-			return len;
+			if(str - tokens < 12)
+				return len;
+			return len + 1000;
 		}
 	}
 	return false;
@@ -131,7 +132,7 @@ Token_t *tokenize(char *p){//入力文字列
 	while(*p){
 
 
-		if( isspace(*p) || *p == ',' ){//空白 ',' の時はスキップ
+		if( isspace(*p)  ){//空白 の時はスキップ
 
 
 			p++;
@@ -147,6 +148,10 @@ Token_t *tokenize(char *p){//入力文字列
 			
 			cur = new_token(TK_OPERATOR,cur,p);
 			cur -> length =is_ope_or_pun(p);
+			if(cur -> length > 1000){
+				cur -> kind = TK_PUNCTUATOR;
+				cur -> length -= 1000;
+			}
 			p += cur -> length;
 			continue;
 
@@ -181,7 +186,7 @@ Token_t *tokenize(char *p){//入力文字列
 		}else if(*p == ';'){
 		
 
-			cur = new_token(TK_OPERATOR,cur,p++);
+			cur = new_token(TK_PUNCTUATOR,cur,p++);
 			cur -> length =1;
 			continue;
 		}

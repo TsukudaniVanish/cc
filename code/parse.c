@@ -183,6 +183,53 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 	}
 }
 
+Node_t *new_function(Token_t**token){
+
+
+	Node_t *node = calloc(1,sizeof(Node_t));
+	node -> kind = ND_FUNCTIONDEF;
+
+	node -> tp = (*token) -> tp;
+
+	(*token) = (*token) ->next;
+
+	//名前読み込み
+	node -> name = calloc(((*token)->length),sizeof(char));
+	memcpy(node -> name,(*token)->str,(*token)-> length );
+
+	consume_ident(token);
+
+	node -> val = 0; // 引数の個数
+
+	expect("(",token);
+	
+	Node_t *left_argnames = calloc(1,sizeof(Node_t));
+	node -> left = left_argnames;
+	while (!find(")",token) && node -> val < 7){
+		
+		node -> val ++;
+
+		left_argnames -> kind = ND_ARGMENT;
+		left_argnames ->left = primary(token);
+
+		Node_t *node_rightend = calloc(1,sizeof(Node_t));
+		left_argnames -> right = node_rightend;
+		left_argnames = node_rightend;
+
+		find(",",token);
+	}
+	if( node -> val > 6){
+
+		fprintf(stderr,"引数の個数が6個より大きいです");
+		exit(1);
+	}
+	left_argnames -> kind = ND_BLOCKEND;//引数読み込み修了
+	
+	node -> right = stmt(token);// 定義本文
+	return node;
+
+}
+
 /*
  * token から構文木を生成 
  */
@@ -247,10 +294,8 @@ void program(Token_t **token,Node_t **code){
 	code[i] = NULL;
 }
 
-Node_t *func(Token_t **token){// function def
+Node_t *func(Token_t **token){
 
-
-	Node_t *node;
 
 	if ((*token) -> kind != TK_Type){
 
@@ -258,64 +303,14 @@ Node_t *func(Token_t **token){// function def
 			exit(1);
 
 	}
-
-	
 	if( !( (*token) ->next ) && (*token) -> next -> kind != TK_IDENT ){
 
 
 		fprintf(stderr,"関数名が必要です");
 		exit(1);
 	
-	}else{
-
-
-		node = calloc(1,sizeof(Node_t));
-		node -> kind = ND_FUNCTIONDEF;
-
-		node -> tp = (*token) -> tp;
-
-		(*token) = (*token) ->next;
-
-		//名前読み込み
-		node -> name = calloc(((*token)->length),sizeof(char));
-		memcpy(node -> name,(*token)->str,(*token)-> length );
-
-		consume_ident(token);
-
-		node -> val = 0; // 引数の個数
-		// if(nametable ->locals){
-		// 	node -> offset = locals -> offset;//top offset
-		// }else{
-		// 	node -> offset = 0;
-		// }
-
-		expect("(",token);
-		
-		Node_t *left_argnames = calloc(1,sizeof(Node_t));
-		node -> left = left_argnames;
-		while (!find(")",token) && node -> val < 7)
-		{
-			
-			node -> val ++;
-			left_argnames -> kind = ND_ARGMENT;
-			left_argnames ->left = primary(token);
-			Node_t *node_rightend = calloc(1,sizeof(Node_t));
-			left_argnames -> right = node_rightend;
-			left_argnames = node_rightend;
-		}
-
-		if( node -> val > 6)
-		{
-
-			fprintf(stderr,"引数の個数が6個より大きいです");
-			exit(1);
-		}
-		left_argnames -> kind = ND_BLOCKEND;
-		node -> right = stmt(token);
-		return node;
-		
-
 	}
+	return new_function(token);
 }
 
 Node_t *stmt(Token_t **token){
@@ -634,6 +629,7 @@ Node_t *primary(Token_t **token){
 				node_end ->left = unitary(token);
 				node_end ->right = node_rightend;
 				node_end = node_rightend;
+				find(",",token);
 			}
 			node_end -> kind = ND_BLOCKEND;
 

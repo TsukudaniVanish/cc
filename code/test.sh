@@ -73,6 +73,7 @@ assert_function (){
 		echo -e " $actual : \e[32mlooks ok.\e[m"
 	else
 		echo -e " $expected ,\e[31m but got $actual\e[m"
+		exit 1
 	fi
 }
 
