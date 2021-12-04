@@ -162,6 +162,10 @@ echo "array index acsess test"
 
 assert 3 'int a[2];  a[1] = 3; return a[1]'
 
+echo "gloval variable test "
+
+assert_function 100 'int g = 100; int main(){return g;}'
+
 echo  "Error test"
 assert_e '20+++3;'
 

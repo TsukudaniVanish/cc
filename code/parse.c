@@ -87,13 +87,13 @@ bool at_eof(Token_t **token){
 
 
 
-Lvar *find_lvar(Token_t **token,Lvar **locals){//array は飛ばす
+Lvar *find_lvar(char *name,int length,Lvar **locals){//array は飛ばす
 	
 
 	for(Lvar *var = *locals; var;var = var -> next){
 
 
-		if( var -> length == (*token)-> length && !memcmp( (*token)-> str, var ->name,var -> length )  ){
+		if( var -> length == length && !memcmp( name, var ->name,length )  ){
 
 
 			return var; 
@@ -229,7 +229,8 @@ Node_t *new_node_ident(Token_t**token){
 		node = calloc(1,sizeof(Node_t));
 		node -> kind = ND_LVAL;
 
-		Lvar *lvar = find_lvar(&ident,&(nametable->locals) );
+		Lvar *lvar = find_lvar( ident -> str,ident -> length,&(nametable->locals) );
+		Lvar *glvar = find_lvar(ident -> str,ident -> length,&global);
 
 		if(lvar){
 
@@ -246,6 +247,21 @@ Node_t *new_node_ident(Token_t**token){
 			node -> offset = lvar -> offset;
 			return node;
 
+		}
+		else if( glvar ){
+
+			node -> kind = ND_GLVALCALL;
+			
+			//名前コピー
+			node -> name = calloc((ident -> length),sizeof(char));
+			memcpy( node -> name , ident -> str, ident -> length);
+
+			node -> tp = glvar -> tp;
+
+			return node;
+
+
+		
 		}else{// local var def =========================
 
 
@@ -430,11 +446,10 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 	}
 }
 
-Node_t *new_function(Token_t**token){
+Node_t *new_node_globalident(Token_t**token){
 
 
 	Node_t *node = calloc(1,sizeof(Node_t));
-	node -> kind = ND_FUNCTIONDEF;
 
 	node -> tp = (*token) -> tp;
 
@@ -443,37 +458,77 @@ Node_t *new_function(Token_t**token){
 	//名前読み込み
 	node -> name = calloc(((*token)->length),sizeof(char));
 	memcpy(node -> name,(*token)->str,(*token)-> length );
-
 	consume_ident(token);
 
-	node -> val = 0; // 引数の個数
+	if(find("(",token)){//関数定義
 
-	expect("(",token);
-	
-	Node_t *left_argnames = calloc(1,sizeof(Node_t));
-	node -> left = left_argnames;
-	while (!find(")",token) && node -> val < 7){
+		if(nametable == 0){//関数の変数情報更新
+
+			nametable = calloc(1,sizeof(Tables));
+			nametable -> head = nametable;
+		}else{
+
+			nametable ->next = calloc(1,sizeof(Tables));
+			nametable -> next -> head = nametable -> head;
+			nametable = nametable -> next;
+
+		}
+
+
+		node -> kind = ND_FUNCTIONDEF;
 		
-		node -> val ++;
 
-		left_argnames -> kind = ND_ARGMENT;
-		left_argnames ->left = primary(token);
-
-		Node_t *node_rightend = calloc(1,sizeof(Node_t));
-		left_argnames -> right = node_rightend;
-		left_argnames = node_rightend;
-
-		find(",",token);
-	}
-	if( node -> val > 6){
-
-		fprintf(stderr,"引数の個数が6個より大きいです");
-		exit(1);
-	}
-	left_argnames -> kind = ND_BLOCKEND;//引数読み込み修了
+		node -> val = 0; // 引数の個数
 	
-	node -> right = stmt(token);// 定義本文
-	return node;
+		Node_t *left_argnames = calloc(1,sizeof(Node_t));
+		node -> left = left_argnames;
+		while (!find(")",token) && node -> val < 7){
+			
+			node -> val ++;
+
+			left_argnames -> kind = ND_ARGMENT;
+			left_argnames ->left = primary(token);
+
+			Node_t *node_rightend = calloc(1,sizeof(Node_t));
+			left_argnames -> right = node_rightend;
+			left_argnames = node_rightend;
+
+			find(",",token);
+		}
+		if( node -> val > 6){
+
+			fprintf(stderr,"引数の個数が6個より大きいです");
+			exit(1);
+		}
+		left_argnames -> kind = ND_BLOCKEND;//引数読み込み修了
+		
+		node -> right = stmt(token);// 定義本文
+		return node;
+	
+	}else{//グローバル変数の定義
+
+		node -> kind = ND_GLVALDEF;
+		Lvar *lvar = find_lvar(node -> name,strlen(node -> name),&global);
+		
+		if(lvar == NULL){//定義
+
+			lvar = calloc(1,sizeof(Lvar));
+			lvar -> next = global;
+			lvar -> tp = node -> tp;
+			lvar -> name = node -> name;
+			lvar -> length = strlen(lvar -> name);
+			global = lvar;
+		}
+
+		
+		
+		if (find("=",token))//変数の代入
+		{
+			node -> val = expect_num(token);
+		}
+		expect(";",token);
+		return node;
+	}
 }
 
 Node_t *new_node_block(Token_t ** token){
@@ -589,18 +644,6 @@ void program(Token_t **token,Node_t **code){
 	int i = 0;
 	while(!at_eof(token)){
 
-		if(nametable == 0){//関数の変数情報更新
-
-			nametable = calloc(1,sizeof(Tables));
-			nametable -> head = nametable;
-		}else{
-
-			nametable ->next = calloc(1,sizeof(Tables));
-			nametable -> next -> head = nametable -> head;
-			nametable = nametable -> next;
-
-		}
-
 		code[i] = func(token);
 		i++;
 	}
@@ -623,7 +666,7 @@ Node_t *func(Token_t **token){
 		exit(1);
 	
 	}
-	return new_function(token);
+	return new_node_globalident(token);
 }
 
 Node_t *stmt(Token_t **token){

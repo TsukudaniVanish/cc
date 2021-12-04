@@ -33,6 +33,7 @@ void set_array_header(){
 void gen_lval(Node_t *node){
 
 
+
 	if( node -> kind != ND_LVAL ){
 		
 		
@@ -194,6 +195,15 @@ void generate(Node_t *node){
 		return;
 	case ND_ASSIGN:
 
+		if( node -> left && node -> left -> kind == ND_GLVALCALL ){
+
+
+			generate(node -> right);
+			printf("	pop rdi\n");
+			printf("	mov QWORD PTR %s[rsi+%ld], rdi\n",node -> left -> name,node -> left -> tp -> size -8);
+			return;
+		}
+
 		if( node -> left && node -> left ->  kind != ND_DEREF){
 
 
@@ -239,6 +249,13 @@ void generate(Node_t *node){
 		printf("	push rax\n");
 		return;
 
+	case ND_GLVALCALL:
+
+		printf("	mov rax, QWORD PTR %s[rip+%ld]\n",node -> name,node -> tp -> size);
+		printf("	push rax\n");
+		return;
+		
+
 	case ND_FUNCTIONCALL://function call abi -> System V AMD64 ABI (Lunix)
 
 		gen_function_call(node);
@@ -260,6 +277,21 @@ void generate(Node_t *node){
 
 	//ノード先端付近
 	switch(node -> kind){
+	case ND_GLVALDEF:
+
+		printf("%s:\n",node -> name);
+		if(node -> val == 0){
+			
+			
+			printf("	.zero %ld\n",node -> tp -> size);
+		
+		}else{
+			
+
+			printf("	.long %d\n",node -> val);
+		}
+		return;
+	
 	case ND_FUNCTIONDEF:
 
 		gen_function_def(node);

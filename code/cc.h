@@ -63,6 +63,7 @@ struct lvar{
 	Type *tp;
 };
 
+Lvar *global;
 
 /**
  * @brief 
@@ -103,6 +104,8 @@ typedef enum{
 	ND_ADDR, //<-> * dereference
 	ND_DEREF,// <-> & reference
 	//型=========================
+	ND_GLVALDEF,// グローバル変数定義
+	ND_GLVALCALL,//
 	ND_LVAL, // ローカル変数
 	ND_FUNCTIONCALL,//関数呼び出し
 	ND_FUNCTIONDEF,//関数定義
@@ -308,11 +311,12 @@ Token_t *tokenize(char *p);
 /**
  * @b
  * table から 識別子を検索する
- * @param Token_t_** token 
+ * @param char* name
+ * @param int length 
  * @param Lvar_** locals 
  * @return Lvar* 
  */
-Lvar *find_lvar(Token_t **token,Lvar **locals);
+Lvar *find_lvar(char *,int,Lvar **locals);
 
 /**
  * @b
@@ -396,10 +400,10 @@ Node_t *new_node_ident(Token_t **);
  */
 Node_t *new_node_keyword(Token_kind kind,Token_t **token);
 /**
- * @brief 関数定義の構文木を作成
+ * @brief 関数定義, グローバル変数の構文木を作成
  * @param Token_t**
  */
-Node_t *new_function(Token_t **);
+Node_t *new_node_globalident(Token_t **);
 
 /**
  * @brief block の構文木を作成
