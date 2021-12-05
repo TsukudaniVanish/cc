@@ -22,6 +22,7 @@ struct type{
 	enum{
 
 		TP_INT,//int 型 8bite
+		TP_CHAR,//char 型
 		TP_POINTER,// pointer 型 8bite
 		TP_ARRAY,// 配列型
 
@@ -149,7 +150,7 @@ struct node {
 	 * bref of member variavle : val 
 	 * ND_FUNCTION... -> 引数の個数
 	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 配列が暗黙にキャストされたなら 1 他は-1
+	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 配列が暗黙にキャストされたなら 配列サイズ 他 0
 	 * 
 	 */
 	int val;
@@ -199,9 +200,10 @@ typedef enum{
 	TK_RETURN,
 	TK_SIZEOF=200,// 演算子としてふるまうので別にする
 	//type of variable =====================================================
-	TK_Type=300,//変数の型名
+	TK_TypeINT=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeCHAR,
 	//=====================================================
-	TK_EOF=999, //終了記号
+	TK_EOF=-1, //終了記号
 
 }Token_kind;
 
@@ -309,14 +311,35 @@ Token_t *tokenize(char *p);
  */
 
 /**
+ * @brief 新しい型を作成
+ * 
+ * @param int Type_label
+ * @param Type* pointerto
+ * @param long_int size
+ * @return Type* 
+ */
+Type *new_tp(int,Type*,long int size);
+
+/**
  * @b
  * table から 識別子を検索する
  * @param char* name
  * @param int length 
- * @param Lvar_** locals 
+ * @param Lvar** locals 
  * @return Lvar* 
  */
 Lvar *find_lvar(char *,int,Lvar **locals);
+
+/**
+ * @brief 新しい変数を作成する
+ * 
+ * @param Type* tp 
+ * @param char* name 
+ * @param int length 
+ * @param Lvar* next
+ * @return Lvar* 
+ */
+Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
 /**
  * @b

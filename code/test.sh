@@ -65,7 +65,7 @@ assert_function (){
 	input="$2"
 	echo -n "$2 => "
 	./cc "$2" > tmp.s
-	cc -o tmp tmp.s
+	cc -g -o tmp tmp.s
 	./tmp
 	actual=$?
 	if [ "$actual" -eq "$expected" ];then
@@ -152,7 +152,7 @@ assert 8 'int x; sizeof x'
 assert 8 'int *y; sizeof(y)'
 
 echo "array sizeof test"
-assert 24 'int *a[2];sizeof a'
+assert 16 'int *a[2];sizeof a'
 
 echo "array type chast test"
 
@@ -165,6 +165,14 @@ assert 3 'int a[2];  a[1] = 3; return a[1]'
 echo "gloval variable test "
 
 assert_function 100 'int g = 100; int main(){return g;}'
+
+assert_function 100 'int g; int main(){g = 100;return g;}'
+
+assert_function 100 'int a[2]; int main(){a[1] = 100;return a[1];}'
+
+echo "char test"
+
+assert 0 'char a;int i = 0; return i'
 
 echo  "Error test"
 assert_e '20+++3;'

@@ -87,6 +87,18 @@ bool at_eof(Token_t **token){
 
 
 
+Type* new_tp(int label,Type* pointerto,long int size){
+
+	Type* tp = calloc(1,sizeof(Type));
+	tp -> Type_label = label;
+	tp -> pointer_to = pointerto;
+	tp -> size = size;
+	return tp;
+}
+
+
+
+
 Lvar *find_lvar(char *name,int length,Lvar **locals){//array は飛ばす
 	
 
@@ -100,6 +112,30 @@ Lvar *find_lvar(char *name,int length,Lvar **locals){//array は飛ばす
 		}
 	}
 	return NULL;
+}
+
+Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
+
+	Lvar *lvar = calloc(1,sizeof(Lvar));
+	lvar -> next = next;
+	lvar -> name = name;
+	lvar -> length = length;
+	lvar -> tp = tp;
+	
+	
+
+
+	if( next ){
+
+
+		lvar -> offset = next -> offset +(lvar -> tp -> size);
+
+	}else{
+
+
+		lvar -> offset = (lvar -> tp->size);
+	}
+	return lvar;
 }
 
 
@@ -174,7 +210,7 @@ Node_t *new_node_ident(Token_t**token){
 	int flag_def = 0;// 0 : 型宣言なし
 	Type *tp;
 
-	if((*token)-> kind == TK_Type){
+	if((*token)-> kind > 299){
 
 
 		tp = (*token) -> tp;
@@ -235,15 +271,13 @@ Node_t *new_node_ident(Token_t**token){
 		if(lvar){
 
 			node -> tp = lvar -> tp;
-			//is array? ====================================================
-			if ( lvar -> tp -> Type_label == TP_ARRAY ){
-				
-				
-				node -> tp -> Type_label = TP_POINTER;
-				node -> val = 1;// 元は配列でした
-			}
-			//====================================================
 
+			if(lvar -> tp -> Type_label == TP_POINTER 
+				&& lvar -> next 
+				&& lvar -> next -> tp -> Type_label == TP_ARRAY)
+			{
+				node -> val = lvar -> next -> tp -> size;
+			}
 			node -> offset = lvar -> offset;
 			return node;
 
@@ -256,8 +290,16 @@ Node_t *new_node_ident(Token_t**token){
 			node -> name = calloc((ident -> length),sizeof(char));
 			memcpy( node -> name , ident -> str, ident -> length);
 
-			node -> tp = glvar -> tp;
+			
+			if( glvar -> tp -> Type_label == TP_ARRAY )
+			{
 
+				node -> tp = new_tp(TP_POINTER,glvar -> tp,8);
+			}
+			else
+			{
+				node -> tp = glvar -> tp;
+			}
 			return node;
 
 
@@ -270,62 +312,26 @@ Node_t *new_node_ident(Token_t**token){
 
 				error_at(ident-> str,"型宣言がありません\n");
 			}
-			lvar = calloc(1,sizeof(Lvar));
-			lvar -> next = nametable-> locals;
-			lvar -> name = ident -> str;
-			lvar -> length = ident -> length;
+
 			
 			//is array?====================================================
 			if ( find("[",token)){
 
-
-				Lvar *array_top = calloc(1,sizeof(Lvar));
-				array_top -> next = nametable -> locals;
-				array_top -> name = ident -> str;
-				array_top -> length = ident -> length;
-				array_top -> tp = calloc(1,sizeof(Type));
-				array_top -> tp -> Type_label = TP_ARRAY;
-				array_top -> tp -> pointer_to = tp;
-				array_top -> tp -> size = expect_num(token) *8;
-				if(nametable ->locals){
-
-
-					array_top -> offset = (nametable-> locals -> offset) +(array_top -> tp -> size);
-
-				}else{
-
-
-					array_top -> offset = (array_top -> tp->size);
-				}
+				Type *top_tp = new_tp(TP_ARRAY,tp,expect_num(token) *8);
+				Lvar *array_top = new_lvar( top_tp,ident -> str,ident -> length,nametable -> locals);
 				expect("]",token);
-				lvar -> next = array_top;
-				lvar -> tp = calloc(1,sizeof(Type));
-				lvar -> tp -> Type_label = TP_POINTER;
-				lvar -> tp -> pointer_to = tp;
-				lvar -> tp -> size = array_top -> tp -> size +8;
-
+				
+				lvar = new_lvar(new_tp(TP_POINTER,tp, 8 ),ident -> str,ident -> length,array_top);
 
 				
 
-			}else{
+			}else{//====================================================
 
+				tp -> size = 8;
+				lvar = new_lvar(tp,ident -> str,ident -> length,nametable -> locals);
 
-				lvar -> tp = tp;
-				lvar -> tp -> size =8;
 			}
-			//====================================================
-
-
-			if(nametable ->locals){
-
-
-				lvar -> offset = (nametable-> locals -> offset) +(lvar -> tp -> size);
-
-			}else{
-
-
-				lvar -> offset = (lvar -> tp->size);
-			}
+			
 			nametable -> locals = lvar;
 			node -> val = 0;
 			node -> offset = lvar -> offset;
@@ -462,15 +468,16 @@ Node_t *new_node_globalident(Token_t**token){
 
 	if(find("(",token)){//関数定義
 
-		if(nametable == 0){//関数の変数情報更新
-
-			nametable = calloc(1,sizeof(Tables));
-			nametable -> head = nametable;
-		}else{
+		if(nametable != 0){//関数の変数情報更新
 
 			nametable ->next = calloc(1,sizeof(Tables));
 			nametable -> next -> head = nametable -> head;
 			nametable = nametable -> next;
+			
+		}else{
+
+			nametable = calloc(1,sizeof(Tables));
+			nametable -> head = nametable;
 
 		}
 
@@ -512,16 +519,25 @@ Node_t *new_node_globalident(Token_t**token){
 		
 		if(lvar == NULL){//定義
 
-			lvar = calloc(1,sizeof(Lvar));
-			lvar -> next = global;
-			lvar -> tp = node -> tp;
-			lvar -> name = node -> name;
-			lvar -> length = strlen(lvar -> name);
+			if(find("[",token)){// is array?==================================
+
+				Type *array_tp = new_tp(TP_ARRAY,node -> tp,expect_num(token)*8);
+				Lvar *array_top = new_lvar(array_tp,node -> name, strlen(node->name),global);
+				lvar = array_top;
+				expect("]",token);
+				
+
+			}else{// ==================================
+
+
+				lvar = new_lvar(node -> tp,node -> name,strlen(node -> name),global);
+				lvar -> tp -> size = 8;
+			}
+			
 			global = lvar;
 		}
 
-		
-		
+		node -> tp = lvar -> tp;
 		if (find("=",token))//変数の代入
 		{
 			node -> val = expect_num(token);
@@ -580,7 +596,14 @@ Node_t *new_node_ref_deref(Token_t **token){
 
 				error_at((*token)->str,"ポインタ型ではありません\n");
 			}
-			node -> tp = node -> left -> tp -> pointer_to;
+			if( node -> left -> tp -> pointer_to -> Type_label == TP_ARRAY)
+			{
+				node -> tp = node -> left -> tp -> pointer_to -> pointer_to;
+			}
+			else
+			{
+				node -> tp = node -> left -> tp -> pointer_to;
+			}
 			return node;
 		
 		case '&':
@@ -648,12 +671,13 @@ void program(Token_t **token,Node_t **code){
 		i++;
 	}
 	code[i] = NULL;
+	nametable -> next = NULL;
 }
 
 Node_t *func(Token_t **token){
 
 
-	if ((*token) -> kind != TK_Type){
+	if ((*token) -> kind <= 299 ){
 
 			fprintf(stderr,"型宣言がありません");
 			exit(1);
@@ -831,7 +855,18 @@ Node_t *unitary(Token_t **token){
 
 
 		(*token) = (*token) -> next;
-		node = new_node_num(  unitary(token) -> tp -> size );
+		node = unitary(token);
+		if( node -> val != 0 ){
+			
+
+			node = new_node_num(  node -> val );
+		}else{
+
+
+			node = new_node_num(  node ->tp -> size );
+		}
+
+		
 				
 	}else if( find("+",token) ){
 
@@ -867,7 +902,7 @@ Node_t *primary(Token_t **token){
 		node = assign(token);
 		expect(")",token);// ')'かcheck
 
-	}else if( (*token)-> kind == TK_IDENT || (*token) -> kind == TK_Type  ){
+	}else if( (*token)-> kind == TK_IDENT || ( (*token) -> kind >299) ){
 
 		node = new_node_ident(token);
 	}else{
@@ -880,7 +915,13 @@ Node_t *primary(Token_t **token){
 
 		Node_t *node_top = calloc(1,sizeof(Node_t));
 		node_top -> kind = ND_DEREF;
-		node_top -> tp = node -> tp -> pointer_to;
+		if(node -> tp -> pointer_to -> Type_label == TP_ARRAY)
+		{
+			node_top -> tp = node -> tp -> pointer_to -> pointer_to;
+		}else
+		{
+			node_top -> tp = node -> tp -> pointer_to;
+		}
 		node_top -> val = -1;
 		node_top -> left = new_node(ND_ADD,node,mul(token));
 
