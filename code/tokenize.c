@@ -42,8 +42,8 @@ int is_ope_or_pun(char *p){
 Token_kind is_keyword(char *p){
 
 	
-	char *assign[] = { "return","sizeof","while","else","for","if","int",NULL};
-	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_Type,TK_EOF};
+	char *assign[] = { "return","sizeof","while","else","for","if","int","char",NULL};
+	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_TypeINT,TK_TypeCHAR,TK_EOF};
 
 	Token_kind *v = assign_kind;
 
@@ -72,11 +72,11 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 	
 	(cur) -> length = q -p;
 	
-	if(kind == TK_Type){//変数の型名か判定
+	if(kind > 299){//ポインタ型か判定
 
 
 		(cur) -> tp = calloc(1,sizeof(Type));
-		(cur) -> tp -> Type_label = TP_INT;
+		(cur) -> tp -> Type_label = kind - 300;
 
 		while (isspace(*q) || *q=='*'){
 			
@@ -94,7 +94,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 			q++;
 		}//qには識別子の名前があるはず
 	
-		if( kind == TK_Type  && is_ope_or_pun(q)  ){//識別子があるか判定
+		if(kind > 299  && is_ope_or_pun(q)  ){//識別子があるか判定
 
 
 			fprintf(stderr,"識別子が必要です。\n");

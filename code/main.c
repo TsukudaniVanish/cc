@@ -69,16 +69,22 @@ int main(int argc, char **argv){
 
 //アセンブリ前半を出力
 	printf(".intel_syntax noprefix\n");
-	printf(".global main\n");
+	printf("	.data\n");
 	
 
-
+	int funcflag = 1;
 	//先頭の式からコード生成
 	//抽象構文木を降りてコード生成
 	//スタックトップには式の結果が入っている
 	for(int i =0;code[i];i++){
+		if( funcflag && code[i] -> kind == ND_FUNCTIONDEF )
+		{
+			printf("	.text\n");
+			printf("	.global main\n");
+			funcflag = 0;
+		}
 		generate(code[i]);
-		if(nametable -> next)
+		if(funcflag == 0 && nametable)
 			nametable = nametable -> next;
 
 	}

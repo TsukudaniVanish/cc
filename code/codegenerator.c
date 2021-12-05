@@ -12,18 +12,23 @@ int filenumber =0;//制御構文のラベル指定で使用する
 
 void set_array_header(){
 
+	if( nametable == 0 )
+		return;
+
 	for( Lvar *var = (nametable -> locals) ; var ; var = var -> next ){
 
 
-		if (var -> next  &&(var -> next -> tp -> Type_label == TP_ARRAY)){
+		if (var ->tp -> Type_label == TP_ARRAY){
 
 			printf("	mov rax, rbp\n");
-			printf("	sub rax, %ld\n",var -> next -> offset);
+			printf("	sub rax, %ld\n",var ->  offset);
 			printf("	mov rdi, rax\n");
 			printf("	sub rax, 8\n");
 			printf("	mov [rax], rdi\n");
 		}
 	}
+	
+	
 	return;
 }
 
@@ -33,13 +38,16 @@ void set_array_header(){
 void gen_lval(Node_t *node){
 
 
-	if( node -> kind != ND_LVAL ){
+
+	if(node -> kind != ND_LVAL){
 		
 		
 		fprintf(stderr,"代入の左辺値が変数ではありません");
 		exit(1);
 
-	}else{
+	}
+	else
+	{
 
 		printf("	mov rax, rbp\n");
 		printf("	sub rax, %ld\n",  node -> offset  );
@@ -112,7 +120,7 @@ void gen_function_def(Node_t *node){
 	rsp_counter++;
 	printf("	mov rbp ,rsp\n");
 
-	if(nametable ->locals){
+	if(nametable && nametable ->locals){
 
 
 		printf("	sub rsp, %ld\n",nametable ->locals -> offset);
@@ -196,11 +204,43 @@ void generate(Node_t *node){
 
 		if( node -> left && node -> left ->  kind != ND_DEREF){
 
-
+			if(node -> left -> kind == ND_GLVALCALL)
+			{
+				generate(node -> right);
+				printf("	pop rax\n");
+				printf("	mov QWORD PTR %s[rip], rax\n",node -> left -> name);
+				return;
+			}
 			gen_lval(node->left);
 		
 		}else{
 			
+			if(node -> left -> left -> kind == ND_ADD)
+			{
+				Node_t *node_ll = node -> left -> left;
+				if(node_ll -> left -> kind == ND_GLVALCALL)
+				{
+					Type *tp_lll = node_ll -> left -> tp;
+					if(tp_lll -> Type_label == TP_POINTER && tp_lll -> pointer_to -> Type_label == TP_ARRAY)
+					{
+						generate(node -> right);
+						printf("	pop rax\n");
+						printf("	mov QWORD PTR %s[rip+%d], rax\n",node_ll -> left -> name,node_ll -> right -> val);
+						return;
+					}
+				}
+				else if(node_ll -> right -> kind == ND_GLVALCALL)
+				{
+					Type *tp_llr = node_ll -> right -> tp;
+					if(tp_llr -> Type_label == TP_POINTER && tp_llr -> pointer_to -> Type_label == TP_ARRAY)
+					{
+						generate(node -> right);
+						printf("	pop rax\n");
+						printf("	mov QWORD PTR %s[rip+%d], rax\n",node_ll -> right -> name,node_ll -> left -> val);
+						return;
+					}
+				}
+			}
 			generate(node -> left -> left);
 		}	
 		
@@ -222,6 +262,55 @@ void generate(Node_t *node){
 
 	case ND_DEREF:
 
+		if(node -> left -> kind == ND_ADD)
+		{
+
+			Node_t *node_l = node -> left;
+			if( node_l -> left -> kind == ND_GLVALCALL )
+			{
+
+				Type *tp_l = node_l -> left -> tp;
+
+				if(tp_l -> Type_label == TP_POINTER && tp_l -> pointer_to -> Type_label == TP_ARRAY)
+				{	
+
+					if(node_l -> right -> val >= 0)
+					{
+
+						printf("	mov rax, QWORD PTR %s[rip+%d]\n",node_l -> left -> name,node_l -> right -> val);
+						printf("	push rax\n");
+						return;
+					}
+					else
+					{
+
+						fprintf(stderr,"添え字が配列範囲外です");
+						exit(1);
+					}
+					
+				}
+			}
+			else if( node_l -> right -> kind == ND_GLVALCALL )
+			{
+
+				Type *tp_r = node_l -> right -> tp;
+				
+				if(tp_r -> Type_label == TP_POINTER && tp_r -> pointer_to -> Type_label == TP_ARRAY)
+				{
+
+					if( node_l -> left -> val >= 0)
+					{
+
+						printf("	mov rax, QWORD PTR %s[rip+%d]\n",node_l -> right -> name,node_l -> left -> val);
+						return;
+					}else
+					{
+						fprintf(stderr,"添え字が配列の範囲外です");
+						exit(1);
+					}
+				}
+			}
+		}
 		generate(node -> left);
 			
 		
@@ -238,6 +327,13 @@ void generate(Node_t *node){
 		printf("	mov rax, [rax]\n");
 		printf("	push rax\n");
 		return;
+
+	case ND_GLVALCALL:
+
+		printf("	mov rax, QWORD PTR %s[rip]\n",node -> name);
+		printf("	push rax\n");
+		return;
+		
 
 	case ND_FUNCTIONCALL://function call abi -> System V AMD64 ABI (Lunix)
 
@@ -260,6 +356,34 @@ void generate(Node_t *node){
 
 	//ノード先端付近
 	switch(node -> kind){
+	case ND_GLVALDEF:
+
+		printf("%s:\n",node -> name);
+
+		
+		if(node -> tp -> Type_label == TP_INT)
+		{
+
+			if(node -> val == 0){
+		
+		
+				printf("	.zero %ld\n",node -> tp -> size);
+			
+			}else{
+				
+
+				printf("	.long %d\n",node -> val);
+			}
+		}
+		else{
+
+			printf("	.zero %ld\n",node -> tp -> size);
+		}
+		
+
+		
+		return;
+	
 	case ND_FUNCTIONDEF:
 
 		gen_function_def(node);

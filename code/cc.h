@@ -22,6 +22,7 @@ struct type{
 	enum{
 
 		TP_INT,//int 型 8bite
+		TP_CHAR,//char 型
 		TP_POINTER,// pointer 型 8bite
 		TP_ARRAY,// 配列型
 
@@ -63,6 +64,7 @@ struct lvar{
 	Type *tp;
 };
 
+Lvar *global;
 
 /**
  * @brief 
@@ -103,6 +105,8 @@ typedef enum{
 	ND_ADDR, //<-> * dereference
 	ND_DEREF,// <-> & reference
 	//型=========================
+	ND_GLVALDEF,// グローバル変数定義
+	ND_GLVALCALL,//
 	ND_LVAL, // ローカル変数
 	ND_FUNCTIONCALL,//関数呼び出し
 	ND_FUNCTIONDEF,//関数定義
@@ -146,7 +150,7 @@ struct node {
 	 * bref of member variavle : val 
 	 * ND_FUNCTION... -> 引数の個数
 	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 配列が暗黙にキャストされたなら 1 他は-1
+	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 配列が暗黙にキャストされたなら 配列サイズ 他 0
 	 * 
 	 */
 	int val;
@@ -196,9 +200,10 @@ typedef enum{
 	TK_RETURN,
 	TK_SIZEOF=200,// 演算子としてふるまうので別にする
 	//type of variable =====================================================
-	TK_Type=300,//変数の型名
+	TK_TypeINT=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeCHAR,
 	//=====================================================
-	TK_EOF=999, //終了記号
+	TK_EOF=-1, //終了記号
 
 }Token_kind;
 
@@ -306,13 +311,35 @@ Token_t *tokenize(char *p);
  */
 
 /**
+ * @brief 新しい型を作成
+ * 
+ * @param int Type_label
+ * @param Type* pointerto
+ * @param long_int size
+ * @return Type* 
+ */
+Type *new_tp(int,Type*,long int size);
+
+/**
  * @b
  * table から 識別子を検索する
- * @param Token_t_** token 
- * @param Lvar_** locals 
+ * @param char* name
+ * @param int length 
+ * @param Lvar** locals 
  * @return Lvar* 
  */
-Lvar *find_lvar(Token_t **token,Lvar **locals);
+Lvar *find_lvar(char *,int,Lvar **locals);
+
+/**
+ * @brief 新しい変数を作成する
+ * 
+ * @param Type* tp 
+ * @param char* name 
+ * @param int length 
+ * @param Lvar* next
+ * @return Lvar* 
+ */
+Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
 /**
  * @b
@@ -396,10 +423,10 @@ Node_t *new_node_ident(Token_t **);
  */
 Node_t *new_node_keyword(Token_kind kind,Token_t **token);
 /**
- * @brief 関数定義の構文木を作成
+ * @brief 関数定義, グローバル変数の構文木を作成
  * @param Token_t**
  */
-Node_t *new_function(Token_t **);
+Node_t *new_node_globalident(Token_t **);
 
 /**
  * @brief block の構文木を作成
