@@ -99,7 +99,7 @@ echo -n "unit '-' test"
 assert 10 '-10+20'
 
 echo -n "unit *,& test"
-assert 3 "int x = 3;int y = 5;int *z = &y + 1;return *z"
+assert 3 "int x = 3;int y = 5;int *z = &y +1;return *z"
 
 echo -n "equality test"
 assert 0 '1==11'
@@ -173,6 +173,8 @@ assert_function 100 'int a[2]; int main(){a[1] = 100;return a[1];}'
 echo "char test"
 
 assert 0 'char a;int i = 0; return i'
+
+assert 3 'char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y'
 
 echo  "Error test"
 assert_e '20+++3;'

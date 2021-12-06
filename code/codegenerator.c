@@ -48,7 +48,6 @@ void gen_lval(Node_t *node){
 	}
 	else
 	{
-
 		printf("	mov rax, rbp\n");
 		printf("	sub rax, %ld\n",  node -> offset  );
 		printf("	push rax\n");
@@ -173,14 +172,146 @@ void gen_function_def(Node_t *node){
 	generate(node -> right);//定義本文をコンパイル
 
 	//epilogue return に書く
-	printf("	pop rax\n");
-	rsp_counter --;
+	if(node -> tp -> size < 5)
+	{
+		printf("	mov eax, DWORD PTR [rsp]\n");
+	}
+	else
+	{
+		printf("	pop rax\n");
+		rsp_counter --;
+	}
 	printf("	mov rsp, rbp\n");
 	printf("	pop rbp\n");
 	rsp_counter --;
 	printf("	ret\n");
 
 	return;
+}
+
+
+
+void gen_formula(Node_t *node){
+
+	//サイズ確認
+	long size[2] = { node -> left -> tp -> size, node -> right -> tp -> size};
+	char *register_name[2];
+
+	// right side of operator
+	if(size[1] < 5 && size[1] > 1 )
+	{
+		printf("	mov edi, DWORD PTR [rsp]\n");
+		printf("	add rsp, %ld\n",size[1]);
+		register_name[1] = "edi";
+		
+	}
+	else
+	{
+		printf("	pop rdi\n");
+		register_name[1] = "rdi";
+	}
+
+	// left side of operator
+	if(size[0] < 5 && size[0] > 1)
+	{
+		printf("	mov eax, DWORD PTR[rsp]\n");
+		printf("	add rsp, %ld\n",size[0]);
+		register_name[0] = "eax";
+	}
+	else
+	{
+		printf("	pop rax\n");
+		register_name[0] = "rax";
+	}
+
+	//サイズ合わせ
+	if(size[0] < size[1])
+	{
+		printf("	mov ecx, eax\n");
+		printf("	mov eax, ecx\n");
+		register_name[0] = "rax";
+	}
+	else if( size[0] > size[1] )
+	{
+		printf("	mov ecx, edi\n");
+		printf("	mov edi, ecx\n");
+		register_name[1] = "rdi";
+	}
+	
+	
+
+	
+	rsp_counter-=2;
+
+	switch (node -> kind){
+	case ND_EQL:
+		
+		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
+		printf("	sete al\n");
+		printf("	movzb %s, al\n",register_name[0]);
+		break;
+		
+	case ND_NEQ:
+
+		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
+		printf("	setne al\n");
+		printf("	movzb %s, al\n",register_name[0]);
+		break;
+
+	case ND_LES:
+
+		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
+		printf("	setl al\n");
+		printf("	movzb %s, al\n",register_name[0]);
+		break;
+
+	case ND_LEQ:
+
+		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
+		printf("	setle al\n");
+		printf("	movzb %s, al\n",register_name[0]);
+		break;
+
+	case ND_ADD:
+		
+		printf("	add %s, %s\n",register_name[0],register_name[1]);
+		break;
+
+	case ND_SUB:
+		
+		printf("	sub %s, %s\n",register_name[0],register_name[1]);
+		break;
+	
+	case ND_MUL:
+		
+		printf("	imul %s, %s\n",register_name[0],register_name[1]);
+		break;
+	
+	case ND_DIV:
+
+		if( size[0] < 5 )
+		{
+			printf("	cdq\n");
+		}
+		else if( size[0] < 9 )
+		{
+			printf("	cqo\n");
+		}
+		printf("	idiv %s\n",register_name[1]);
+		break;
+	}
+
+	if(size[0] < 5 && size[0] >1 )
+	{
+		printf("	sub rsp, %ld\n",size[0]);
+		printf("	mov DWORD PTR [rsp], eax\n");
+	}
+	else
+	{
+		printf("	push rax\n");
+	}
+	
+	rsp_counter++;
 }
 
 
@@ -193,30 +324,35 @@ void generate(Node_t *node){
 		return;
 
 	
-	//ノード末端付近
+	//ノード末端付近==========================================================
 	switch(node -> kind) {
 	case ND_NUM:
 
-		printf("	push %d\n",node ->val);
+		printf("	sub rsp , 4\n");
+		printf("	mov DWORD PTR [rsp], %d\n",node ->val);
 		rsp_counter++;
 		return;
 	case ND_ASSIGN:
+	{
+		long int size[2];
+		char *register_name[3];
 
 		if( node -> left && node -> left ->  kind != ND_DEREF){
 
 			if(node -> left -> kind == ND_GLVALCALL)
-			{
+			{//グローバル変数処理
 				generate(node -> right);
 				printf("	pop rax\n");
 				printf("	mov QWORD PTR %s[rip], rax\n",node -> left -> name);
 				return;
 			}
 			gen_lval(node->left);
+			size[0] = node -> left -> tp -> size;
 		
 		}else{
 			
 			if(node -> left -> left -> kind == ND_ADD)
-			{
+			{//global 変数処理
 				Node_t *node_ll = node -> left -> left;
 				if(node_ll -> left -> kind == ND_GLVALCALL)
 				{
@@ -242,28 +378,56 @@ void generate(Node_t *node){
 				}
 			}
 			generate(node -> left -> left);
+			size[0] = node -> left -> left -> tp -> size;
 		}	
 		
 		generate(node -> right);
+		size[1] = node -> right -> tp -> size;
 
-		printf("	pop rdi\n");
-		rsp_counter--;
+
+		// right side of operator
+		if(size[1] < 5 && size[1] > 1 )
+		{
+			printf("	mov edi, DWORD PTR [rsp]\n");
+			printf("	add rsp, %ld\n",size[1]);
+			register_name[1] = "edi";
+			
+		}
+		else
+		{
+			printf("	pop rdi\n");
+			register_name[1] = "rdi";
+		}
+
+
+		// left side of operator
 		printf("	pop rax\n");
+		if(size[0] < 5 && size[0] > 1)
+		{
+			register_name[0] = "rax";
+			register_name[2] = "DWORD PTR";
+		}
+		else
+		{
+			register_name[0] = "rax";
+			register_name[2] = "QWORD PTR";
+		}
 		rsp_counter--;
-		printf("	mov [rax], rdi\n");
-		printf("	push rdi\n");
+		rsp_counter--;
+		printf("	mov %s [%s], %s\n",register_name[2],register_name[0],register_name[1]);
 		rsp_counter++;
 		return;
-	
+	}
 	case ND_ADDR:
 
 		gen_lval(node -> left);
 		return;
 
 	case ND_DEREF:
+	{
 
 		if(node -> left -> kind == ND_ADD)
-		{
+		{// global 変数処理
 
 			Node_t *node_l = node -> left;
 			if( node_l -> left -> kind == ND_GLVALCALL )
@@ -312,21 +476,73 @@ void generate(Node_t *node){
 			}
 		}
 		generate(node -> left);
-			
+		
+		char * register_name;
+		char * pointer_size;
+		if(node -> tp -> size < 5 && node -> tp -> size > 1){
+			register_name = "ecx";
+			pointer_size = "DWORD PTR";
+		}
+		else
+		{
+			register_name = "rcx";
+			pointer_size = "QWORD PTR";
+		}
 		
 		printf("	pop rax\n");
-		printf("	mov rax, [rax]\n");
-		printf("	push rax\n");
+		printf("	mov %s, %s [rax]\n",register_name,pointer_size);
+		if(node -> tp -> size < 5 && node -> tp -> size > 1)
+		{
+			printf("	mov eax, ecx\n");
+		}
+		else
+		{
+			printf("	mov rax, rcx\n");
+		}
+		
+		if(node -> tp -> size < 5 && node -> tp -> size > 1)
+		{
+			printf("	sub rsp, 4\n");
+			printf("	mov DWORD PTR [rsp], eax\n");
+		}
+		else
+		{
+			printf("	push rax\n");
+		}
 		return;
-
+	}
 	
 	case ND_LVAL:
+	{
 
 		gen_lval(node);
+
+		char * register_name;
+		char * pointer_size;
+		if(node -> tp -> size < 5 && node -> tp -> size > 1){
+			register_name = "eax";
+			pointer_size = "DWORD PTR";
+		}
+		else
+		{
+			register_name = "rax";
+			pointer_size = "QWORD PTR";
+		}
+		
 		printf("	pop rax\n");
-		printf("	mov rax, [rax]\n");
-		printf("	push rax\n");
+		printf("	mov %s, %s [rax]\n",register_name,pointer_size);
+		
+		if(node -> tp -> size < 5 && node -> tp -> size > 1)
+		{
+			printf("	sub rsp, 4\n");
+			printf("	mov DWORD PTR [rsp], eax\n");
+		}
+		else
+		{
+			printf("	push rax\n");
+		}
 		return;
+	}
 
 	case ND_GLVALCALL:
 
@@ -343,8 +559,18 @@ void generate(Node_t *node){
 	case ND_RETURN:
 		
 		generate(node -> left);
-		printf("	pop rax\n");
-		rsp_counter--;
+
+		if(node -> left -> tp -> size < 5)
+		{
+			printf("	mov eax, DWORD PTR [rsp]\n");
+		}
+		else
+		{
+			printf("	pop rax\n");
+			rsp_counter--;
+		}
+
+		
 		printf("	mov rsp, rbp\n");
 		rsp_counter =1;
 		printf("	pop rbp\n");
@@ -352,9 +578,9 @@ void generate(Node_t *node){
 		printf("	ret\n");
 		return;
 
-	}
+	}//ノード末端付近==========================================================
 
-	//ノード先端付近
+	//ノード先端付近 ===================================================
 	switch(node -> kind){
 	case ND_GLVALDEF:
 
@@ -404,6 +630,7 @@ void generate(Node_t *node){
 
 
 	case ND_IF:
+	{
 	
 		generate(node -> left);
 		printf("	pop rax\n");
@@ -418,6 +645,7 @@ void generate(Node_t *node){
 		
 		filenumber ++;
 		return;
+	}
 
 	case ND_ELSE:
 		
@@ -519,7 +747,7 @@ void generate(Node_t *node){
 		}
 		return;
 
-	}
+	}//ノード先端付近 ===================================================
 	
 
 	//以下は単項でないoperatorのコンパイル===================
@@ -527,62 +755,5 @@ void generate(Node_t *node){
 	generate(node -> right);
 
 
-	printf("	pop rdi\n");// right side of operator
-	printf("	pop rax\n");// left side of operator
-
-	
-	rsp_counter-=2;
-
-	switch (node -> kind){
-	case ND_EQL:
-		
-		printf("	cmp rax, rdi\n");
-		printf("	sete al\n");
-		printf("	movzb rax, al\n");
-		break;
-		
-	case ND_NEQ:
-
-		printf("	cmp rax, rdi\n");
-		printf("	setne al\n");
-		printf("	movzb rax, al\n");
-		break;
-
-	case ND_LES:
-
-		printf("	cmp rax, rdi\n");
-		printf("	setl al\n");
-		printf("	movzb rax, al\n");
-		break;
-
-	case ND_LEQ:
-
-		printf("	cmp rax, rdi\n");
-		printf("	setle al\n");
-		printf("	movzb rax, al\n");
-		break;
-
-	case ND_ADD:
-		
-		printf("	add rax, rdi\n");
-		break;
-
-	case ND_SUB:
-		
-		printf("	sub rax, rdi\n");
-		break;
-	
-	case ND_MUL:
-		
-		printf("	imul rax, rdi\n");
-		break;
-	
-	case ND_DIV:
-
-		printf("	cqo\n");
-		printf("	idiv rdi\n");
-		break;
-	}
-	printf("	push rax\n");
-	rsp_counter++;
+	gen_formula(node);
 }
