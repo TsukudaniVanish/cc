@@ -249,6 +249,7 @@ Node_t *new_node_ident(Token_t**token){
 
 
 		node = calloc(1,sizeof(Node_t));
+		node -> tp = new_tp(TP_INT,NULL,4);//後出かけ
 		node -> kind = ND_FUNCTIONCALL;
 		node -> val = 0; // 引数の個数
 
