@@ -5,6 +5,23 @@
 
 
 
+int sizeof_token(int kind){
+
+	switch (kind)
+	{
+	case TK_TypeINT:
+		
+		return 4;
+	
+	case TK_TypeCHAR:
+
+		return 1;
+	}
+	return 0;
+}
+
+
+
 
 bool is_alnum(char c){
 
@@ -75,8 +92,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 	if(kind > 299){//ポインタ型か判定
 
 
-		(cur) -> tp = calloc(1,sizeof(Type));
-		(cur) -> tp -> Type_label = kind - 300;
+		(cur) -> tp = new_tp(kind -300,NULL,sizeof_token(kind));
 
 		while (isspace(*q) || *q=='*'){
 			
@@ -87,9 +103,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 				continue;
 			}
 			(cur) -> length++;
-			Type *pointerto = calloc(1,sizeof(Type));
-			pointerto -> Type_label = TP_POINTER;
-			pointerto -> pointer_to = (cur) ->tp;
+			Type *pointerto = new_tp(TP_POINTER,(cur) ->tp,8);
 			(cur) -> tp = pointerto;
 			q++;
 		}//qには識別子の名前があるはず

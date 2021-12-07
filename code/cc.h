@@ -244,6 +244,15 @@ void error_at(char *,char *,...);
  */
 
 /**
+ * @brief TK_Type... のメモリサイズを返す
+ * 
+ * @param int kind
+ * @return int
+ * 
+ */
+int sizeof_token(int);
+
+/**
  * @b
  * 新しいtokenを作り　cur->nextに代入する 代入後 cur を次のtoken に送る
  * @param Token_kind kind
@@ -482,6 +491,9 @@ void gen_function_def(Node_t *node);
 
 //配列自身の先頭をさすポインタをセット
 void set_array_header();
+
+//式をコンパイル
+void gen_formula(Node_t*);
 
 
 //抽象構文木からアセンブリコードを生成する

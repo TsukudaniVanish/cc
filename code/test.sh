@@ -99,7 +99,7 @@ echo -n "unit '-' test"
 assert 10 '-10+20'
 
 echo -n "unit *,& test"
-assert 3 "int x = 3;int y = 5;int *z = &y + 1;return *z"
+assert 3 "int x = 3;int y = 5;int *z = &y +1;return *z"
 
 echo -n "equality test"
 assert 0 '1==11'
@@ -130,7 +130,7 @@ assert 1 'if(1)return 1'
 assert 10 'if(0)return 0; else return 10'
 
 echo "while test"
-assert 0 'int a=10;int b=0;while(a) a=a-1; return a '
+assert 0 'int a=10;while(a) a=a-1; return a '
 
 echo "For test"
 assert 10 'for(int i = 0; i <10; i = i+1) 0; return i'
@@ -141,14 +141,14 @@ assert 1 'int a = 1; for(  int i=0 ; i < 10 ; i = i+1 ){ a = a +i ; a = a -i ; }
 
 echo "function call test"
 
-assert_function 16 'int gagaga(int a,int b,int c){ while(c){ a = a+b; c = c-1;} return a; }int main(){int x = 10;int y = 2;return gagaga(x,y,3);}'
+assert_function 16 'int gagaga(int a,int b,int c){ a = a + b*c;  return a; }int main(){return gagaga(10,2,3);}'
 
 echo "pointer test"
 
 assert 3 'int x;int *y;y = &x;*y = 3;return x'
 
 echo "sizeof test"
-assert 8 'int x; sizeof x'
+assert 4 'int x; sizeof x'
 assert 8 'int *y; sizeof(y)'
 
 echo "array sizeof test"
@@ -173,6 +173,8 @@ assert_function 100 'int a[2]; int main(){a[1] = 100;return a[1];}'
 echo "char test"
 
 assert 0 'char a;int i = 0; return i'
+
+assert 3 'char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y'
 
 echo  "Error test"
 assert_e '20+++3;'
