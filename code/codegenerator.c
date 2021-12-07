@@ -164,6 +164,8 @@ void gen_lval(Node_t *node){
 	}
 }
 
+
+
 void gen_function_call(Node_t *node){
 
 
@@ -187,126 +189,35 @@ void gen_function_call(Node_t *node){
 	}
 		
 
-		switch(node ->val){//読み込んだ引数をスタックに
+		switch(node ->val){//読み込んだ引数をレジスタに
 		case 6:
 
-			if(arg_types[5] -> size < 5 && arg_types[5] -> size > 1)
-			{
-				printf("	mov r9d, DWORD PTR [rsp]\n");
-				printf("	add rsp, 4\n");
-				rsp_counter -=4;
-			}
-			else if( 0 < arg_types[5] -> size && arg_types[5] -> size < 2 )
-			{
-				printf("	mov r9d, BYTE PTR [rsp]\n");
-				printf("	add rsp, 1\n");
-				rsp_counter -= 1;
-			}
-			else
-			{
-				printf("	pop r9\n");
-				rsp_counter -= 8;
-			}
+			pop_stack(arg_types[5] -> size,"r9");
+			
 
 		case 5:
 
-			if(arg_types[4] -> size < 5 && arg_types[4] -> size > 1)
-			{
-				printf("	mov r8d, DWORD PTR [rsp]\n");
-				printf("	add rsp, 4\n");
-				rsp_counter -= 4;
-			}
-			else if( 0 < arg_types[4] -> size < 2 )
-			{
-				printf("	mov r8d, BYTE PTR [rsp]\n");
-				printf("	add rsp, 1\n");
-				rsp_counter -= 1;
-			}
-			else
-			{
-				printf("	pop r8\n");
-				rsp_counter -= 8;
-			}
+			pop_stack(arg_types[4] -> size,"r8");
 
 		case 4:
 
-			if(arg_types[3] -> size < 5 && arg_types[3] -> size > 1)
-			{
-				printf("	mov ecx, DWORD PTR [rsp]\n");
-				printf("	add rsp, 4\n");
-				rsp_counter -= 4;
-			}
-			else if( 0 < arg_types[3] -> size < 2 )
-			{
-				printf("	mov ecx, BYTE PTR [rsp]\n");
-				printf("	add rsp, 1\n");
-				rsp_counter -= 1;
-			}
-			else
-			{
-				printf("	pop rcx\n");
-				rsp_counter -= 8;
-			}
+			pop_stack(arg_types[3] -> size,"rcx");
+			
 
 		case 3:
 
-			if(arg_types[2] -> size < 5 && arg_types[2] -> size > 1)
-			{
-				printf("	mov edx, DWORD PTR [rsp]\n");
-				printf("	add rsp, 4\n");
-				rsp_counter -= 4;
-			}
-			else if( 0 < arg_types[2] -> size < 2 )
-			{
-				printf("	mov edx, BYTE PTR [rsp]\n");
-				printf("	add rsp, 1\n");
-				rsp_counter -= 1;
-			}
-			else
-			{
-				printf("	pop rdx\n");
-				rsp_counter -= 8;
-			}
+			pop_stack(arg_types[2] -> size,"rdx");
+			
 
 		case 2:
 
-			if(arg_types[1] -> size < 5 && arg_types[1] -> size > 1)
-			{
-				printf("	mov esi, DWORD PTR [rsp]\n");
-				printf("	add rsp, 4\n");
-				rsp_counter -= 4;
-			}
-			else if( 0 < arg_types[1] -> size < 2 )
-			{
-				printf("	mov esi, BYTE PTR [rsp]\n");
-				printf("	add rsp, 1\n");
-				rsp_counter -= 1;
-			}
-			else
-			{
-				printf("	pop rsi\n");
-				rsp_counter -= 8;
-			}
+			pop_stack(arg_types[1] -> size,"rsi");
+			
 
 		case 1:
 
-			if(arg_types[0] -> size < 5 && arg_types[0] -> size > 1)
-			{
-				printf("	mov edi, DWORD PTR [rsp]\n");
-				printf("	add rsp, 4\n");
-				rsp_counter -= 4;
-			}
-			else if( 0 < arg_types[0] -> size < 2 )
-			{
-				printf("	mov edi, BYTE PTR [rsp]\n");
-				printf("	add rsp, 1\n");
-				rsp_counter -= 1;
-			}
-			else
-			{
-				printf("	pop rdi\n");
-				rsp_counter -= 8;
-			}
+			pop_stack(arg_types[0] -> size,"rdi");
+			
 		}
 
 		if(rsp_counter%16 !=0)
