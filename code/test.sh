@@ -99,7 +99,7 @@ echo -n "unit '-' test"
 assert 10 '-10+20'
 
 echo -n "unit *,& test"
-assert 3 "int x = 3;int y = 5;int *z = &y +1;return *z"
+assert 3 "int x = 3;int *z = &x;return *z"
 
 echo -n "equality test"
 assert 0 '1==11'

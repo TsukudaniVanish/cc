@@ -10,6 +10,115 @@ int filenumber =0;//制御構文のラベル指定で使用する
 
 
 
+char * get_registername(char *register_name,long int size)
+{
+	//register names
+	char *register_rax[] = {"al","ax","eax","rax"};
+	char *register_rdi[] = {"dil","di","edi","rdi"};
+	char *register_rsi[] = {"sil","si","esi","rsi"};
+	char *register_rdx[] = {"dl","dx","edx","rdx"};
+	char *register_rcx[] = {"cl","cx","ecx","rcx"};
+	char *register_r8[] = {"r8b","r8w","r8d","r8"};
+	char *register_r9[] = {"r9b","r9w","r9d","r9"};
+	char **arg_register[] = {register_rax,register_rdi , register_rsi , register_rdx , register_rcx , register_r8 , register_r9};
+	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9",NULL};
+
+	//名前検索
+	for(char ** name = registers; *name ; name++)
+	{
+		if(strlen(*name) <= strlen(register_name) && strncmp(register_name,*name,strlen(*name)) == 0)
+		{
+			int i = name - registers;
+			if( size < 5 && size > 1)
+			{
+				return arg_register[i][2];
+			}
+			else if(0 < size && size < 2)
+			{
+				return arg_register[i][0];
+			}
+			else
+			{
+				return arg_register[i][3];
+			}
+		}
+	}
+	return NULL;
+}
+
+
+
+
+char *get_pointerpref(long int size)
+{
+	if(size < 5 && 1 < size)
+	{
+		return "DWORD PTR";
+	}
+	else if(size == 1)
+	{
+		return "BYTE PTR";
+	}
+	else
+	{
+		return "QWORD PTR";
+	}
+}
+
+
+
+
+void push_stack(int long size, char * register_name){
+
+	char *name = get_registername(register_name,size);
+
+	if(size < 5 && size > 1)
+	{
+		printf("	sub rsp, %ld\n",size);
+		printf("	mov DWORD PTR [rsp], %s\n",name);
+		rsp_counter += 4;
+	}
+	else if(0 < size && size < 2)
+	{
+		printf("	sub rsp, %ld\n",size);
+		printf("	mov BYTE PTR [rsp], %s\n",name);
+		rsp_counter += 1;
+	}
+	else
+	{
+		printf("	push %s\n",name);
+		rsp_counter += 8;
+	}
+}
+
+void pop_stack(int long size,char *register_name){
+
+	char *name = get_registername(register_name,size);
+
+	if(size < 5 && size > 1)
+	{
+		printf("	mov %s, DWORD PTR [rsp]\n",name);
+		printf("	add rsp, 4\n");
+		rsp_counter -= 4;
+	}
+	else if(0 < size && size < 2)
+	{
+		printf("	movsx %s, BYTE PTR [rsp]\n",get_registername(register_name,4));
+		printf("	add rsp, 1\n");
+		rsp_counter -= 1;
+	}
+	else
+	{
+		printf("	pop %s\n",name);
+		rsp_counter -= 8;
+	}
+}
+
+
+
+
+
+
 void set_array_header(){
 
 	if( nametable == 0 )
@@ -75,10 +184,10 @@ void gen_function_call(Node_t *node){
 
 		i++;
 
-	}//読み込み終了
+	}
 		
 
-		switch(node ->val){
+		switch(node ->val){//読み込んだ引数をスタックに
 		case 6:
 
 			if(arg_types[5] -> size < 5 && arg_types[5] -> size > 1)
@@ -86,6 +195,12 @@ void gen_function_call(Node_t *node){
 				printf("	mov r9d, DWORD PTR [rsp]\n");
 				printf("	add rsp, 4\n");
 				rsp_counter -=4;
+			}
+			else if( 0 < arg_types[5] -> size && arg_types[5] -> size < 2 )
+			{
+				printf("	mov r9d, BYTE PTR [rsp]\n");
+				printf("	add rsp, 1\n");
+				rsp_counter -= 1;
 			}
 			else
 			{
@@ -101,6 +216,12 @@ void gen_function_call(Node_t *node){
 				printf("	add rsp, 4\n");
 				rsp_counter -= 4;
 			}
+			else if( 0 < arg_types[4] -> size < 2 )
+			{
+				printf("	mov r8d, BYTE PTR [rsp]\n");
+				printf("	add rsp, 1\n");
+				rsp_counter -= 1;
+			}
 			else
 			{
 				printf("	pop r8\n");
@@ -114,6 +235,12 @@ void gen_function_call(Node_t *node){
 				printf("	mov ecx, DWORD PTR [rsp]\n");
 				printf("	add rsp, 4\n");
 				rsp_counter -= 4;
+			}
+			else if( 0 < arg_types[3] -> size < 2 )
+			{
+				printf("	mov ecx, BYTE PTR [rsp]\n");
+				printf("	add rsp, 1\n");
+				rsp_counter -= 1;
 			}
 			else
 			{
@@ -129,6 +256,12 @@ void gen_function_call(Node_t *node){
 				printf("	add rsp, 4\n");
 				rsp_counter -= 4;
 			}
+			else if( 0 < arg_types[2] -> size < 2 )
+			{
+				printf("	mov edx, BYTE PTR [rsp]\n");
+				printf("	add rsp, 1\n");
+				rsp_counter -= 1;
+			}
 			else
 			{
 				printf("	pop rdx\n");
@@ -142,6 +275,12 @@ void gen_function_call(Node_t *node){
 				printf("	mov esi, DWORD PTR [rsp]\n");
 				printf("	add rsp, 4\n");
 				rsp_counter -= 4;
+			}
+			else if( 0 < arg_types[1] -> size < 2 )
+			{
+				printf("	mov esi, BYTE PTR [rsp]\n");
+				printf("	add rsp, 1\n");
+				rsp_counter -= 1;
 			}
 			else
 			{
@@ -157,6 +296,12 @@ void gen_function_call(Node_t *node){
 				printf("	add rsp, 4\n");
 				rsp_counter -= 4;
 			}
+			else if( 0 < arg_types[0] -> size < 2 )
+			{
+				printf("	mov edi, BYTE PTR [rsp]\n");
+				printf("	add rsp, 1\n");
+				rsp_counter -= 1;
+			}
 			else
 			{
 				printf("	pop rdi\n");
@@ -164,25 +309,48 @@ void gen_function_call(Node_t *node){
 			}
 		}
 
-		if(rsp_counter%16 !=0){
-
+		if(rsp_counter%16 !=0)
+		{//rsp を調整
 
 			printf("	sub rsp , %ld\n", 16 - rsp_counter % 16);
 		}
 		printf("	call %s\n",node -> name);
 		rsp_counter += 8;
-		if(node -> tp -> size < 5 && node -> tp -> size > 1)
-		{
-			printf("	sub rsp, 4\n");
-			printf("	mov DWORD PTR [rsp], eax\n");
-			rsp_counter += 4;
-		}
-		else
-		{
-			printf("	push rax\n");
-			rsp_counter += 8;
-		}
+
+
+		push_stack(node -> tp -> size,"rax");
+		
 		return;
+}
+
+void argment_set(int arg_index , long int offset , long int size){
+
+	//register names
+	char *register_rax[] = {"al","ax","eax","rax"};
+	char *register_rdi[] = {"dil","di","edi","rdi"};
+	char *register_rsi[] = {"sil","si","esi","rsi"};
+	char *register_rdx[] = {"dl","dx","edx","rdx"};
+	char *register_rcx[] = {"cl","cx","ecx","rcx"};
+	char *register_r8[] = {"r8b","r8w","r8d","r8"};
+	char *register_r9[] = {"r9b","r9w","r9d","r9"};
+	char **arg_register[] = {register_rdi , register_rsi , register_rdx , register_rcx , register_r8 , register_r9};
+	
+	//use register set 
+	char **use = arg_register[arg_index-1];
+	printf("	mov rax, rbp\n");
+	printf("	sub rax, %ld\n",offset );
+	if(size < 5 && size >1)
+	{
+		printf("	mov DWORD PTR [rax], %s\n",use[2]);
+	}
+	else if(0 < size && size < 2)
+	{
+		printf("	mov BYTE PTR [rax], %s\n",use[0]);
+	}
+	else
+	{
+		printf("	mov QWORD PTR [rax], %s\n",use[3]);
+	}
 }
 
 void gen_function_def(Node_t *node){
@@ -205,16 +373,19 @@ void gen_function_def(Node_t *node){
 
 	Node_t *arg = node -> left;
 	long int size[node -> val];
+	long int offset[node -> val];
 	int i = 0;
 	while (arg -> kind != ND_BLOCKEND)
 	{	
+		size[i] = arg -> left -> tp -> size;
 		if(i > 0)
 		{
-			size[i] = arg -> left -> tp -> size + size[i-1];
+			offset[i] = size[i] + offset[i-1];
+			
 		}
 		else
 		{
-			size[i] = arg -> left -> tp -> size;
+			offset[i] = size[i];
 		}
 			
 		i++;
@@ -226,84 +397,28 @@ void gen_function_def(Node_t *node){
 	{
 	case 6:
 		
-		printf("	mov rax, rbp\n");
-		printf("	sub rax, %ld\n",size[5] );
-		if(size[5] < 5 && size[5] >1)
-		{
-			printf("	mov DWORD PTR [rax], r9d\n");
-		}
-		else
-		{
-			printf("	mov QWORD PTR [rax], r9\n");
-		}
+		argment_set(6,offset[5],size[5]);
 	
 	case 5:
 		
-		printf("	mov rax, rbp\n");
-		printf("	sub rax, %ld\n",size[4] );
-		if(size[4] < 5 && size[4] >1)
-		{
-			printf("	mov DWORD PTR [rax], r8d\n");
-		}
-		else
-		{
-			printf("	mov QWORD PTR [rax], r8\n");
-		}
+		argment_set(5,offset[4],size[4]);
 
 
 	case 4:
 
-		printf("	mov rax, rbp\n");
-		printf("	sub rax, %ld\n" , size[3]);
-		if(size[3] < 5 && size[3] > 1)
-		{
-			printf("	mov DWORD PTR [rax], ecx\n");
-		}
-		else
-		{
-			printf("	mov QWORD PTR [rax], rcx\n");
-		}
+		argment_set(4,offset[3],size[3]);
 
 	case 3:
 
-		printf("	mov rax, rbp\n");
-		printf("	sub rax, %ld\n",size[2] );
-		if(size[2] < 5 && size[2] > 1)
-		{
-			printf("	mov DWORD PTR [rax], edx\n");
-		}
-		else
-		{
-			printf("	mov QWORD PTR [rax], rdx\n");
-		}
+		argment_set(3,offset[2],size[2]);
 
 	case 2:
 
-		printf("	mov rax, rbp\n");
-		printf("	sub rax, %ld\n" , size[1]);
-		if(size[1] < 5 && size[1] > 1)
-		{
-			printf("	mov DWORD PTR [rax], esi\n");
-		}
-		else
-		{
-			printf("	mov [rax], rsi\n");
-		}
+		argment_set(2,offset[1],size[1]);
 
 	case 1:
 
-		printf("	mov rax, rbp\n");
-		printf("	sub rax, %ld\n" , size[0]);
-		if(size[0] < 5 && size[0] > 1)
-		{
-			printf("	mov DWORD PTR [rax], edi\n");
-		}
-		else
-		{
-			printf("	mov [rax], rdi\n");	
-		}
-		
-		break;
+		argment_set(1,offset[0],size[0]);
 	}
 
 	set_array_header();
@@ -312,16 +427,7 @@ void gen_function_def(Node_t *node){
 	generate(node -> right);//定義本文をコンパイル
 
 	//epilogue return に書く
-	if(node -> tp -> size < 5)
-	{
-		printf("	mov eax, DWORD PTR [rsp]\n");
-		rsp_counter -= 4;
-	}
-	else
-	{
-		printf("	pop rax\n");
-		rsp_counter -= 8;
-	}
+	pop_stack(node -> tp -> size,"rax");
 	printf("	mov rsp, rbp\n");
 	printf("	pop rbp\n");
 	rsp_counter -= 8;
@@ -329,6 +435,44 @@ void gen_function_def(Node_t *node){
 
 	return;
 }
+
+void gen_global_store(char *name,char *register_name,long int size)
+{
+	char *regi_name = get_registername(register_name,size);
+	if( size < 5 &&  size > 1)
+	{
+		printf("	mov DWORD PTR %s[rip], %s\n",name,regi_name);
+	}
+	else if(0 <  size && size < 2)
+	{
+		printf("	mov BYTE PTR %s[rip], %s\n", name,regi_name);
+	}
+	else
+	{
+		printf("	mov QWORD PTR %s[rip], %s\n", name,regi_name);
+	}
+}
+
+
+
+
+void gen_global_store_arr(char *name,char *register_name,long int size,long int index)
+{
+	char *regi_name = get_registername(register_name,size);
+	if( size < 5 &&  size > 1)
+	{
+		printf("	mov DWORD PTR %s[rip+%ld], %s\n",name,index,regi_name);
+	}
+	else if(0 <  size && size < 2)
+	{
+		printf("	mov BYTE PTR %s[rip+%ld], %s\n",name,index,regi_name);
+	}
+	else
+	{
+		printf("	mov QWORD PTR %s[rip+%ld], %s\n",name,index,regi_name);
+	}
+}
+
 
 
 
@@ -339,48 +483,20 @@ void gen_formula(Node_t *node){
 	char *register_name[2];
 
 	// right side of operator
-	if(size[1] < 5 && size[1] > 1 )
-	{
-		printf("	mov edi, DWORD PTR [rsp]\n");
-		printf("	add rsp, %ld\n",size[1]);
-		register_name[1] = "edi";
-		rsp_counter -= 4;
-		
-	}
-	else
-	{
-		printf("	pop rdi\n");
-		register_name[1] = "rdi";
-		rsp_counter -= 8;
-	}
+	pop_stack(size[1],"rdi");
+	register_name[1] = get_registername("rdi",size[1]);
 
 	// left side of operator
-	if(size[0] < 5 && size[0] > 1)
+	pop_stack(size[0],"rax");
+	register_name[0] = get_registername("rax",size[0]);
+
+	if(size[0] < size[1])
 	{
-		printf("	mov eax, DWORD PTR[rsp]\n");
-		printf("	add rsp, %ld\n",size[0]);
-		register_name[0] = "eax";
-		rsp_counter -= 4;
+		register_name[0] = get_registername("rax",size[1]);
 	}
 	else
 	{
-		printf("	pop rax\n");
-		register_name[0] = "rax";
-		rsp_counter -= 8;
-	}
-
-	//サイズ合わせ
-	if(size[0] < size[1])
-	{
-		printf("	mov ecx, eax\n");
-		printf("	mov eax, ecx\n");
-		register_name[0] = "rax";
-	}
-	else if( size[0] > size[1] )
-	{
-		printf("	mov ecx, edi\n");
-		printf("	mov edi, ecx\n");
-		register_name[1] = "rdi";
+		register_name[1] = get_registername("rdi",size[0]);
 	}
 	
 	
@@ -446,19 +562,7 @@ void gen_formula(Node_t *node){
 		break;
 	}
 
-	if(size[0] < 5 && size[0] >1 )
-	{
-		printf("	sub rsp, %ld\n",size[0]);
-		printf("	mov DWORD PTR [rsp], eax\n");
-		rsp_counter += 4;
-		return;
-	}
-	else
-	{
-		printf("	push rax\n");
-		rsp_counter += 8;
-		return;
-	}
+	push_stack(size[0],"rax");
 }
 
 
@@ -489,8 +593,8 @@ void generate(Node_t *node){
 			if(node -> left -> kind == ND_GLVALCALL)
 			{//グローバル変数処理
 				generate(node -> right);
-				printf("	pop rax\n");
-				printf("	mov QWORD PTR %s[rip], rax\n",node -> left -> name);
+				pop_stack(node -> tp -> size,"rax");
+				gen_global_store(node -> left -> name,"rax",node -> tp -> size);
 				return;
 			}
 			gen_lval(node->left);
@@ -507,8 +611,8 @@ void generate(Node_t *node){
 					if(tp_lll -> Type_label == TP_POINTER && tp_lll -> pointer_to -> Type_label == TP_ARRAY)
 					{
 						generate(node -> right);
-						printf("	pop rax\n");
-						printf("	mov QWORD PTR %s[rip+%d], rax\n",node_ll -> left -> name,node_ll -> right -> val);
+						pop_stack(node -> tp -> size,"rax");
+						gen_global_store_arr(node_ll -> left -> name,"rax",node -> tp -> size,node_ll -> right -> val);
 						return;
 					}
 				}
@@ -518,8 +622,8 @@ void generate(Node_t *node){
 					if(tp_llr -> Type_label == TP_POINTER && tp_llr -> pointer_to -> Type_label == TP_ARRAY)
 					{
 						generate(node -> right);
-						printf("	pop rax\n");
-						printf("	mov QWORD PTR %s[rip+%d], rax\n",node_ll -> right -> name,node_ll -> left -> val);
+						pop_stack(node -> tp -> size,"rax");
+						gen_global_store_arr(node_ll -> right -> name,"rax",node -> tp -> size,node_ll -> val);
 						return;
 					}
 				}
@@ -533,36 +637,17 @@ void generate(Node_t *node){
 
 
 		// right side of operator
-		if(size[1] < 5 && size[1] > 1 )
-		{
-			printf("	mov edi, DWORD PTR [rsp]\n");
-			printf("	add rsp, %ld\n",size[1]);
-			register_name[1] = "edi";
-			rsp_counter -= 4;
-			
-		}
-		else
-		{
-			printf("	pop rdi\n");
-			register_name[1] = "rdi";
-			rsp_counter -= 8;
-		}
-
+		pop_stack(size[1],"rdi");
+		register_name[1] = get_registername("rdi",size[0]);
 
 		// left side of operator
 		printf("	pop rax\n");
 		rsp_counter -= 8;
-		if(size[0] < 5 && size[0] > 1)
-		{
-			register_name[0] = "rax";
-			register_name[2] = "DWORD PTR";
-		}
-		else
-		{
-			register_name[0] = "rax";
-			register_name[2] = "QWORD PTR";
-		}
-		printf("	mov %s [%s], %s\n",register_name[2],register_name[0],register_name[1]);
+		register_name[2] = get_pointerpref(size[0]);
+		
+
+		//代入
+		printf("	mov %s [rax], %s\n",register_name[2],register_name[1]);
 		printf("	sub rsp, %ld\n",node -> right -> tp -> size );
 		printf("	mov %s [rsp], %s\n",register_name[2],register_name[1]);
 		rsp_counter++;
@@ -627,41 +712,16 @@ void generate(Node_t *node){
 		}
 		generate(node -> left);
 		
-		char * register_name;
-		char * pointer_size;
-		if(node -> tp -> size < 5 && node -> tp -> size > 1){
-			register_name = "ecx";
-			pointer_size = "DWORD PTR";
-		}
-		else
-		{
-			register_name = "rcx";
-			pointer_size = "QWORD PTR";
-		}
+		char * register_name = get_registername("rcx",node -> tp -> size);
+		char * pointer_pref = get_pointerpref(node -> tp -> size);
+		
 		
 		printf("	pop rax\n");
 		rsp_counter -= 8;
-		printf("	mov %s, %s [rax]\n",register_name,pointer_size);
-		if(node -> tp -> size < 5 && node -> tp -> size > 1)
-		{
-			printf("	mov eax, ecx\n");
-		}
-		else
-		{
-			printf("	mov rax, rcx\n");
-		}
+		printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
+		printf("	mov %s, %s\n",get_registername("rax",node -> tp -> size),get_registername("rcx",node -> tp -> size));
 		
-		if(node -> tp -> size < 5 && node -> tp -> size > 1)
-		{
-			printf("	sub rsp, 4\n");
-			printf("	mov DWORD PTR [rsp], eax\n");
-			rsp_counter += 4;
-		}
-		else
-		{
-			printf("	push rax\n");
-			rsp_counter += 8;
-		}
+		push_stack(node -> tp -> size,"rax");
 		return;
 	}
 	
@@ -670,40 +730,33 @@ void generate(Node_t *node){
 
 		gen_lval(node);
 
-		char * register_name;
-		char * pointer_size;
-		if(node -> tp -> size < 5 && node -> tp -> size > 1){
-			register_name = "eax";
-			pointer_size = "DWORD PTR";
-		}
-		else
-		{
-			register_name = "rax";
-			pointer_size = "QWORD PTR";
-		}
+		char * register_name = get_registername("rax",node -> tp -> size);
+		char * pointer_pref = get_pointerpref(node -> tp -> size);
+		
 		
 		printf("	pop rax\n");
 		rsp_counter -= 8;
-		printf("	mov %s, %s [rax]\n",register_name,pointer_size);
+		printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
 		
-		if(node -> tp -> size < 5 && node -> tp -> size > 1)
+		push_stack(node -> tp -> size,"rax");
+		return;
+	}
+
+	case ND_GLVALCALL://調整=====================
+	{
+		if(node -> tp && node -> tp -> size < 5 && node -> tp -> size > 1)
 		{
+			printf("	mov eax, DWORD PTR %s[rip]\n",node -> name);
 			printf("	sub rsp, 4\n");
 			printf("	mov DWORD PTR [rsp], eax\n");
 			rsp_counter += 4;
 		}
 		else
 		{
+			printf("	mov rax, QWORD PTR %s[rip]\n",node -> name);
 			printf("	push rax\n");
 			rsp_counter += 8;
 		}
-		return;
-	}
-
-	case ND_GLVALCALL://調整=====================
-	{
-		printf("	mov rax, QWORD PTR %s[rip]\n",node -> name);
-		printf("	push rax\n");
 		return;
 	}//調整=====================
 

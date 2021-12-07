@@ -304,7 +304,7 @@ Node_t *new_node_ident(Token_t**token){
 			return node;
 
 		}
-		else if( glvar ){
+		else if( glvar ){// global var
 
 			node -> kind = ND_GLVALCALL;
 			
