@@ -702,8 +702,19 @@ void generate(Node_t *node){
 
 	case ND_GLVALCALL://調整=====================
 	{
-		printf("	mov rax, QWORD PTR %s[rip]\n",node -> name);
-		printf("	push rax\n");
+		if(node -> tp && node -> tp -> size < 5 && node -> tp -> size > 1)
+		{
+			printf("	mov eax, DWORD PTR %s[rip]\n",node -> name);
+			printf("	sub rsp, 4\n");
+			printf("	mov DWORD PTR [rsp], eax\n");
+			rsp_counter += 4;
+		}
+		else
+		{
+			printf("	mov rax, QWORD PTR %s[rip]\n",node -> name);
+			printf("	push rax\n");
+			rsp_counter += 8;
+		}
 		return;
 	}//調整=====================
 
