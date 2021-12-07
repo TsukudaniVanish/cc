@@ -483,8 +483,12 @@ Node_t *primary(Token_t **);
 //変数情報をコンパイルする
 void gen_lval(Node_t *node);
 
+
 //関数呼びたしをコンパイル
 void gen_function_call(Node_t *node);
+
+//関数の引数をセットする
+void argment_set(int,long int,long int);
 
 //関数定義をコンパイル
 void gen_function_def(Node_t *node);
@@ -492,6 +496,57 @@ void gen_function_def(Node_t *node);
 //配列自身の先頭をさすポインタをセット
 void set_array_header();
 
+/**
+ * @brief Get the register name
+ * 
+ * @param int 
+ * @return char* 
+ */
+char *get_registername(char *,long int);
+
+/**
+ * @brief Get the pointer prefix
+ * 
+ * @param long_int size 
+ * @return char* 
+ */
+char *get_pointerpref(long int size);
+
+/**
+ * @brief rsp の値を引いてrsp の示すアドレスにストア
+ * 
+ * @param long_int size
+ * @param char* register name
+ * @return void
+ */
+void push_stack(int long size,char *);
+
+/**
+ * @brief rsp の値を足してrspの示すアドレスからロード
+ * 
+ * @param long_int size
+ * @param char* register name
+ * @return void 
+ */
+void pop_stack(long int size,char *);
+/**
+ * @brief register の値をストレージにストア
+ * 
+ * @param  char* name : 変数名
+ * @param char* register name
+ * @param long_int size
+ */
+void gen_global_store(char*,char*,long int);
+
+/**
+ * @brief registerの値の値をストレージにストア
+ * 
+ * @param  char* name : 変数名
+ * @param char* register name
+ * @param long_int size
+ * @param long_int index
+ */
+void gen_global_store_arr(char*,char*,long int,long int);
 //式をコンパイル
 void gen_formula(Node_t*);
 
