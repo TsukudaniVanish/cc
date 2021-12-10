@@ -152,13 +152,38 @@ Token_t *tokenize(char *p){//入力文字列
 			p++;
 			continue;
 
-		}else if ( is_keyword(p) !=TK_EOF ){
+		}
+		else if(*p == '"')
+		{//文字列リテラル
+			cur = new_token(TK_PUNCTUATOR,cur,p);
+			cur -> length = 1;
+			char *q = p;
+			while (*(q+1) != '"')
+			{
+				q++;
+			}
+			cur = new_token(TK_STRINGITERAL,cur,p+1);
+			cur -> length = q-p;
+			p = q+1;
+			if(*p != '"')
+			{
+				fprintf(stderr,"文字列イテラルが閉じていません");
+				exit(1);
+			}
+			cur = new_token(TK_PUNCTUATOR,cur,p);
+			cur -> length = 1;
+			p++;
+			continue;	
+		}
+		else if ( is_keyword(p) !=TK_EOF )
+		{//キーワード
 			
 			cur = new_keyword(is_keyword(p),cur,p);
-			p+= cur -> length;
+			p += cur -> length;
 			continue;
 
-		}else if(is_ope_or_pun(p)){
+		}else if(is_ope_or_pun(p))
+		{//演算子または区切り文字
 			
 			cur = new_token(TK_OPERATOR,cur,p);
 			cur -> length =is_ope_or_pun(p);
@@ -169,14 +194,15 @@ Token_t *tokenize(char *p){//入力文字列
 			p += cur -> length;
 			continue;
 
-		}else if(isdigit(*p)){
+		}else if(isdigit(*p))
+		{//数字
 
 
 			cur = new_token(TK_CONST,cur,p);
 			cur -> val = strtol(p,&p,10);
 			continue;
 		
-		}else if(*p != ';'){
+		}else if(*p != ';'){//識別子
 			
 
 			cur = new_token(TK_IDENT,cur,p);

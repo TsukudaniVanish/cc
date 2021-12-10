@@ -69,8 +69,9 @@ int main(int argc, char **argv){
 
 //アセンブリ前半を出力
 	printf(".intel_syntax noprefix\n");
+	if(string_iter)
+		set_stringiter();
 	printf("	.data\n");
-	
 
 	int funcflag = 1;
 	//先頭の式からコード生成
@@ -81,6 +82,7 @@ int main(int argc, char **argv){
 		{
 			printf("	.text\n");
 			printf("	.global main\n");
+
 			funcflag = 0;
 		}
 		generate(code[i]);
