@@ -60,6 +60,10 @@ struct lvar{
 	Lvar *next;
 	char *name;
 	int length;
+	/**
+	 * @brief ローカル変数の時 : rbp からのオフセット 文字列の時はラベル番号
+	 * 
+	 */
 	long int offset;
 	Type *tp;
 };
@@ -540,6 +544,11 @@ void push_stack(int long size,char *);
  * @return void 
  */
 void pop_stack(long int size,char *);
+/**
+ * @brief 文字列イテラルをセットする
+ * 
+ */
+void set_stringiter();
 /**
  * @brief register の値をストレージにストア
  * 

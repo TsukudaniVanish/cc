@@ -199,6 +199,14 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 				}
 				return node;
 			}
+			else if(l -> kind == ND_LVAL && r -> kind == ND_STRINGITERAL)
+			{
+				if(l -> tp -> Type_label = TP_POINTER && l -> tp -> pointer_to ->Type_label == TP_CHAR)
+				{
+					node -> tp = l -> tp;
+					return node;
+				}
+			}
 
 		}
 		else if( l -> tp -> size < 9 && r -> tp -> size < 9)
@@ -476,11 +484,22 @@ Node_t *new_node_stringiter(Token_t ** token)
 {
 	Node_t * node = calloc(1,sizeof(Node_t));
 	node -> kind = ND_STRINGITERAL;
+	node -> tp = new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8);
 	
 	Lvar *iter = calloc(1,sizeof(Lvar));
 	iter -> name = calloc((*token) -> length , sizeof(char) );
 	iter -> name = memcpy(iter -> name , (*token) -> str , (*token) -> length);
 	iter -> next = string_iter;
+	if(string_iter)
+	{
+		iter -> offset =  string_iter -> offset;
+	}
+	else
+	{
+		iter -> offset = 0;
+	}
+	node -> name = iter -> name;
+	node -> offset = iter -> offset;
 	string_iter = iter;
 
 	(*token) = (*token) -> next;

@@ -117,6 +117,22 @@ void pop_stack(int long size,char *register_name){
 
 
 
+void set_stringiter()
+{
+	Lvar *iter = string_iter;
+	int i = 0;
+	while (iter)
+	{
+		
+		printf("	.section	.rodata\n");
+		printf(".LC%d:\n",i);
+		printf("	.string \"%s\"\n",iter -> name);
+		
+		iter = iter -> next;
+		i++;
+	}
+	
+}
 
 
 void set_array_header(){
@@ -486,20 +502,25 @@ void generate(Node_t *node){
 	{
 		return;
 	}
-	else if( node -> kind == ND_STRINGITERAL)
-	{
-		return;
-	}
 
 	
 	//ノード末端付近==========================================================
 	switch(node -> kind) {
 	case ND_NUM:
-
+	
 		printf("	sub rsp , 4\n");
 		printf("	mov DWORD PTR [rsp], %d\n",node ->val);
 		rsp_counter+= 4;
 		return;
+
+	case ND_STRINGITERAL:
+
+		//printf("	sub rsp, 8\n");
+		printf("	lea rax, .LC%ld[rip]\n",node -> offset);
+		printf("	push rax\n");
+		rsp_counter += 8;
+		return;
+
 	case ND_ASSIGN:
 	{
 		long int size[2];
