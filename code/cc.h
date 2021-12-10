@@ -21,7 +21,7 @@ typedef struct type Type;
 struct type{
 	enum{
 
-		TP_INT,//int 型 8bite
+		TP_INT = 0,//int 型 8bite
 		TP_CHAR,//char 型
 		TP_POINTER,// pointer 型 8bite
 		TP_ARRAY,// 配列型
@@ -63,7 +63,7 @@ struct lvar{
 	long int offset;
 	Type *tp;
 };
-
+Lvar *string_iter;
 Lvar *global;
 
 /**
@@ -100,10 +100,11 @@ typedef enum{
 	ND_SUB, // <-> -
 	ND_MUL, // <-> *
 	ND_DIV, // <-> /
-	ND_NUM, // <-> integer
 	ND_ASSIGN, // <-> = 
 	ND_ADDR, //<-> * dereference
 	ND_DEREF,// <-> & reference
+	ND_NUM, // <-> integer
+	ND_STRINGITERAL,
 	//型=========================
 	ND_GLVALDEF,// グローバル変数定義
 	ND_GLVALCALL,//
@@ -192,6 +193,7 @@ typedef enum{
 	TK_CONST=1, //整数
 	TK_OPERATOR=2, // 演算子
 	TK_PUNCTUATOR=3,// 区切り文字
+	TK_STRINGITERAL,//文字列
 	//key words=====================================================
 	TK_IF=100,//制御構文
 	TK_ELSE,
@@ -416,6 +418,15 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r);
  * @return Node_t* 
  */
 Node_t *new_node_num(int val);
+
+/**
+ * @brief 文字列リテラルをパースする
+ * 
+ * @param Token_t** token
+ * 
+ */
+Node_t* new_node_stringiter(Token_t**);
+
 /**
  * @brief 識別子の末端ノードを作る
  * 

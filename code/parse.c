@@ -472,6 +472,22 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 	}
 }
 
+Node_t *new_node_stringiter(Token_t ** token)
+{
+	Node_t * node = calloc(1,sizeof(Node_t));
+	node -> kind = ND_STRINGITERAL;
+	
+	Lvar *iter = calloc(1,sizeof(Lvar));
+	iter -> name = calloc((*token) -> length , sizeof(char) );
+	iter -> name = memcpy(iter -> name , (*token) -> str , (*token) -> length);
+	iter -> next = string_iter;
+	string_iter = iter;
+
+	(*token) = (*token) -> next;
+	expect("\"",token);
+	return node;
+}
+
 Node_t *new_node_globalident(Token_t**token){
 
 
@@ -662,7 +678,10 @@ Node_t *new_node_ref_deref(Token_t **token){
  * 			| ('+' | '-' )? primary
  * 			| '*' unitary
  * 			| '&' unitary
- * primary = num | type? indent  ( "["add"]" )? | "(" assign ")"
+ * primary = num 
+ * 			| type? indent  ( "["add"]" )? 
+ * 			| "(" assign ")"
+ * 			| "\"" strig iteal "\""
  *
  * 終端記号:
  * 		num
@@ -919,17 +938,28 @@ Node_t *primary(Token_t **token){
 		node = assign(token);
 		expect(")",token);// ')'かcheck
 
-	}else if( (*token)-> kind == TK_IDENT || ( (*token) -> kind >299) ){
+	}else if( (*token)-> kind == TK_IDENT || ( (*token) -> kind >299) )
+	{
 
 		node = new_node_ident(token);
-	}else{
-
-
+	}
+	else if(find("\"",token))
+	{
+		node = new_node_stringiter(token);
+	}
+	else
+	{
 		node = new_node_num(expect_num(token));
 	}
 	if(find("[",token)){// a[...] -> *(a + ...)
 
-
+		if( node -> tp -> Type_label !=TP_POINTER)
+		{//識別子を読んでいるかチェック
+			fprintf(stderr,"N kind : %d",node -> kind);
+			fprintf(stderr,"Type label : %d",node -> tp -> Type_label);
+			fprintf(stderr,"識別子がありません");
+			exit(1);
+		}
 		Node_t *node_top = calloc(1,sizeof(Node_t));
 		node_top -> kind = ND_DEREF;
 		if(node -> tp -> pointer_to -> Type_label == TP_ARRAY)

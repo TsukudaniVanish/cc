@@ -176,6 +176,8 @@ assert 0 'char a;int i = 0; return i'
 
 assert 3 'char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y'
 
+assert 10 '"hi hello"; int a = 10; return a'
+
 echo  "Error test"
 assert_e '20+++3;'
 

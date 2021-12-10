@@ -483,7 +483,13 @@ void gen_formula(Node_t *node){
 void generate(Node_t *node){
 
 	if(!node)
+	{
 		return;
+	}
+	else if( node -> kind == ND_STRINGITERAL)
+	{
+		return;
+	}
 
 	
 	//ノード末端付近==========================================================
