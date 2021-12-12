@@ -39,24 +39,29 @@ void error_at(char *loc,char *fmt,...){
 
 
 int main(int argc, char **argv){
+
 	
-	if( argc != 2 ){
 
-
-		fprintf(stderr,"引数の個数が正しくありません\n");
-		return 1;
+	char *buffer;
+	if( strncmp(argv[1],"-f",2) == 0)
+	{
+		buffer = file_open(argv[2]);
 	}
+	else
+	{
+		//グローバル変数に代入　エラー出力用
+		user_input = argv[1];
+		buffer = argv[1];
+	}
+		
+	
 
-	//グローバル変数に代入　エラー出力用
-	user_input = argv[1];
-	
-	
 
 	// fuction ごとのコード
 	Node_t *code[100];
 	
 	//入力をトークン列に変換
-	Token_t *token = tokenize(argv[1]);
+	Token_t *token = tokenize(buffer);
 
 
 	//token を抽象構文木に変換

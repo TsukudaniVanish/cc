@@ -227,14 +227,20 @@ struct token {
 
 };
 
-
+//file.c====================================================
+/**
+ * @b 指定されたファイルの内容を返す
+ * @param char* path
+ * @return char*
+ */
+char *file_open(char *);
+//====================================================
 
 
 //main.c=====================================================
 
 /**
- * @b
- * エラーをはく関数 printfと同じ引数をとる
+ * @b エラーをはく関数 printfと同じ引数をとる
  * @param char_* location
  * @param char_* format
  * @param ... 
@@ -248,6 +254,14 @@ void error_at(char *,char *,...);
 /*
  * tokenize.c=====================================================
  */
+
+/**
+ * @brief 空白をスキップする
+ * 
+ * @param char* p 
+ * @return char* 
+ */
+char *skip(char * p);
 
 /**
  * @brief TK_Type... のメモリサイズを返す

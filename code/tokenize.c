@@ -33,6 +33,15 @@ bool is_alnum(char c){
 }
 
 
+char *skip(char * p)
+{
+	while (' ' == *p || '\t' == *p || '\n' == *p || '\r' == *p || '\f' == *p)
+	{
+		p++;
+	}
+	return p;	
+}
+
 
 
 int is_ope_or_pun(char *p){
@@ -143,17 +152,11 @@ Token_t *tokenize(char *p){//入力文字列
 	head.next = NULL;
 	Token_t *cur = &head;
 
-	while(*p){
+	while(*p != '\0'){
 
 
-		if( isspace(*p)  ){//空白 の時はスキップ
-
-
-			p++;
-			continue;
-
-		}
-		else if(*p == '"')
+		p = skip(p);
+		if(*p == '"')
 		{//文字列リテラル
 			cur = new_token(TK_PUNCTUATOR,cur,p);
 			cur -> length = 1;
