@@ -23,7 +23,7 @@ struct type{
 
 		TP_INT = 0,//int 型 8bite
 		TP_CHAR,//char 型
-		TP_POINTER,// pointer 型 8bite
+		TP_POINTER=10,// pointer 型 8bite
 		TP_ARRAY,// 配列型
 
 	}Type_label;
@@ -419,6 +419,22 @@ bool at_eof(Token_t **token);
  * @return Token_t* 
  */
 Token_t *consume_ident(Token_t **token);
+
+/**
+ * @brief 型チェックをする関数 両辺が違う方の時は2を返す
+ * 
+ * @param Node_t node
+ * @return int 
+ */
+int typecheck(Node_t *node);
+/**
+ * @brief 暗黙の型変換をする
+ * 
+ * @param Node_t* node
+ * @return Type* 
+ */
+Type *imptypechast(Node_t*);
+
 
 /**
  * @brief 

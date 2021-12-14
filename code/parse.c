@@ -102,12 +102,10 @@ Type* new_tp(int label,Type* pointerto,long int size){
 Lvar *find_lvar(char *name,int length,Lvar **locals){//array は飛ばす
 	
 
-	for(Lvar *var = *locals; var;var = var -> next){
-
-
-		if( var -> length == length && !memcmp( name, var ->name,length )  ){
-
-
+	for(Lvar *var = *locals; var;var = var -> next)
+	{
+		if( var -> length == length && !memcmp( name, var ->name,length))
+		{
 			return var; 
 		}
 	}
@@ -121,18 +119,13 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 	lvar -> name = name;
 	lvar -> length = length;
 	lvar -> tp = tp;
-	
-	
 
-
-	if( next ){
-
-
+	if( next )
+	{
 		lvar -> offset = next -> offset +(lvar -> tp -> size);
-
-	}else{
-
-
+	}
+	else
+	{
 		lvar -> offset = (lvar -> tp->size);
 	}
 	return lvar;
@@ -150,6 +143,80 @@ Token_t *consume_ident(Token_t **token){
 
 
 
+int typecheck(Node_t *node){
+
+	Type *tp_l , *tp_r;
+	if(node -> left)
+	{
+		tp_l = node -> left -> tp;
+	}
+	else
+	{
+		return 0;
+	}
+	if(node -> right)
+	{
+		tp_r = node -> right -> tp;
+	}
+	else
+	{
+		return 0;
+	}
+
+	if( tp_l -> Type_label == tp_r -> Type_label)
+		return 1;
+
+	return 2;
+}
+
+
+Type *imptypechast(Node_t *node)
+{
+	int tp_l,tp_r;
+
+	switch (typecheck(node))
+	{
+	case 0:
+		return NULL;
+		break;
+
+	case 1:
+		return node -> left -> tp;
+	
+	default:
+		tp_l = node -> left -> tp -> Type_label;
+		tp_r = node -> right -> tp -> Type_label;
+		break;
+	}
+
+	
+
+	if(tp_l == TP_POINTER)
+	{
+		if(tp_r == TP_INT)
+		{
+			return node -> left -> tp;
+		}
+		return NULL;
+	}
+	else if(tp_r == TP_POINTER)
+	{
+		if(tp_l == TP_INT)
+		{
+			return node -> right -> tp;
+		}
+		return NULL;
+	}
+	if(tp_l < 10 && tp_r < 10)
+	{
+		return tp_l < tp_r ? node -> left -> tp  : node -> right -> tp;
+	}
+
+	
+}
+
+
+
 
 //Node_t を作る関数
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
@@ -160,78 +227,22 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	node -> left = l;
 	node -> right =r;
 	//型チェック
-	if( l && ! l -> tp){
-
-
-		fprintf(stderr,"型が未定義です\n");
-		exit(1);
-	}else if ( r  && ! r -> tp){
-
-
-		fprintf(stderr,"型が未定義です\n");
+	if(typecheck(node) == 0)
+	{
+		fprintf(stderr,": %d:型エラー\n",typecheck(node));
 		exit(1);
 	}
-	if ( l && r &&l -> tp -> Type_label != r -> tp -> Type_label){// 数値型とポインタの演算
-
-		if( l -> tp -> Type_label == TP_POINTER || r -> tp -> Type_label == TP_POINTER){
-
-		
-			if(l -> tp -> Type_label != TP_POINTER || r -> tp -> Type_label != TP_POINTER ){
-
-
-				if( l -> tp -> Type_label == TP_POINTER && r -> tp -> size < 9){
-					
-					
-					node -> tp = l -> tp;
-					node -> right -> val = node -> right -> val * ( l -> tp -> pointer_to -> size);
-				
-				}
-				else if(r -> tp -> Type_label == TP_POINTER && l -> tp -> size < 9)
-				{
-
-					node -> tp = r -> tp;
-					node -> left -> val = node -> right -> val * (r -> tp -> pointer_to -> size);
-				}
-				else
-				{
-					fprintf(stderr,"Pointer型と演算できません\n");
-					exit(1);
-				}
-				return node;
-			}
-			else if(l -> kind == ND_LVAL && r -> kind == ND_STRINGITERAL)
-			{
-				if(l -> tp -> Type_label = TP_POINTER && l -> tp -> pointer_to ->Type_label == TP_CHAR)
-				{
-					node -> tp = l -> tp;
-					return node;
-				}
-			}
-
-		}
-		else if( l -> tp -> size < 9 && r -> tp -> size < 9)
-		{//char と INT　の演算は許す
-			if( l -> tp -> size > r -> tp -> size)
-			{
-				node -> tp = l -> tp;
-			}
-			else
-			{
-				node -> tp = r -> tp;
-			}
-			return node;
-		}
-		else
-		{
-
-			fprintf(stderr,"型が一致しません\n");
-			exit(1);
-		}
+	
+	node -> tp = imptypechast(node);
+	if(node -> tp)
+	{
+		return node;
 	}
-	if(l)
-		node -> tp = l -> tp;
-
-	return node;
+	else
+	{
+		fprintf(stderr,": %d:型エラー\n",typecheck(node));
+		exit(1);
+	}
 }
 
 Node_t *new_node_ident(Token_t**token){
@@ -984,7 +995,8 @@ Node_t *primary(Token_t **token){
 		if(node -> tp -> pointer_to -> Type_label == TP_ARRAY)
 		{
 			node_top -> tp = node -> tp -> pointer_to -> pointer_to;
-		}else
+		}
+		else
 		{
 			node_top -> tp = node -> tp -> pointer_to;
 		}
