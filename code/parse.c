@@ -133,6 +133,22 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 
 
 
+void Lvar_add(Lvar **table , Lvar *lvar)
+{
+	if(*table)
+	{
+		if(lvar -> next != *table)
+		{//更新可能か確認
+			fprintf(stderr,"識別子が既に定義されています\n");
+			exit(1);
+		}
+	}
+	*table = lvar;
+	return;
+}
+
+
+
 
 
 Token_t *consume_ident(Token_t **token){
@@ -268,7 +284,7 @@ Node_t *new_node_ident(Token_t**token){
 
 
 		node = calloc(1,sizeof(Node_t));
-		node -> tp = new_tp(TP_INT,NULL,4);//後出かけ
+		node -> tp = find_lvar(ident -> str,ident -> length,&global) -> tp;//後出かけ
 		node -> kind = ND_FUNCTIONCALL;
 		node -> val = 0; // 引数の個数
 
@@ -287,7 +303,7 @@ Node_t *new_node_ident(Token_t**token){
 
 			node_end -> kind = ND_ARGMENT;
 			Node_t *node_rightend = calloc(1,sizeof(Node_t));
-			node_end ->left = unitary(token);
+			node_end ->left = add(token);
 			node_end ->right = node_rightend;
 			node_end = node_rightend;
 			find(",",token);
@@ -304,12 +320,13 @@ Node_t *new_node_ident(Token_t**token){
 		
 
 		node = calloc(1,sizeof(Node_t));
-		node -> kind = ND_LVAL;
+		
 
 		Lvar *lvar = find_lvar( ident -> str,ident -> length,&(nametable->locals) );
 		Lvar *glvar = find_lvar(ident -> str,ident -> length,&global);
 
 		if(lvar){
+			node -> kind = ND_LVAL;
 
 			node -> tp = lvar -> tp;
 
@@ -323,7 +340,7 @@ Node_t *new_node_ident(Token_t**token){
 			return node;
 
 		}
-		else if( glvar ){// global var
+		else if( glvar ){// global var call 
 
 			node -> kind = ND_GLVALCALL;
 			
@@ -346,11 +363,12 @@ Node_t *new_node_ident(Token_t**token){
 
 		
 		}else{// local var def =========================
-
+		
+			node -> kind = ND_LVAL;
 
 			if( flag_def == 0 ){
 
-
+				fprintf(stderr,"%s:",(*token) -> str);
 				error_at(ident-> str,"型宣言がありません\n");
 			}
 
@@ -372,12 +390,14 @@ Node_t *new_node_ident(Token_t**token){
 
 			}
 			
-			nametable -> locals = lvar;
+			Lvar_add(&(nametable -> locals),lvar);
 			node -> val = 0;
 			node -> offset = lvar -> offset;
 			node ->tp = lvar -> tp;
-			if( (*token) -> kind != TK_OPERATOR ){
-				Node_t *top = new_node(ND_ASSIGN,node,node);
+			if((*token) -> kind == TK_OPERATOR)
+			{
+				(*token) = (*token) -> next;
+				Node_t *top = new_node(ND_ASSIGN,node,assign(token));
 				return top;
 			}
 			return node;
@@ -511,7 +531,7 @@ Node_t *new_node_stringiter(Token_t ** token)
 	}
 	node -> name = iter -> name;
 	node -> offset = iter -> offset;
-	string_iter = iter;
+	Lvar_add(&(string_iter),iter);
 
 	(*token) = (*token) -> next;
 	expect("\"",token);
@@ -533,6 +553,10 @@ Node_t *new_node_globalident(Token_t**token){
 	consume_ident(token);
 
 	if(find("(",token)){//関数定義
+
+		//関数をname table に登録
+		Lvar_add(&global, new_lvar(node ->tp,node -> name,strlen(node -> name),global));
+		
 
 		if(nametable != 0){//関数の変数情報更新
 
@@ -599,7 +623,7 @@ Node_t *new_node_globalident(Token_t**token){
 				lvar = new_lvar(node -> tp,node -> name,strlen(node -> name),global);
 			}
 			
-			global = lvar;
+			Lvar_add(&global , lvar);
 		}
 
 		node -> tp = lvar -> tp;
@@ -698,7 +722,7 @@ Node_t *new_node_ref_deref(Token_t **token){
  * 		| "while"  "(" assign ")" stmt
  * 		| "for"  "(" assign?; assign? ; assign? ")"stmt
  * 		| "return" assign ";"
- * 		| ...
+ * 		
  * assign = equality ("=" assign )?
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
@@ -745,7 +769,7 @@ Node_t *func(Token_t **token){
 
 	if ((*token) -> kind <= 299 ){
 
-			fprintf(stderr,"型宣言がありません");
+			fprintf(stderr,"%s : 型宣言がありません",(*token) -> str);
 			exit(1);
 
 	}

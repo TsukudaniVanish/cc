@@ -9,6 +9,8 @@ int sizeof_token(int kind){
 
 	switch (kind)
 	{
+	case TK_TypeVOID:
+		return 0;
 	case TK_TypeINT:
 		
 		return 4;
@@ -64,12 +66,43 @@ int is_ope_or_pun(char *p){
 }
 
 
+int is_commnet(char *p)
+{
+	if(*p == '/')
+	{
+		return strncmp(p,"/*",2) ? 0 : 1;
+	}
+	return 0;
+}
+
+
+
+
+void comment_skip(char **p)
+{
+	while (1)
+	{
+		if( **p == '*' && !strncmp(*p,"*/",2))
+		{
+			*p += 2;
+			return;
+		}
+		*p += 1;
+	}
+	
+}
+
+
 
 Token_kind is_keyword(char *p){
 
 	
-	char *assign[] = { "return","sizeof","while","else","for","if","int","char",NULL};
-	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,TK_TypeINT,TK_TypeCHAR,TK_EOF};
+	char *assign[] = { "return","sizeof","while","else","for","if",
+						"void","int","char",
+						NULL};
+	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,
+								TK_TypeVOID,TK_TypeINT,TK_TypeCHAR,
+								TK_EOF};
 
 	Token_kind *v = assign_kind;
 
@@ -178,6 +211,10 @@ Token_t *tokenize(char *p){//入力文字列
 			p++;
 			continue;	
 		}
+		else if(is_commnet(p))
+		{
+			comment_skip(&p);
+		}
 		else if ( is_keyword(p) !=TK_EOF )
 		{//キーワード
 			
@@ -233,7 +270,7 @@ Token_t *tokenize(char *p){//入力文字列
 			cur -> length =1;
 			continue;
 		}
-		error_at(cur -> str,"tokenizeできません。");
+		//error_at(cur -> str,"tokenizeできません。");
 	}
 	new_token(TK_EOF,cur,p);
 	return head.next;

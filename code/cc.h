@@ -20,8 +20,8 @@ typedef struct type Type;
 
 struct type{
 	enum{
-
-		TP_INT = 0,//int 型 8bite
+		TP_VOID = 0,
+		TP_INT ,//int 型 8bite
 		TP_CHAR,//char 型
 		TP_POINTER=10,// pointer 型 8bite
 		TP_ARRAY,// 配列型
@@ -206,7 +206,8 @@ typedef enum{
 	TK_RETURN,
 	TK_SIZEOF=200,// 演算子としてふるまうので別にする
 	//type of variable =====================================================
-	TK_TypeINT=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeVOID=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeINT,
 	TK_TypeCHAR,
 	//=====================================================
 	TK_EOF=-1, //終了記号
@@ -371,6 +372,14 @@ Lvar *find_lvar(char *,int,Lvar **locals);
 Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
 /**
+ * @brief テーブルに識別子を追加する
+ * 
+ * @param Lvar** table
+ * @param Lvar* lvar
+ */
+void Tables_add(Lvar**,Lvar *);
+
+/**
  * @b
  * token -> strとstring が一致するか見る
  * @param char_* string
@@ -411,6 +420,7 @@ int expect_num(Token_t **token);
  * @return bool 
  */
 bool at_eof(Token_t **token);
+
 
 /**
  * @brief 

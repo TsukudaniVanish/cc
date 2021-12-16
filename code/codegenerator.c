@@ -242,7 +242,7 @@ void gen_function_call(Node_t *node){
 			printf("	sub rsp , %ld\n", 16 - rsp_counter % 16);
 		}
 		printf("	call %s\n",node -> name);
-		rsp_counter += 8;
+		printf("	add rsp, %ld\n", 16 - rsp_counter %16);
 
 
 		push_stack(node -> tp -> size,"rax");
@@ -487,6 +487,8 @@ void gen_formula(Node_t *node){
 		}
 		printf("	idiv %s\n",register_name[1]);
 		break;
+	default:
+		return;
 	}
 
 	push_stack(size[0],"rax");
