@@ -351,6 +351,15 @@ Token_t *tokenize(char *p);
 Type *new_tp(int,Type*,long int size);
 
 /**
+ * @brief token を読み込んで型を判定する
+ * 
+ * @param char** 識別子名を代入する
+ * @param Token_t** token
+ * @return Type*
+ */
+Type *read_type(char ** name,Token_t **token);
+
+/**
  * @b
  * table から 識別子を検索する
  * @param char* name
@@ -424,11 +433,11 @@ bool at_eof(Token_t **token);
 
 /**
  * @brief 
- * 識別子を読み込んで token を次に送る
+ * token をさすポインタを返して token を次に送る
  * @param token 
  * @return Token_t* 
  */
-Token_t *consume_ident(Token_t **token);
+Token_t *consume(Token_t **token);
 
 /**
  * @brief 型チェックをする関数 両辺が違う方の時は2を返す
@@ -445,7 +454,30 @@ int typecheck(Node_t *node);
  */
 Type *imptypechast(Node_t*);
 
+/**
+ * @brief 変数宣言か判定する
+ * 
+ * @param token 
+ * @return int 
+ */
+int is_lvardec(Token_t **token);
 
+/**
+ * @brief 変数宣言を処理する
+ * 
+ * @param Type* tp 
+ * @param char* name 
+ * @param int len 
+ * @param Lvar** tabele 
+ */
+Lvar *declere_local_var(Type *tp, char *name,int len ,Lvar **tabele);
+
+/**
+ * @brief 新しいノードを作る
+ * 
+ * @return Node_t* 
+ */
+Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name);
 /**
  * @brief 
  * 新しいノードを作る
@@ -520,6 +552,7 @@ void program(Token_t **,Node_t **);
  */
 Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
+Node_t *Lvardec(Token_t**);
 Node_t *assign(Token_t **);
 Node_t *equality(Token_t **);
 Node_t *relational(Token_t **);

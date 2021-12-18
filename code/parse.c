@@ -96,6 +96,33 @@ Type* new_tp(int label,Type* pointerto,long int size){
 	return tp;
 }
 
+Type *read_type(char **name,Token_t **token)
+{
+	Token_t *buf = consume(token);
+
+	if((*token) -> kind != TK_IDENT)
+	{
+		fprintf(stderr,"識別子名がありません");
+		exit(1);
+	}
+
+	if(*name)
+		free(*name);
+	*name = calloc((*token) -> length, sizeof(char));
+	memcpy(*name,(*token) -> str, (*token) -> length);
+
+	consume(token);
+
+	if(find("[",token))
+	{//配列定義
+		int array_size = expect_num(token) * (buf -> tp -> size);
+		expect("]",token);
+		return new_tp(TP_ARRAY,buf -> tp,array_size);
+	}
+	return buf -> tp;
+
+}	
+
 
 
 
@@ -151,7 +178,7 @@ void Lvar_add(Lvar **table , Lvar *lvar)
 
 
 
-Token_t *consume_ident(Token_t **token){
+Token_t *consume(Token_t **token){
 	Token_t *tok = *token;
 	*token = (*token)-> next;
 	return tok;
@@ -231,6 +258,43 @@ Type *imptypechast(Node_t *node)
 	
 }
 
+int is_lvardec(Token_t **token)
+{
+	if((*token) -> kind > 299 )
+		return 1;
+	return 0;
+}
+
+
+Lvar *declere_local_var(Type *tp, char *name,int len ,Lvar **tabele)
+{
+	Lvar *lvar = find_lvar(name,len,tabele);
+	if(lvar && lvar -> tp -> Type_label != TP_ARRAY)
+		return NULL;
+	lvar = new_lvar(tp,name,len,*tabele);
+	*tabele = lvar;
+	if(lvar -> tp -> Type_label == TP_ARRAY)
+	{
+		return declere_local_var(new_tp(TP_POINTER,lvar -> tp -> pointer_to,8),lvar -> name, lvar -> length,tabele);
+	}
+	return lvar;
+}
+
+
+
+
+Node_t *new_Node_t(Node_kind kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name)
+{
+	Node_t *node = calloc(1,sizeof(Node_t));
+	node -> kind = kind;
+	node -> left = l;
+	node -> right = r;
+	node -> val = v;
+	node -> offset = off;
+	node -> tp = tp;
+	node -> name = name;
+	return node;
+}
 
 
 
@@ -238,10 +302,7 @@ Type *imptypechast(Node_t *node)
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 
 
-	Node_t *node=calloc(1,sizeof( Node_t ));
-	node ->kind = kind;
-	node -> left = l;
-	node -> right =r;
+	Node_t *node = new_Node_t(kind,l,r,0,0,NULL,NULL);
 	//型チェック
 	if(typecheck(node) == 0)
 	{
@@ -274,7 +335,7 @@ Node_t *new_node_ident(Token_t**token){
 		(*token) = (*token)->next; 
 	}
 
-	Token_t *ident = consume_ident(token);//識別子読み込み
+	Token_t *ident = consume(token);//識別子読み込み
 	Node_t *node;
 
 	/**
@@ -362,45 +423,10 @@ Node_t *new_node_ident(Token_t**token){
 
 
 		
-		}else{// local var def =========================
-		
-			node -> kind = ND_LVAL;
-
-			if( flag_def == 0 ){
-
-				fprintf(stderr,"%s:",(*token) -> str);
-				error_at(ident-> str,"型宣言がありません\n");
-			}
-
-			
-			//is array?====================================================
-			if ( find("[",token)){
-
-				Type *top_tp = new_tp(TP_ARRAY , tp , expect_num(token) * (tp -> size));
-				Lvar *array_top = new_lvar(top_tp , ident -> str , ident -> length , nametable -> locals);
-				expect("]",token);
-				
-				lvar = new_lvar(new_tp(TP_POINTER,tp, 8 ),ident -> str,ident -> length,array_top);
-
-				
-
-			}else{//====================================================
-
-				lvar = new_lvar(tp , ident -> str , ident -> length , nametable -> locals);
-
-			}
-			
-			Lvar_add(&(nametable -> locals),lvar);
-			node -> val = 0;
-			node -> offset = lvar -> offset;
-			node ->tp = lvar -> tp;
-			if((*token) -> kind == TK_OPERATOR)
-			{
-				(*token) = (*token) -> next;
-				Node_t *top = new_node(ND_ASSIGN,node,assign(token));
-				return top;
-			}
-			return node;
+		}else
+		{// local var def なし=========================
+			fprintf(stderr,"不明な識別子");
+			exit(1);
 		}//=========================
 	}
 }
@@ -480,9 +506,16 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 			
 			Node_t *init_condition = calloc(1,sizeof(Node_t));
 			init_condition -> kind = ND_FORINITCONDITION;
-			init_condition ->left = assign(token);
-
-			expect(";",token);
+			if(is_lvardec(token))
+			{
+				init_condition -> left = Lvardec(token);
+				expect(";",token);
+			}
+			else
+			{
+				init_condition -> left = assign(token);
+				expect(";",token);
+			}
 
 			init_condition -> right = assign(token);
 
@@ -550,7 +583,7 @@ Node_t *new_node_globalident(Token_t**token){
 	//名前読み込み
 	node -> name = calloc(((*token)->length),sizeof(char));
 	memcpy(node -> name,(*token)->str,(*token)-> length );
-	consume_ident(token);
+	consume(token);
 
 	if(find("(",token)){//関数定義
 
@@ -584,7 +617,7 @@ Node_t *new_node_globalident(Token_t**token){
 			node -> val ++;
 
 			left_argnames -> kind = ND_ARGMENT;
-			left_argnames ->left = primary(token);
+			left_argnames ->left = Lvardec(token);
 
 			Node_t *node_rightend = calloc(1,sizeof(Node_t));
 			left_argnames -> right = node_rightend;
@@ -597,7 +630,7 @@ Node_t *new_node_globalident(Token_t**token){
 			fprintf(stderr,"引数の個数が6個より大きいです");
 			exit(1);
 		}
-		left_argnames -> kind = ND_BLOCKEND;//引数読み込み修了
+		left_argnames -> kind = ND_BLOCKEND;//引数読み込み終了
 		
 		node -> right = stmt(token);// 定義本文
 		return node;
@@ -716,13 +749,14 @@ Node_t *new_node_ref_deref(Token_t **token){
  *
  * program = func*
  * func = ident "(" (type? ident)*  ")"  stmt 
- * stmt = assign";" 
+ * stmt = assign";"
+ * 		| lvardec ";"
  * 		| "{" stmt* "}"
  * 		| "if" "(" assign  ")" stmt ( "else" stmt  )?
  * 		| "while"  "(" assign ")" stmt
  * 		| "for"  "(" assign?; assign? ; assign? ")"stmt
  * 		| "return" assign ";"
- * 		
+ * lvardec = Type ident ( "[" num? "]" )? ( "=" assign )? 
  * assign = equality ("=" assign )?
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
@@ -798,13 +832,37 @@ Node_t *stmt(Token_t **token){
 
 		node = new_node_block(token);
 	
-	}else{
+	}
+	else if(is_lvardec(token))
+	{
+		node = Lvardec(token);
+		expect(";",token);
+		if(node -> kind == ND_LVAL)
+			return NULL;
+		return node;
+	}
+	else{
 
 		node = assign(token);
 		expect(";",token);
 	}
 	
 	return node;
+}
+
+Node_t *Lvardec(Token_t **token)
+{
+	char *name = NULL;
+	Type *tp = read_type(&name,token);
+	Lvar *lvar = declere_local_var(tp,name,strlen(name),&(nametable -> locals));
+	Node_t *node = new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
+	if(find("=",token))
+	{
+		node = new_node(ND_ASSIGN,node,assign(token));
+		return node;
+	}
+	return node;
+
 }
 
 Node_t *assign(Token_t **token){
