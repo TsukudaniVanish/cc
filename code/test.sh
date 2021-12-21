@@ -97,10 +97,6 @@ echo -n "unit '+' test"
 assert 30 '+10+20'
 echo -n "unit '-' test"
 assert 10 '-10+20'
-
-echo -n "unit *,& test"
-assert 3 "int x = 3;int *z = &x;return *z"
-
 echo -n "equality test"
 assert 0 '1==11'
 assert 0 '1 != 1'
@@ -118,7 +114,7 @@ assert 1 '11 <= 11'
 assert 1 '11 >= 2'
 
 echo "local var test"
-assert 14 'int a=3;int b =5*6- 8 ; a+b/2'
+assert 14 'int a ; a=3;int b; b =5*6- 8 ; a+b/2'
 assert 14 'int foo =3; int baa = 5 * 6-8;foo+baa/2'
 
 echo "return test"
@@ -146,6 +142,9 @@ assert_function 16 'int gagaga(int a,int b,int c){ a = a + b*c;  return a; }int 
 echo "pointer test"
 
 assert 3 'int x;int *y;y = &x;*y = 3;return x'
+
+echo -n "unit *,& test"
+assert 3 "int x; x = 3;int *z; z = &x;return *z"
 
 echo "sizeof test"
 assert 4 'int x; sizeof x'

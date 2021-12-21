@@ -20,10 +20,10 @@ typedef struct type Type;
 
 struct type{
 	enum{
-
-		TP_INT = 0,//int 型 8bite
+		TP_VOID = 0,
+		TP_INT ,//int 型 8bite
 		TP_CHAR,//char 型
-		TP_POINTER,// pointer 型 8bite
+		TP_POINTER=10,// pointer 型 8bite
 		TP_ARRAY,// 配列型
 
 	}Type_label;
@@ -206,7 +206,8 @@ typedef enum{
 	TK_RETURN,
 	TK_SIZEOF=200,// 演算子としてふるまうので別にする
 	//type of variable =====================================================
-	TK_TypeINT=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeVOID=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeINT,
 	TK_TypeCHAR,
 	//=====================================================
 	TK_EOF=-1, //終了記号
@@ -227,37 +228,7 @@ struct token {
 
 };
 
-
-
-
-//main.c=====================================================
-
-/**
- * @b
- * エラーをはく関数 printfと同じ引数をとる
- * @param char_* location
- * @param char_* format
- * @param ... 
- */
-void error_at(char *,char *,...);
-//=====================================================
-
-
-
-
-/*
- * tokenize.c=====================================================
- */
-
-/**
- * @brief TK_Type... のメモリサイズを返す
- * 
- * @param int kind
- * @return int
- * 
- */
-int sizeof_token(int);
-
+//Token.c ======================================================
 /**
  * @b
  * 新しいtokenを作り　cur->nextに代入する 代入後 cur を次のtoken に送る
@@ -268,35 +239,6 @@ int sizeof_token(int);
  * */
 Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 
-
-/**
- * @brief 
- * 英数字かどうか判定する
- * @param char  
- * @return bool 
- */
-bool is_alnum(char c);
-
-
-/**
- * 
- * @b
- * operator か punctuatorのどちらかであるか判定する
- * @param char_*
- * @return int : len of operator
- * */
-int is_ope_or_pun(char *);
-
-
-/**
- * @b
- * key word と一致するか見る 一致したらその種類　一致しないならTK_EOFを出す
- * @param char_*
- * @param Token_t**
- * @return bool
- * @sa  new_token
- * */
-Token_kind is_keyword(char *);
 /**
  * @brief 
  * key word を受け取ってトークンを生成する
@@ -305,56 +247,6 @@ Token_kind is_keyword(char *);
  * @return Token_t* 
  */
 Token_t *new_keyword(Token_kind,Token_t *,char *);
-
-/**
- * @fn 
- * tokenize function
- * 演算子は長さの順にtokenizeすること
- * @sa new_token
- * 
- * @return Token_t*
- * */
-Token_t *tokenize(char *p);
-//=====================================================
-
-
-
-
-
-/*
- * parse.c=====================================================
- */
-
-/**
- * @brief 新しい型を作成
- * 
- * @param int Type_label
- * @param Type* pointerto
- * @param long_int size
- * @return Type* 
- */
-Type *new_tp(int,Type*,long int size);
-
-/**
- * @b
- * table から 識別子を検索する
- * @param char* name
- * @param int length 
- * @param Lvar** locals 
- * @return Lvar* 
- */
-Lvar *find_lvar(char *,int,Lvar **locals);
-
-/**
- * @brief 新しい変数を作成する
- * 
- * @param Type* tp 
- * @param char* name 
- * @param int length 
- * @param Lvar* next
- * @return Lvar* 
- */
-Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
 /**
  * @b
@@ -382,7 +274,7 @@ void expect(char *string ,Token_t **token);
  * @param Token_t token
  * @return char 
  */
-char expect_ident(Token_t **);
+char *expect_ident(Token_t **);
 /**
  * @brief 
  * 数字があるか確認する 数字でない場合はエラーをはく
@@ -398,14 +290,33 @@ int expect_num(Token_t **token);
  */
 bool at_eof(Token_t **token);
 
+
 /**
  * @brief 
- * 識別子を読み込んで token を次に送る
+ * token をさすポインタを返して token を次に送る
  * @param token 
  * @return Token_t* 
  */
-Token_t *consume_ident(Token_t **token);
+Token_t *consume(Token_t **token);
 
+/**
+ * @brief token を先読みして関数宣言かどうか判定する
+ * 
+ * @param Token_t**
+ * @return int
+ * 
+ */
+int is_functioncall(Token_t **);
+
+// ======================================================
+
+//Node.c ======================================================
+/**
+ * @brief 新しいノードを作る
+ * 
+ * @return Node_t* 
+ */
+Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name);
 /**
  * @brief 
  * 新しいノードを作る
@@ -430,6 +341,14 @@ Node_t *new_node_num(int val);
  * 
  */
 Node_t* new_node_stringiter(Token_t**);
+
+/**
+ * @brief 関数呼び出しをパース
+ * 
+ * @param Token_t** 
+ * @return Node_t* 
+ */
+Node_t *new_node_funcCall(Token_t **token);
 
 /**
  * @brief 識別子の末端ノードを作る
@@ -467,6 +386,221 @@ Node_t *new_node_block(Token_t **);
  */
 Node_t *new_node_ref_deref(Token_t **);
 
+//======================================================
+//file.c====================================================
+/**
+ * @brief 指定されたファイルの内容を返す
+ * @param char* path
+ * @return char*
+ */
+char *file_open(char *);
+//====================================================
+
+
+//main.c=====================================================
+
+/**
+ * @brief エラーをはく関数 printfと同じ引数をとる
+ * @param char_* location
+ * @param char_* format
+ * @param ... 
+ */
+void error_at(char *,char *,...);
+//=====================================================
+
+
+
+
+/*
+ * tokenize.c=====================================================
+ */
+
+/**
+ * @brief 空白文字を判定する
+ * @param char p
+ * @return int 
+ */
+int is_space(char );
+
+/**
+ * @brief 空白をスキップする
+ * 
+ * @param char* p 
+ * @return char* 
+ */
+char *skip(char * p);
+
+/**
+ * @brief TK_Type... のメモリサイズを返す
+ * 
+ * @param int kind
+ * @return int
+ * 
+ */
+int sizeof_token(int);
+
+
+/**
+ * @brief 
+ * 英数字かどうか判定する
+ * @param char  
+ * @return bool 
+ */
+int is_alnum(char c);
+
+
+/**
+ * 
+ * @b
+ * operator か punctuatorのどちらかであるか判定する
+ * @param char_*
+ * @return int : len of operator
+ * */
+int is_ope_or_pun(char *);
+
+/**
+ * @brief コメントかどうか判定する
+ * 
+ * @param char* p 
+ * @return int 
+ */
+int is_comment(char *p);
+
+/**
+ * @brief コメント部分を送って次のトークンにポインタを合わせる
+ * 
+ * @param char** p 
+ */
+void comment_skip(char **p);
+
+
+
+
+/**
+ * @b
+ * key word と一致するか見る 一致したらその種類　一致しないならTK_EOFを出す
+ * @param char_*
+ * @param Token_t**
+ * @return bool
+ * @sa  new_token
+ * */
+Token_kind is_keyword(char *);
+
+
+/**
+ * @fn 
+ * tokenize function
+ * 演算子は長さの順にtokenizeすること
+ * @sa new_token
+ * 
+ * @return Token_t*
+ * */
+Token_t *tokenize(char *p);
+//=====================================================
+
+
+
+
+
+/*
+ * parse.c=====================================================
+ */
+
+/**
+ * @brief 新しい型を作成
+ * 
+ * @param int Type_label
+ * @param Type* pointerto
+ * @param long_int size
+ * @return Type* 
+ */
+Type *new_tp(int,Type*,long int size);
+
+/**
+ * @brief token を読み込んで型を判定する
+ * 
+ * @param char** 識別子名を代入する
+ * @param Token_t** token
+ * @return Type*
+ */
+Type *read_type(char ** name,Token_t **token);
+
+/**
+ * @brief 関数名を代入して関数の型を検索して返す
+ * @param char** name
+ * @param Token_t** token
+ * @return Type*
+ */
+Type *Type_function_return(char **,Token_t**);
+
+/**
+ * @b
+ * table から 識別子を検索する
+ * @param char* name
+ * @param int length 
+ * @param Lvar** locals 
+ * @return Lvar* 
+ */
+Lvar *find_lvar(char *,int,Lvar **locals);
+
+/**
+ * @brief 新しい変数を作成する
+ * 
+ * @param Type* tp 
+ * @param char* name 
+ * @param int length 
+ * @param Lvar* next
+ * @return Lvar* 
+ */
+Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
+
+
+
+
+/**
+ * @brief 型チェックをする関数 両辺が違う方の時は2を返す
+ * 
+ * @param Node_t node
+ * @return int 
+ */
+int typecheck(Node_t *node);
+/**
+ * @brief 暗黙の型変換をする
+ * 
+ * @param Node_t* node
+ * @return Type* 
+ */
+Type *imptypechast(Node_t*);
+
+/**
+ * @brief 変数宣言か判定する
+ * 
+ * @param token 
+ * @return int 
+ */
+int is_lvardec(Token_t **token);
+
+/**
+ * @brief 変数宣言を処理する
+ * 
+ * @param Type* tp 
+ * @param char* name 
+ * @param int len 
+ * @param Lvar** tabele 
+ */
+Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **tabele);
+
+/**
+ * @brief ファイルスコープの識別子宣言
+ * 
+ * @param Type* tp
+ * @param char* name
+ * @param int len
+ * @param Lvar** table
+ */
+Lvar *declere_glIdent(Type *,char*,int,Lvar**);
+
+
 /**
  * @brief パーサ本体
  * @param Token_t_** token
@@ -480,6 +614,7 @@ void program(Token_t **,Node_t **);
  */
 Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
+Node_t *Lvardec(Token_t**);
 Node_t *assign(Token_t **);
 Node_t *equality(Token_t **);
 Node_t *relational(Token_t **);

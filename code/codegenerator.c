@@ -120,16 +120,14 @@ void pop_stack(int long size,char *register_name){
 void set_stringiter()
 {
 	Lvar *iter = string_iter;
-	int i = 0;
 	while (iter)
 	{
 		
 		printf("	.section	.rodata\n");
-		printf(".LC%d:\n",i);
+		printf(".LC%ld:\n",iter -> offset);
 		printf("	.string \"%s\"\n",iter -> name);
 		
 		iter = iter -> next;
-		i++;
 	}
 	
 }
@@ -242,7 +240,7 @@ void gen_function_call(Node_t *node){
 			printf("	sub rsp , %ld\n", 16 - rsp_counter % 16);
 		}
 		printf("	call %s\n",node -> name);
-		rsp_counter += 8;
+		printf("	add rsp, %ld\n", 16 - rsp_counter %16);
 
 
 		push_stack(node -> tp -> size,"rax");
@@ -487,6 +485,8 @@ void gen_formula(Node_t *node){
 		}
 		printf("	idiv %s\n",register_name[1]);
 		break;
+	default:
+		return;
 	}
 
 	push_stack(size[0],"rax");
