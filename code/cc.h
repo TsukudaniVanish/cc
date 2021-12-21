@@ -228,9 +228,78 @@ struct token {
 
 };
 
+//Node.c ======================================================
+/**
+ * @brief 新しいノードを作る
+ * 
+ * @return Node_t* 
+ */
+Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name);
+/**
+ * @brief 
+ * 新しいノードを作る
+ * @param Node_kind kind 
+ * @param Node_t l : left
+ * @param Node_t r : right
+ * @return Node_t* 
+ */
+Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r);
+/**
+ * @brief 
+ * 定数の末端ノードを作る
+ * @param int val 
+ * @return Node_t* 
+ */
+Node_t *new_node_num(int val);
+
+/**
+ * @brief 文字列リテラルをパースする
+ * 
+ * @param Token_t** token
+ * 
+ */
+Node_t* new_node_stringiter(Token_t**);
+
+/**
+ * @brief 識別子の末端ノードを作る
+ * 
+ * @param Token_t** token
+ * @return Node_t* 
+ */
+Node_t *new_node_ident(Token_t **);
+/**
+ * @brief keyword の末端ノードを作る
+ * 
+ * @param Token_kind kind 
+ * @param Token_t** token 
+ * @return Node_t* 
+ */
+Node_t *new_node_keyword(Token_kind kind,Token_t **token);
+/**
+ * @brief 関数定義, グローバル変数の構文木を作成
+ * @param Token_t**
+ */
+Node_t *new_node_globalident(Token_t **);
+
+/**
+ * @brief block の構文木を作成
+ * @param Token_t** token
+ * @return Node_t*
+ * 
+ */
+Node_t *new_node_block(Token_t **);
+
+/**
+ * @brief '*' または '&'をパースする
+ * @param Token_t** token
+ * @return Node_t*
+ */
+Node_t *new_node_ref_deref(Token_t **);
+
+//======================================================
 //file.c====================================================
 /**
- * @b 指定されたファイルの内容を返す
+ * @brief 指定されたファイルの内容を返す
  * @param char* path
  * @return char*
  */
@@ -241,7 +310,7 @@ char *file_open(char *);
 //main.c=====================================================
 
 /**
- * @b エラーをはく関数 printfと同じ引数をとる
+ * @brief エラーをはく関数 printfと同じ引数をとる
  * @param char_* location
  * @param char_* format
  * @param ... 
@@ -470,74 +539,18 @@ int is_lvardec(Token_t **token);
  * @param int len 
  * @param Lvar** tabele 
  */
-Lvar *declere_local_var(Type *tp, char *name,int len ,Lvar **tabele);
+Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **tabele);
 
 /**
- * @brief 新しいノードを作る
+ * @brief ファイルスコープの識別子宣言
  * 
- * @return Node_t* 
+ * @param Type* tp
+ * @param char* name
+ * @param int len
+ * @param Lvar** table
  */
-Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name);
-/**
- * @brief 
- * 新しいノードを作る
- * @param Node_kind kind 
- * @param Node_t l : left
- * @param Node_t r : right
- * @return Node_t* 
- */
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r);
-/**
- * @brief 
- * 定数の末端ノードを作る
- * @param int val 
- * @return Node_t* 
- */
-Node_t *new_node_num(int val);
+Lvar *declere_glIdent(Type *,char*,int,Lvar**);
 
-/**
- * @brief 文字列リテラルをパースする
- * 
- * @param Token_t** token
- * 
- */
-Node_t* new_node_stringiter(Token_t**);
-
-/**
- * @brief 識別子の末端ノードを作る
- * 
- * @param Token_t** token
- * @return Node_t* 
- */
-Node_t *new_node_ident(Token_t **);
-/**
- * @brief keyword の末端ノードを作る
- * 
- * @param Token_kind kind 
- * @param Token_t** token 
- * @return Node_t* 
- */
-Node_t *new_node_keyword(Token_kind kind,Token_t **token);
-/**
- * @brief 関数定義, グローバル変数の構文木を作成
- * @param Token_t**
- */
-Node_t *new_node_globalident(Token_t **);
-
-/**
- * @brief block の構文木を作成
- * @param Token_t** token
- * @return Node_t*
- * 
- */
-Node_t *new_node_block(Token_t **);
-
-/**
- * @brief '*' または '&'をパースする
- * @param Token_t** token
- * @return Node_t*
- */
-Node_t *new_node_ref_deref(Token_t **);
 
 /**
  * @brief パーサ本体
