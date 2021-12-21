@@ -39,7 +39,39 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	}
 }
 
-Node_t *new_node_ident(Token_t**token){
+Node_t *new_node_funcCall(Token_t **token)
+{
+	Node_t *node = new_Node_t(ND_FUNCTIONCALL,NULL,NULL,0,0,NULL,NULL);
+	node -> tp = Type_function_return(&node -> name,token);
+
+	expect("(",token);
+
+	Node_t *node_end = calloc(1,sizeof(Node_t));
+	node -> left = node_end;
+
+	while (!find(")",token))
+	{
+
+		node -> val++;
+
+		node_end -> kind = ND_ARGMENT;
+		Node_t *node_rightend = calloc(1,sizeof(Node_t));
+		node_end ->left = add(token);
+		node_end ->right = node_rightend;
+		node_end = node_rightend;
+		find(",",token);
+	}
+	node_end -> kind = ND_BLOCKEND;
+	return node;
+}
+
+Node_t *new_node_ident(Token_t**token)
+{
+
+	if(is_functioncall(token))
+	{
+		return new_node_funcCall(token);
+	}
 
 	int flag_def = 0;// 0 : 型宣言なし
 	Type *tp;
@@ -54,45 +86,6 @@ Node_t *new_node_ident(Token_t**token){
 
 	Token_t *ident = consume(token);//識別子読み込み
 	Node_t *node;
-
-	/**
-	 * function call ====================================================
-	 */
-	if( find("(",token) ){
-
-
-		node = calloc(1,sizeof(Node_t));
-		node -> tp = find_lvar(ident -> str,ident -> length,&global) -> tp;//後出かけ
-		node -> kind = ND_FUNCTIONCALL;
-		node -> val = 0; // 引数の個数
-
-		//名前読み込み
-		node -> name = calloc( ((*token)->length),sizeof(char));
-		memcpy(node -> name,ident->str,ident -> length );
-
-		Node_t *node_end = calloc(1,sizeof(Node_t));
-		node -> left = node_end;
-
-		while (!find(")",token))
-		{
-
-
-			node -> val++;
-
-			node_end -> kind = ND_ARGMENT;
-			Node_t *node_rightend = calloc(1,sizeof(Node_t));
-			node_end ->left = add(token);
-			node_end ->right = node_rightend;
-			node_end = node_rightend;
-			find(",",token);
-		}
-		node_end -> kind = ND_BLOCKEND;
-
-		return node;
-	}
-	/*
-	*	end function call ==================================================== 
-	*/
 
 	if(ident){
 		
@@ -268,22 +261,11 @@ Node_t *new_node_stringiter(Token_t ** token)
 	node -> tp = new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8);
 	
 	Lvar *iter = declere_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
-	// iter -> name = calloc((*token) -> length , sizeof(char) );
-	// iter -> name = memcpy(iter -> name , (*token) -> str , (*token) -> length);
-	// iter -> next = string_iter;
-	// if(string_iter)
-	// {
-	// 	iter -> offset =  string_iter -> offset;
-	// }
-	// else
-	// {
-	// 	iter -> offset = 0;
-	// }
+	
 	node -> name = calloc(iter -> length, sizeof(char));
     memcpy(node -> name,iter -> name,iter -> length);
 	node -> offset = iter -> offset;
-	//Lvar_add(&(string_iter),iter);
-
+	
 	consume(token);
 	expect("\"",token);
 	return node;

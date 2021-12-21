@@ -25,13 +25,22 @@ int sizeof_token(int kind){
 
 
 
-bool is_alnum(char c){
+int is_alnum(char c){
 
 	
 	return ('a' <= c && c <= 'z' ) ||
 		   ('A' <= c && c <= 'Z' ) ||
 		   ('0' <= c && c <= '9' ) ||
 		   (c == '_');
+}
+
+int is_space(char p)
+{
+	if(' ' == p || '\t' == p || '\n' == p || '\r' == p || '\f' == p)
+	{
+		return 1;
+	}
+	return 0;
 }
 
 
@@ -66,7 +75,7 @@ int is_ope_or_pun(char *p){
 }
 
 
-int is_commnet(char *p)
+int is_comment(char *p)
 {
 	if(*p == '/')
 	{
@@ -120,61 +129,6 @@ Token_kind is_keyword(char *p){
 	return *v;
 }
 
-Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
-
-	cur = new_token( kind,cur,p);
-	// keywordのlength を計算 TK_Typeの時はポインタ型の読み取りに使用する
-	char *q = p;
-	while (!(is_ope_or_pun(q) || isspace(*q))){
-		q++;
-	}
-	
-	(cur) -> length = q -p;
-	
-	if(kind > 299){//ポインタ型か判定
-
-
-		(cur) -> tp = new_tp(kind -300,NULL,sizeof_token(kind));
-
-		while (isspace(*q) || *q=='*'){
-			
-			if(isspace(*q)){
-				
-				q++;
-				(cur) -> length++;
-				continue;
-			}
-			(cur) -> length++;
-			Type *pointerto = new_tp(TP_POINTER,(cur) ->tp,8);
-			(cur) -> tp = pointerto;
-			q++;
-		}//qには識別子の名前があるはず
-	
-		if(kind > 299  && is_ope_or_pun(q)  ){//識別子があるか判定
-
-
-			fprintf(stderr,"識別子が必要です。\n");
-			exit(1);
-		}
-	}
-	return cur;
-}
-
-
-
-
-
-
-
-Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
-
-
-	Token_t *token = calloc(1,sizeof(Token_t));
-	token ->kind = kind;
-	token -> str = str;
-	cur ->next = token;
-	return token;
-};
 
 
 
@@ -211,7 +165,7 @@ Token_t *tokenize(char *p){//入力文字列
 			p++;
 			continue;	
 		}
-		else if(is_commnet(p))
+		else if(is_comment(p))
 		{
 			comment_skip(&p);
 		}

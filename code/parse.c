@@ -5,86 +5,6 @@
 
 
 
-bool find(char *string,Token_t **token){
-
-	if( (*token) -> kind > 100 | strlen(string) != (*token) -> length | memcmp( (*token) -> str,string,(*token)-> length ) != 0  ){
-
-
-		return false;
-
-	}else{
-
-
-		*token = (*token) -> next;
-		return true;
-	}
-}
-
-
-
-
-void expect(char *string ,Token_t **token){
-
-
-	if( (*token) -> kind > 100 | (*token) -> length != strlen(string) | memcmp( (*token) -> str,string,(*token) -> length ) ){
-		
-		error_at( (*token) -> str ,"不正な文字");
-	
-	}else{
-	
-		(*token) = (*token) -> next;
-		
-	}
-}
-
-char expect_ident(Token_t **token){
-
-
-	if( (*token)->kind != TK_IDENT ){
-
-
-		error_at( (*token)-> str,"無効な変数名" );
-	
-	}else{
-
-
-		char name = (*token)-> str[0];
-		(*token) = (*token) -> next;
-		return name;
-	}
-}
-
-int expect_num(Token_t **token){
-
-	
-	if( (*token) -> kind != TK_CONST  ){
-
-
-		error_at( (*token) -> str ,"数ではありません");
-	
-	}else{
-		
-		int v = (*token) -> val;	
-		(*token) = (*token) -> next;
-		return v;
-	}
-}
-
-bool at_eof(Token_t **token){
-
-
-	if( (*token)-> kind != TK_EOF ){
-
-
-		return false;
-	
-	}else{
-
-
-		return true;
-	}
-}
-
 
 
 Type* new_tp(int label,Type* pointerto,long int size){
@@ -121,7 +41,18 @@ Type *read_type(char **name,Token_t **token)
 	}
 	return buf -> tp;
 
-}	
+}
+
+Type *Type_function_return(char **name,Token_t** token)
+{
+	Token_t *buf = consume(token);
+	if(*name)
+		free(*name);
+	*name = calloc(buf -> length, sizeof(char));
+	memcpy(*name,buf -> str,buf -> length);
+
+	return find_lvar(*name,buf -> length,&global) -> tp;
+}
 
 
 
@@ -161,29 +92,6 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 
 
 
-void Lvar_add(Lvar **table , Lvar *lvar)
-{
-	if(*table)
-	{
-		if(lvar -> next != *table)
-		{//更新可能か確認
-			fprintf(stderr,"識別子が既に定義されています\n");
-			exit(1);
-		}
-	}
-	*table = lvar;
-	return;
-}
-
-
-
-
-
-Token_t *consume(Token_t **token){
-	Token_t *tok = *token;
-	*token = (*token)-> next;
-	return tok;
-}
 
 
 
@@ -216,7 +124,7 @@ int typecheck(Node_t *node){
 
 Type *imptypechast(Node_t *node)
 {
-	int tp_l,tp_r;
+	int tp_l , tp_r;
 
 	switch (typecheck(node))
 	{
@@ -265,7 +173,6 @@ int is_lvardec(Token_t **token)
 		return 1;
 	return 0;
 }
-
 
 Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table)
 {

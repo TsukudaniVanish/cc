@@ -228,6 +228,88 @@ struct token {
 
 };
 
+//Token.c ======================================================
+/**
+ * @b
+ * 新しいtokenを作り　cur->nextに代入する 代入後 cur を次のtoken に送る
+ * @param Token_kind kind
+ * @param Token_t_* cur
+ * @param char_* str
+ * @return Token_t_*
+ * */
+Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
+
+/**
+ * @brief 
+ * key word を受け取ってトークンを生成する
+ * @param Token_kind
+ * @param 
+ * @return Token_t* 
+ */
+Token_t *new_keyword(Token_kind,Token_t *,char *);
+
+/**
+ * @b
+ * token -> strとstring が一致するか見る
+ * @param char_* string
+ * @param Token_t_** token 
+ * @return bool
+ */
+bool find(char *,Token_t **);
+
+/**
+ * @brief 
+ * token -> strとstring が一致するか確認 一致しない場合はエラーをはく
+ * @sa error_at
+ * @param char_* string 
+ * @param Token_t token
+ * @return void
+ * @sa error_at
+ */
+void expect(char *string ,Token_t **token);
+/**
+ * @brief 
+ * 識別子か確認する　識別子ではない場合はエラーを吐く
+ * @sa error_at
+ * @param Token_t token
+ * @return char 
+ */
+char *expect_ident(Token_t **);
+/**
+ * @brief 
+ * 数字があるか確認する 数字でない場合はエラーをはく
+ * @param Token_t_** token 
+ * @return int 
+ */
+int expect_num(Token_t **token);
+/**
+ * @brief 
+ * token が末端か判定する
+ * @param Token_t_** token 
+ * @return bool 
+ */
+bool at_eof(Token_t **token);
+
+
+/**
+ * @brief 
+ * token をさすポインタを返して token を次に送る
+ * @param token 
+ * @return Token_t* 
+ */
+Token_t *consume(Token_t **token);
+
+/**
+ * @brief token を先読みして関数宣言かどうか判定する
+ * 
+ * @param Token_t**
+ * @return int
+ * 
+ */
+int is_functioncall(Token_t **);
+
+// ======================================================
+
 //Node.c ======================================================
 /**
  * @brief 新しいノードを作る
@@ -259,6 +341,14 @@ Node_t *new_node_num(int val);
  * 
  */
 Node_t* new_node_stringiter(Token_t**);
+
+/**
+ * @brief 関数呼び出しをパース
+ * 
+ * @param Token_t** 
+ * @return Node_t* 
+ */
+Node_t *new_node_funcCall(Token_t **token);
 
 /**
  * @brief 識別子の末端ノードを作る
@@ -326,6 +416,13 @@ void error_at(char *,char *,...);
  */
 
 /**
+ * @brief 空白文字を判定する
+ * @param char p
+ * @return int 
+ */
+int is_space(char );
+
+/**
  * @brief 空白をスキップする
  * 
  * @param char* p 
@@ -342,16 +439,6 @@ char *skip(char * p);
  */
 int sizeof_token(int);
 
-/**
- * @b
- * 新しいtokenを作り　cur->nextに代入する 代入後 cur を次のtoken に送る
- * @param Token_kind kind
- * @param Token_t_* cur
- * @param char_* str
- * @return Token_t_*
- * */
-Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
-
 
 /**
  * @brief 
@@ -359,7 +446,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
  * @param char  
  * @return bool 
  */
-bool is_alnum(char c);
+int is_alnum(char c);
 
 
 /**
@@ -371,6 +458,23 @@ bool is_alnum(char c);
  * */
 int is_ope_or_pun(char *);
 
+/**
+ * @brief コメントかどうか判定する
+ * 
+ * @param char* p 
+ * @return int 
+ */
+int is_comment(char *p);
+
+/**
+ * @brief コメント部分を送って次のトークンにポインタを合わせる
+ * 
+ * @param char** p 
+ */
+void comment_skip(char **p);
+
+
+
 
 /**
  * @b
@@ -381,14 +485,7 @@ int is_ope_or_pun(char *);
  * @sa  new_token
  * */
 Token_kind is_keyword(char *);
-/**
- * @brief 
- * key word を受け取ってトークンを生成する
- * @param Token_kind
- * @param 
- * @return Token_t* 
- */
-Token_t *new_keyword(Token_kind,Token_t *,char *);
+
 
 /**
  * @fn 
@@ -429,6 +526,14 @@ Type *new_tp(int,Type*,long int size);
 Type *read_type(char ** name,Token_t **token);
 
 /**
+ * @brief 関数名を代入して関数の型を検索して返す
+ * @param char** name
+ * @param Token_t** token
+ * @return Type*
+ */
+Type *Type_function_return(char **,Token_t**);
+
+/**
  * @b
  * table から 識別子を検索する
  * @param char* name
@@ -449,64 +554,8 @@ Lvar *find_lvar(char *,int,Lvar **locals);
  */
 Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
-/**
- * @brief テーブルに識別子を追加する
- * 
- * @param Lvar** table
- * @param Lvar* lvar
- */
-void Tables_add(Lvar**,Lvar *);
-
-/**
- * @b
- * token -> strとstring が一致するか見る
- * @param char_* string
- * @param Token_t_** token 
- * @return bool
- */
-bool find(char *,Token_t **);
-
-/**
- * @brief 
- * token -> strとstring が一致するか確認 一致しない場合はエラーをはく
- * @sa error_at
- * @param char_* string 
- * @param Token_t token
- * @return void
- * @sa error_at
- */
-void expect(char *string ,Token_t **token);
-/**
- * @brief 
- * 識別子か確認する　識別子ではない場合はエラーを吐く
- * @sa error_at
- * @param Token_t token
- * @return char 
- */
-char expect_ident(Token_t **);
-/**
- * @brief 
- * 数字があるか確認する 数字でない場合はエラーをはく
- * @param Token_t_** token 
- * @return int 
- */
-int expect_num(Token_t **token);
-/**
- * @brief 
- * token が末端か判定する
- * @param Token_t_** token 
- * @return bool 
- */
-bool at_eof(Token_t **token);
 
 
-/**
- * @brief 
- * token をさすポインタを返して token を次に送る
- * @param token 
- * @return Token_t* 
- */
-Token_t *consume(Token_t **token);
 
 /**
  * @brief 型チェックをする関数 両辺が違う方の時は2を返す
