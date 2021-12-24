@@ -1,5 +1,15 @@
 #include "cc.h"
+//#include<stdarg.h>
 #include<errno.h>
+
+void error(char *fmt,...)
+{
+	va_list arg;
+	va_start(arg,fmt);
+	fprintf(stderr,fmt,arg);
+	va_end(arg);
+	exit(1);
+}
 
 
 char* file_open(char* path)

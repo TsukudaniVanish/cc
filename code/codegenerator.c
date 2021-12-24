@@ -119,14 +119,12 @@ void pop_stack(int long size,char *register_name){
 
 void set_stringiter()
 {
+	printf("	.section	.rodata\n");
 	Lvar *iter = string_iter;
 	while (iter)
 	{
-		
-		printf("	.section	.rodata\n");
 		printf(".LC%ld:\n",iter -> offset);
 		printf("	.string \"%s\"\n",iter -> name);
-		
 		iter = iter -> next;
 	}
 	
@@ -239,8 +237,13 @@ void gen_function_call(Node_t *node){
 
 			printf("	sub rsp , %ld\n", 16 - rsp_counter % 16);
 		}
+
 		printf("	call %s\n",node -> name);
-		printf("	add rsp, %ld\n", 16 - rsp_counter %16);
+		
+		if(rsp_counter%16 !=0)
+		{
+			printf("	add rsp, %ld\n", 16 - rsp_counter %16);
+		}
 
 
 		push_stack(node -> tp -> size,"rax");
@@ -513,7 +516,7 @@ void generate(Node_t *node){
 		rsp_counter+= 4;
 		return;
 
-	case ND_STRINGITERAL:
+	case ND_STRINGLITERAL:
 
 		//printf("	sub rsp, 8\n");
 		printf("	lea rax, .LC%ld[rip]\n",node -> offset);
@@ -528,7 +531,7 @@ void generate(Node_t *node){
 
 		if( node -> left && node -> left ->  kind != ND_DEREF){
 
-			if(node -> left -> kind == ND_GLVALCALL)
+			if(node -> left -> kind == ND_GLOBVALCALL)
 			{//グローバル変数処理
 				generate(node -> right);
 				pop_stack(node -> tp -> size,"rax");
@@ -543,7 +546,7 @@ void generate(Node_t *node){
 			if(node -> left -> left -> kind == ND_ADD)
 			{//global 変数処理
 				Node_t *node_ll = node -> left -> left;
-				if(node_ll -> left -> kind == ND_GLVALCALL)
+				if(node_ll -> left -> kind == ND_GLOBVALCALL)
 				{
 					Type *tp_lll = node_ll -> left -> tp;
 					if(tp_lll -> Type_label == TP_POINTER && tp_lll -> pointer_to -> Type_label == TP_ARRAY)
@@ -554,7 +557,7 @@ void generate(Node_t *node){
 						return;
 					}
 				}
-				else if(node_ll -> right -> kind == ND_GLVALCALL)
+				else if(node_ll -> right -> kind == ND_GLOBVALCALL)
 				{
 					Type *tp_llr = node_ll -> right -> tp;
 					if(tp_llr -> Type_label == TP_POINTER && tp_llr -> pointer_to -> Type_label == TP_ARRAY)
@@ -603,7 +606,7 @@ void generate(Node_t *node){
 		{// global 変数処理
 
 			Node_t *node_l = node -> left;
-			if( node_l -> left -> kind == ND_GLVALCALL )
+			if( node_l -> left -> kind == ND_GLOBVALCALL )
 			{
 
 				Type *tp_l = node_l -> left -> tp;
@@ -627,7 +630,7 @@ void generate(Node_t *node){
 					
 				}
 			}
-			else if( node_l -> right -> kind == ND_GLVALCALL )
+			else if( node_l -> right -> kind == ND_GLOBVALCALL )
 			{
 
 				Type *tp_r = node_l -> right -> tp;
@@ -680,7 +683,7 @@ void generate(Node_t *node){
 		return;
 	}
 
-	case ND_GLVALCALL://調整=====================
+	case ND_GLOBVALCALL://調整=====================
 	{
 		if(node -> tp && node -> tp -> size < 5 && node -> tp -> size > 1)
 		{
@@ -728,7 +731,7 @@ void generate(Node_t *node){
 
 	//ノード先端付近 ===================================================
 	switch(node -> kind){
-	case ND_GLVALDEF:
+	case ND_GLOBVALDEF:
 	{//調整=====================
 
 		printf("%s:\n",node -> name);

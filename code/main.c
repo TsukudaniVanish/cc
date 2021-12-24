@@ -1,41 +1,7 @@
 #include "cc.h"
 //#include<stdio.h>
-#include<stdarg.h>
 //#include<stdbool.h>
 //#include<string.h>
-
-
-
-
-
-
-char *user_input;
-
-
-
-
-void error_at(char *loc,char *fmt,...){
-
-
-	va_list arg;
-	va_start(arg,fmt);
-	int pos = loc - (user_input);
-	fprintf(stderr,"%s\n",user_input);
-	fprintf(stderr,"%*s",pos," ");
-	fprintf(stderr,"^");
-	vfprintf(stderr,fmt,arg);
-	fprintf(stderr,"\n");
-	exit(1);
-
-}
-
-
-
-
-
-
-
-
 
 
 int main(int argc, char **argv){
@@ -45,7 +11,9 @@ int main(int argc, char **argv){
 	char *buffer;
 	if( strncmp(argv[1],"-f",2) == 0)
 	{
+		filepah = argv[2];
 		buffer = file_open(argv[2]);
+		user_input = buffer;
 	}
 	else
 	{
@@ -53,6 +21,16 @@ int main(int argc, char **argv){
 		user_input = argv[1];
 		buffer = argv[1];
 	}
+
+	//helperfunction input
+	char *test_print = "test_print";
+	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print,strlen(test_print),&global);
+
+	char *test_print_int = "test_print_int";
+	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print_int,strlen(test_print_int),&global);
+
+	char *test_error = "test_error";
+	declere_glIdent(new_tp(TP_VOID,NULL,0),test_error,strlen(test_error),&global);
 		
 	
 

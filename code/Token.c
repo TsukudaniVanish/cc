@@ -46,9 +46,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 	
 		if(kind > 299  && is_ope_or_pun(q)  ){//識別子があるか判定
 
-
-			fprintf(stderr,"識別子が必要です。\n");
-			exit(1);
+			error_at(p,"識別子が必要です");
 		}
 	}
 	return cur;

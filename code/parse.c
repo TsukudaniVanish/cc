@@ -7,11 +7,11 @@
 
 
 
-Type* new_tp(int label,Type* pointerto,long int size){
+Type* new_tp(int label,Type* pointer_to,long int size){
 
 	Type* tp = calloc(1,sizeof(Type));
 	tp -> Type_label = label;
-	tp -> pointer_to = pointerto;
+	tp -> pointer_to = pointer_to;
 	tp -> size = size;
 	return tp;
 }
@@ -22,8 +22,7 @@ Type *read_type(char **name,Token_t **token)
 
 	if((*token) -> kind != TK_IDENT)
 	{
-		fprintf(stderr,"識別子名がありません");
-		exit(1);
+		error_at((*token) -> str,"識別子名がありません");
 	}
 
 	if(*name)
@@ -122,7 +121,7 @@ int typecheck(Node_t *node){
 }
 
 
-Type *imptypechast(Node_t *node)
+Type *imptypecast(Node_t *node)
 {
 	int tp_l , tp_r;
 
@@ -177,8 +176,6 @@ int is_lvardec(Token_t **token)
 Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table)
 {
 	Lvar *lvar = find_lvar(name,len,table);
-	if(lvar && lvar -> tp -> Type_label != TP_ARRAY)
-		return NULL;
 	lvar = new_lvar(tp,name,len,*table);
 	*table = lvar;
 	if(lvar -> tp -> Type_label == TP_ARRAY)
@@ -231,7 +228,7 @@ Lvar *declere_glIdent(Type *tp,char *name, int len, Lvar **table)
  * primary = num 
  * 			| type? indent  ( "["add"]" )? 
  * 			| "(" assign ")"
- * 			| "\"" strig iteal "\""
+ * 			| "\"" strring literal "\""
  *
  * 終端記号:
  * 		num
@@ -265,16 +262,13 @@ Node_t *func(Token_t **token){
 
 	if ((*token) -> kind <= 299 ){
 
-			fprintf(stderr,"%s : 型宣言がありません",(*token) -> str);
-			exit(1);
+		error_at((*token) -> str , "型宣言がありません");
 
 	}
 	if( !( (*token) ->next ) && (*token) -> next -> kind != TK_IDENT ){
 
 
-		fprintf(stderr,"関数名が必要です");
-		exit(1);
-	
+		error_at((*token) -> str,"関数名が必要です");
 	}
 	return new_node_globalident(token);
 }
@@ -320,6 +314,7 @@ Node_t *Lvardec(Token_t **token)
 	Node_t *node = new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	if(find("=",token))
 	{
+		parsing_here = (*token) -> str;
 		node = new_node(ND_ASSIGN,node,assign(token));
 		return node;
 	}
@@ -334,7 +329,7 @@ Node_t *assign(Token_t **token){
 	
 	if( find("=",token) ){
 		
-
+		parsing_here = (*token) -> str;
 		node = new_node(ND_ASSIGN,node,assign(token));
 	}
 	return node;
@@ -348,7 +343,7 @@ Node_t *equality(Token_t **token){
 
 	for(;;){
 		
-
+		parsing_here = (*token) -> str;
 		if( find("==",token) ){
 		
 
@@ -374,7 +369,7 @@ Node_t *relational(Token_t **token){
 
 	for (;;){
 
-		
+		parsing_here = (*token) -> str;
 		if( find("<=",token) ){
 			
 			
@@ -410,7 +405,7 @@ Node_t *add(Token_t **token){
 
 	for(;;){
 
-		
+		parsing_here = (*token) -> str;
 		if( find("+",token) ){
 
 
@@ -437,7 +432,7 @@ Node_t *mul(Token_t **token){
 
 	for(;;){
 
-
+		parsing_here = (*token) -> str;
 		if( find("*",token) ){
 
 
@@ -474,11 +469,13 @@ Node_t *unitary(Token_t **token){
 
 
 			node = new_node_num(  node ->tp -> size );
-		}
+		}	
+		return node;		
+	}
 
-		
-				
-	}else if( find("+",token) ){
+	parsing_here = (*token) -> str;
+
+	if( find("+",token) ){
 
 
 		node = primary(token);
@@ -529,10 +526,9 @@ Node_t *primary(Token_t **token){
 
 		if( node -> tp -> Type_label !=TP_POINTER)
 		{//識別子を読んでいるかチェック
-			fprintf(stderr,"N kind : %d",node -> kind);
-			fprintf(stderr,"Type label : %d",node -> tp -> Type_label);
-			fprintf(stderr,"識別子がありません");
-			exit(1);
+			fprintf(stderr,"N kind : %d\n",node -> kind);
+			fprintf(stderr,"Type label : %d\n",node -> tp -> Type_label);
+			error_at((*token) -> str,"識別子がありません");
 		}
 		Node_t *node_top = calloc(1,sizeof(Node_t));
 		node_top -> kind = ND_DEREF;
@@ -545,6 +541,8 @@ Node_t *primary(Token_t **token){
 			node_top -> tp = node -> tp -> pointer_to;
 		}
 		node_top -> val = -1;
+
+		parsing_here = (*token) -> str;
 		node_top -> left = new_node(ND_ADD,node,mul(token));
 
 		expect("]",token);
