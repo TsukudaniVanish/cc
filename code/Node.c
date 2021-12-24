@@ -23,19 +23,17 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	//型チェック
 	if(typecheck(node) == 0)
 	{
-		fprintf(stderr,": %d:型エラー\n",typecheck(node));
-		exit(1);
+		error_at(parsing_here,"型エラー");
 	}
 	
-	node -> tp = imptypechast(node);
+	node -> tp = imptypecast(node);
 	if(node -> tp)
 	{
 		return node;
 	}
 	else
 	{
-		fprintf(stderr,": %d:型エラー\n",typecheck(node));
-		exit(1);
+		error_at(parsing_here,"型エラー");
 	}
 }
 
@@ -94,7 +92,7 @@ Node_t *new_node_ident(Token_t**token)
 		
 
 		Lvar *lvar = find_lvar( ident -> str,ident -> length,&(nametable->locals) );
-		Lvar *glvar = find_lvar(ident -> str,ident -> length,&global);
+		Lvar *globvar = find_lvar(ident -> str,ident -> length,&global);
 
 		if(lvar){
 			node -> kind = ND_LVAL;
@@ -111,23 +109,23 @@ Node_t *new_node_ident(Token_t**token)
 			return node;
 
 		}
-		else if( glvar ){// global var call 
+		else if( globvar ){// global var call 
 
-			node -> kind = ND_GLVALCALL;
+			node -> kind = ND_GLOBVALCALL;
 			
 			//名前コピー
 			node -> name = calloc((ident -> length),sizeof(char));
 			memcpy( node -> name , ident -> str, ident -> length);
 
 			
-			if( glvar -> tp -> Type_label == TP_ARRAY )
+			if( globvar -> tp -> Type_label == TP_ARRAY )
 			{
 
-				node -> tp = new_tp(TP_POINTER,glvar -> tp,8);
+				node -> tp = new_tp(TP_POINTER,globvar -> tp,8);
 			}
 			else
 			{
-				node -> tp = glvar -> tp;
+				node -> tp = globvar -> tp;
 			}
 			return node;
 
@@ -135,8 +133,7 @@ Node_t *new_node_ident(Token_t**token)
 		
 		}else
 		{// local var def なし=========================
-			fprintf(stderr,"不明な識別子");
-			exit(1);
+			error_at(ident -> str, "不明な識別子");
 		}//=========================
 	}
 }
@@ -206,7 +203,7 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 
 		node -> kind = ND_FOR;
 
-		if((*token)-> str[0] != ';'){// no conditons
+		if((*token)-> str[0] != ';'){// no conditions
 			
 			
 			expect("(",token);
@@ -257,7 +254,7 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 Node_t *new_node_stringiter(Token_t ** token)
 {
 	Node_t * node = calloc(1,sizeof(Node_t));
-	node -> kind = ND_STRINGITERAL;
+	node -> kind = ND_STRINGLITERAL;
 	node -> tp = new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8);
 	
 	Lvar *iter = declere_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
@@ -319,8 +316,7 @@ Node_t *new_node_globalident(Token_t**token){
 		}
 		if( node -> val > 6){
 
-			fprintf(stderr,"引数の個数が6個より大きいです");
-			exit(1);
+			error_at((*token) -> str,"引数の個数が6個より大きいです");
 		}
 		left_argnames -> kind = ND_BLOCKEND;//引数読み込み終了
 		
@@ -329,13 +325,8 @@ Node_t *new_node_globalident(Token_t**token){
 	
 	}else{//グローバル変数の定義
 
-		node -> kind = ND_GLVALDEF;
+		node -> kind = ND_GLOBVALDEF;
 		Lvar *lvar = declere_glIdent(node -> tp,node -> name, strlen(node -> name),&global);
-		
-		if(lvar == NULL){// 既に定義されている
-            fprintf(stderr,"%s は既に定義されています",node -> name);
-            exit(1);
-		}
 
 		if (find("=",token))//変数の代入
 		{

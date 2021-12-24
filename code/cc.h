@@ -1,7 +1,10 @@
+#define VOID_TYPE_VALUE 0
+#define POINTER_TYPE_VALUE 10
+
 #include<stdbool.h>
 #include<stdlib.h>
 //#include<ctype.h>
-//#include<stdarg.h>
+#include<stdarg.h>
 #include<stdio.h>
 #include<string.h>
 
@@ -20,10 +23,10 @@ typedef struct type Type;
 
 struct type{
 	enum{
-		TP_VOID = 0,
+		TP_VOID = VOID_TYPE_VALUE,
 		TP_INT ,//int 型 8bite
 		TP_CHAR,//char 型
-		TP_POINTER=10,// pointer 型 8bite
+		TP_POINTER = POINTER_TYPE_VALUE,// pointer 型 8bite
 		TP_ARRAY,// 配列型
 
 	}Type_label;
@@ -91,6 +94,68 @@ struct NameSpace{
 Tables *nametable;
 
 
+// =========================Token =========================
+/**
+ * @b
+ * Token の種類を列挙する
+ * 
+ *
+ * tokens:
+ * 		operator:
+ * 				"==","!=","<=",">=",
+ * 				"<",">","+","-","*","/","&","=",
+ * 		key word:
+ * 				return ...
+ * 				if(...)...
+ * 				if(...)...else...
+ * 				while(...)...
+ * 				for(...)...
+ * 				sizeof ...
+ * 				int
+ * 		punctuator:
+ * 					"{","}","[","]",";",","
+ * 		identifier
+ * 		constant
+ * 		string-literal
+ */
+typedef enum{
+	// token ====================================================
+	TK_IDENT=0, //識別子
+	TK_CONST=1, //整数
+	TK_OPERATOR=2, // 演算子
+	TK_PUNCTUATOR=3,// 区切り文字
+	TK_STRINGLITERAL,//文字列
+	//key words=====================================================
+	TK_IF=100,//制御構文
+	TK_ELSE,
+	TK_WHILE,
+	TK_FOR,
+	TK_RETURN,
+	TK_SIZEOF=200,// 演算子としてふるまうので別にする
+	//type of variable =====================================================
+	TK_TypeVOID=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeINT,
+	TK_TypeCHAR,
+	//=====================================================
+	TK_EOF=-1, //終了記号
+
+}Token_kind;
+
+typedef struct token Token_t;
+
+struct token {
+
+	Token_kind kind;
+	Token_t *next;
+	int val;//if kind == TK_DIGIT　-> val = the number
+	char *str;//string of token
+	int length;//length of operator or length of local variable name
+	Type *tp;
+
+
+};//====================================================
+
+
 //========================= Node =========================
 
 //抽象構文木のノードの識別に使用する
@@ -108,10 +173,10 @@ typedef enum{
 	ND_ADDR, //<-> * dereference
 	ND_DEREF,// <-> & reference
 	ND_NUM, // <-> integer
-	ND_STRINGITERAL,
+	ND_STRINGLITERAL,
 	//型=========================
-	ND_GLVALDEF,// グローバル変数定義
-	ND_GLVALCALL,//
+	ND_GLOBVALDEF,// グローバル変数定義
+	ND_GLOBVALCALL,//グローバル変数呼び出し
 	ND_LVAL, // ローカル変数
 	ND_FUNCTIONCALL,//関数呼び出し
 	ND_FUNCTIONDEF,//関数定義
@@ -152,10 +217,10 @@ struct node {
 	Node_t *right;
 	/**
 	 * 
-	 * bref of member variavle : val 
+	 * @brief of member variable : val 
 	 * ND_FUNCTION... -> 引数の個数
 	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_lable == TP_TOINTER -> 配列が暗黙にキャストされたなら 配列サイズ 他 0
+	 * ND_Lval && node -> tp -> Type_label == TP_POINTER -> 配列が暗黙にキャストされたなら 配列サイズ 他 0
 	 * 
 	 */
 	int val;
@@ -165,68 +230,34 @@ struct node {
 
 };
 
-
-
-// =========================Token =========================
+//file.c====================================================
 /**
- * @b
- * Tokeen の種類を列挙する
- * 
- *
- * tokens:
- * 		operator:
- * 				"==","!=","<=",">=",
- * 				"<",">","+","-","*","/","&","=",
- * 		key word:
- * 				return ...
- * 				if(...)...
- * 				if(...)...else...
- * 				while(...)...
- * 				for(...)...
- * 				sizeof ...
- * 				int
- * 		punctutator:
- * 					"{","}","[","]",";",","
- * 		identifier
- * 		constant
- * 		string-literal
+ * @brief 指定されたファイルの内容を返す
+ * @param char* path
+ * @return char*
  */
-typedef enum{
-	// token ====================================================
-	TK_IDENT=0, //識別子
-	TK_CONST=1, //整数
-	TK_OPERATOR=2, // 演算子
-	TK_PUNCTUATOR=3,// 区切り文字
-	TK_STRINGITERAL,//文字列
-	//key words=====================================================
-	TK_IF=100,//制御構文
-	TK_ELSE,
-	TK_WHILE,
-	TK_FOR,
-	TK_RETURN,
-	TK_SIZEOF=200,// 演算子としてふるまうので別にする
-	//type of variable =====================================================
-	TK_TypeVOID=300,//変数の型名 Type_label と順番はそろえる
-	TK_TypeINT,
-	TK_TypeCHAR,
-	//=====================================================
-	TK_EOF=-1, //終了記号
+char *file_open(char *);
+//====================================================
 
-}Token_kind;
+// error_point.c====================================================
 
-typedef struct token Token_t;
+//エラー報告用
+char* user_input;
 
-struct token {
+//エラー報告用
+char* filepah;
 
-	Token_kind kind;
-	Token_t *next;
-	int val;//if kind == TK_DIGIT　-> val = the number
-	char *str;//string of token
-	int length;//length of operator or length of local variable name
-	Type *tp;
+//エラー報告用
+char *parsing_here;
 
-
-};
+/**
+ * @brief エラーが起きた場所を指摘する関数
+ * @param char_* location
+ * @param char_* format
+ * @param ... 
+ */
+void error_at(char *,char *,...);
+//====================================================
 
 //Token.c ======================================================
 /**
@@ -399,13 +430,7 @@ char *file_open(char *);
 
 //main.c=====================================================
 
-/**
- * @brief エラーをはく関数 printfと同じ引数をとる
- * @param char_* location
- * @param char_* format
- * @param ... 
- */
-void error_at(char *,char *,...);
+
 //=====================================================
 
 
@@ -510,7 +535,7 @@ Token_t *tokenize(char *p);
  * @brief 新しい型を作成
  * 
  * @param int Type_label
- * @param Type* pointerto
+ * @param Type* pointer_to
  * @param long_int size
  * @return Type* 
  */
@@ -570,7 +595,7 @@ int typecheck(Node_t *node);
  * @param Node_t* node
  * @return Type* 
  */
-Type *imptypechast(Node_t*);
+Type *imptypecast(Node_t*);
 
 /**
  * @brief 変数宣言か判定する
@@ -586,9 +611,9 @@ int is_lvardec(Token_t **token);
  * @param Type* tp 
  * @param char* name 
  * @param int len 
- * @param Lvar** tabele 
+ * @param Lvar** table
  */
-Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **tabele);
+Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table);
 
 /**
  * @brief ファイルスコープの識別子宣言

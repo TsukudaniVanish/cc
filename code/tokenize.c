@@ -152,13 +152,12 @@ Token_t *tokenize(char *p){//入力文字列
 			{
 				q++;
 			}
-			cur = new_token(TK_STRINGITERAL,cur,p+1);
+			cur = new_token(TK_STRINGLITERAL,cur,p+1);
 			cur -> length = q-p;
 			p = q+1;
 			if(*p != '"')
 			{
-				fprintf(stderr,"文字列イテラルが閉じていません");
-				exit(1);
+				error_at(p,"文字リテラルが閉じていません\n");
 			}
 			cur = new_token(TK_PUNCTUATOR,cur,p);
 			cur -> length = 1;
@@ -168,6 +167,7 @@ Token_t *tokenize(char *p){//入力文字列
 		else if(is_comment(p))
 		{
 			comment_skip(&p);
+			continue;
 		}
 		else if ( is_keyword(p) !=TK_EOF )
 		{//キーワード
@@ -224,7 +224,7 @@ Token_t *tokenize(char *p){//入力文字列
 			cur -> length =1;
 			continue;
 		}
-		//error_at(cur -> str,"tokenizeできません。");
+		error_at(cur -> str,"tokenizeできません。");
 	}
 	new_token(TK_EOF,cur,p);
 	return head.next;
