@@ -1,4 +1,41 @@
+void error_template_int(int expect , int a)
+{
+    test_print("\x1b[31merror\x1b[m at add and sub test\n");
+    test_print_int(expect);
+    test_print(" was expected but got: \x1b[31m");
+    test_print_int(a);
+    test_print("\x1b[m\n");
+    test_error();
+}
+/*
+void test_passed(char *p)
+{
+    test_print("\x1b[32m);
+    test_print(p);
+    test_print(" passed!!");
+    test_print("\x1b[m\n");
+}
+*/
 int main(){
+    test_print("\x1b[32mHello\x1b[m\n"); /* display test */
 
-    return 29;
+    int x = 10;
+
+    test_print_int(x); /*display int test */
+    test_print("\n");
+
+    x = 20 + 5 - 4;
+    if(x != 21)
+    {
+        error_template_int(21,x);
+    }
+    /* test_passed("add and sub test"); */
+
+    x = (20 -10)*5;
+    if(x != 50)
+    {
+        error_template_int(50,x);
+    }
+    /* test_passed("bracket test") */
+    return 0;
 }

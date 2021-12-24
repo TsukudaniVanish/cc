@@ -8,7 +8,7 @@ cc: $(OBJS)
 $(OBJS): cc.h
 
 test: cc
-	./test.sh
+	./test_f.sh
 
 clean:
 	rm -f cc *.o *~ tmp* *.log
