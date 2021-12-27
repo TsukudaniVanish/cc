@@ -382,6 +382,31 @@ Node_t* new_node_stringiter(Token_t**);
 Node_t *new_node_funcCall(Token_t **token);
 
 /**
+ * @brief 関数の引数を読み込む
+ * 
+ * @param Tokent_t** token
+ * @param Node_t** vector which holds arg types
+ * @return int : a number of argment 
+ */
+int Node_readarg(Token_t **, Node_t**);
+
+/**
+ * @brief 関数定義をパース
+ * 
+ * @param Token_t **
+ * @return Node_t*
+ */
+Node_t *new_node_funcDef(Token_t **token);
+
+/**
+ * @brief 変数を表すノードを作る
+ * 
+ * @param token 
+ * @return Node_t* 
+ */
+Node_t *new_node_var(Token_t **token);
+
+/**
  * @brief 識別子の末端ノードを作る
  * 
  * @param Token_t** token
@@ -579,6 +604,21 @@ Lvar *find_lvar(char *,int,Lvar **locals);
  */
 Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
+/**
+ * @brief 新しい名前空間を作成する
+ * 
+ * @param head 
+ * @param next 
+ * @param locals 
+ * @return Tables* 
+ */
+Tables *new_Tables(Tables *head,Tables *next,Lvar *locals);
+/**
+ * @brief　識別子の名前空間を更新する
+ * 
+ * @param Tables** table
+ */
+void make_nametable(Tables **table);
 
 
 

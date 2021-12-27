@@ -39,8 +39,8 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 				continue;
 			}
 			(cur) -> length++;
-			Type *pointerto = new_tp(TP_POINTER,(cur) ->tp,8);
-			(cur) -> tp = pointerto;
+			Type *pointer_to = new_tp(TP_POINTER,(cur) ->tp,8);
+			(cur) -> tp = pointer_to;
 			q++;
 		}//qには識別子の名前があるはず
 	

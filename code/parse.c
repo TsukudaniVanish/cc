@@ -73,8 +73,10 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 
 	Lvar *lvar = calloc(1,sizeof(Lvar));
 	lvar -> next = next;
+	//名前コピー
 	lvar -> name = calloc(length,sizeof(char));
 	memcpy(lvar -> name,name,length);
+	// 名前コピー終わり
 	lvar -> length = length;
 	lvar -> tp = tp;
 
@@ -87,6 +89,30 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 		lvar -> offset = (lvar -> tp->size);
 	}
 	return lvar;
+}
+
+
+Tables *new_Tables(Tables *head,Tables *next,Lvar *locals)
+{
+	Tables *table = calloc(1,sizeof(Tables));
+	table -> head = head;
+	table -> next = next;
+	table -> locals = locals;
+	return table;
+}
+
+
+void make_nametable(Tables **table)
+{
+	if(*table)
+	{
+		(*table) -> next = new_Tables((*table) -> head,NULL,NULL);
+		(*table) = (*table) -> next;
+		return;
+	}
+	*table = new_Tables(NULL,NULL,NULL);
+	(*table) -> head = *table;
+	return;
 }
 
 
@@ -467,7 +493,7 @@ Node_t *unitary(Token_t **token){
 			node = new_node_num(  node -> val );
 		}else{
 
-
+			
 			node = new_node_num(  node ->tp -> size );
 		}	
 		return node;		
