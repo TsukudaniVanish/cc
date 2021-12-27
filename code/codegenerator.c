@@ -302,8 +302,7 @@ void gen_function_def(Node_t *node){
 	Node_t *arg = node -> left;
 	long int size[node -> val];
 	long int offset[node -> val];
-	int i = 0;
-	while (arg -> kind != ND_BLOCKEND)
+	for(int i = 0 ;arg -> kind != ND_BLOCKEND; i++,arg = arg -> right)
 	{	
 		size[i] = arg -> left -> tp -> size;
 		if(i > 0)
@@ -315,9 +314,6 @@ void gen_function_def(Node_t *node){
 		{
 			offset[i] = size[i];
 		}
-			
-		i++;
-		arg = arg -> right;
 	}
 	
 	//引数代入
@@ -505,6 +501,8 @@ void generate(Node_t *node){
 	{
 		return;
 	}
+	else if(node -> kind == ND_BLOCKEND)
+		return;
 
 	
 	//ノード末端付近==========================================================
@@ -768,14 +766,13 @@ void generate(Node_t *node){
 
 	case ND_BLOCK:
 
-		while (node->right ->kind != ND_BLOCKEND){
-			
-			
+		while (node ->kind != ND_BLOCKEND)
+		{
+					
 			generate(node -> left);
 			node = node ->right;
 
 		}
-		generate(node ->left);
 		
 		return;
 

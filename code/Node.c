@@ -305,26 +305,20 @@ Node_t *new_node_block(Token_t ** token){
 		
 	node -> kind = ND_BLOCK;
 
-	node -> left = stmt(token);
-
 	Node_t *node_top = node;
 
 	while (!find("}",token))
 	{
-		
-		Node_t *right = calloc(1,sizeof(Node_t));
+		node -> kind = ND_BLOCK;
+		node -> left = stmt(token);
 
+		Node_t *right = calloc(1,sizeof(Node_t));
 		node -> right = right;
 
 		node = right;
-		node -> kind = ND_BLOCK;
-		node -> left = stmt(token);
 	}
 
-	Node_t *end = calloc(1,sizeof(Node_t));
-	end -> kind = ND_BLOCKEND;
-	
-	node -> right = end;
+	node -> kind = ND_BLOCKEND;
 	return node_top;
 }
 
