@@ -8,12 +8,22 @@
 #include<stdio.h>
 #include<string.h>
 
+/**
+ * @brief 汎用のvector
+ * 
+ */
 
+typedef struct vector Vector;
+
+struct vector{
+	Vector *next;
+	void *value;
+};
 
 
 /**
- * @brief 
- * 変数型
+ * @brief 識別子の実行型を表現する
+ * 
  * @param Type_label 変数の型ラベル
  * @param Type_* pointer_to : ポインタの示す先
  * @param size_t size : メモリでのサイズ
@@ -48,8 +58,8 @@ struct type{
 
 
 /**
- * @brief 
- * local varの実装
+ * @brief 識別子として保持する必要のある情報をストアする
+ * 
  * @param Lvar_* next
  * @param char_* name
  * @param int length : length of name
@@ -74,8 +84,8 @@ Lvar *string_iter;
 Lvar *global;
 
 /**
- * @brief 
- * function scope で管理する識別子テーブル
+ * @brief 名前空間
+ * 
  * @param Tables_* head
  * @param Tables_* next
  * @param Lvar_* locals
@@ -664,6 +674,25 @@ Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table);
  * @param Lvar** table
  */
 Lvar *declere_glIdent(Type *,char*,int,Lvar**);
+
+/**
+ * @brief トークン列が配列要素へのアクセスかどうか判定する
+ * 与えられたtoken へのポインタを先頭として
+ *  "[" expression "]" 
+ * の形の構文かどうかを判定する
+ * @param token 
+ * @return int 
+ */
+int is_arrmemaccess(Token_t **token);
+
+/**
+ * @brief 配列要素アクセスを構文木に変換する
+ * 
+ * @param Token_t** token
+ * @param Node_t** prev
+ * @return Node_t* 
+ */
+Node_t* arrmemaccess(Token_t **token , Node_t**);
 
 
 /**
