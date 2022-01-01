@@ -133,10 +133,12 @@ void set_stringiter()
 
 void set_array_header(){
 
-	if( nametable == 0 )
+	Lvar* nametable = *scope;
+
+	if(nametable == NULL)
 		return;
 
-	for( Lvar *var = (nametable -> locals) ; var ; var = var -> next ){
+	for( Lvar *var = nametable ; var ; var = var -> next ){
 
 
 		if (var ->tp -> Type_label == TP_ARRAY){
@@ -283,6 +285,7 @@ void argment_set(int arg_index , long int offset , long int size){
 
 void gen_function_def(Node_t *node){
 
+	Lvar* nametable = *scope;
 
 	printf("%s:",node -> name);
 	int return_rsp_number = rsp_counter;
@@ -292,18 +295,17 @@ void gen_function_def(Node_t *node){
 	rsp_counter+= 8;
 	printf("	mov rbp ,rsp\n");
 
-	if(nametable && nametable ->locals){
+	if(nametable){
 
 
-		printf("	sub rsp, %ld\n",nametable ->locals -> offset);
-		rsp_counter += nametable ->locals->offset;
+		printf("	sub rsp, %ld\n",nametable -> offset);
+		rsp_counter += nametable ->offset;
 	}//=======================================
 
 	Node_t *arg = node -> left;
 	long int size[node -> val];
 	long int offset[node -> val];
-	int i = 0;
-	while (arg -> kind != ND_BLOCKEND)
+	for(int i = 0 ;arg -> kind != ND_BLOCKEND; i++,arg = arg -> right)
 	{	
 		size[i] = arg -> left -> tp -> size;
 		if(i > 0)
@@ -315,9 +317,6 @@ void gen_function_def(Node_t *node){
 		{
 			offset[i] = size[i];
 		}
-			
-		i++;
-		arg = arg -> right;
 	}
 	
 	//引数代入
@@ -505,6 +504,8 @@ void generate(Node_t *node){
 	{
 		return;
 	}
+	else if(node -> kind == ND_BLOCKEND)
+		return;
 
 	
 	//ノード末端付近==========================================================
@@ -768,14 +769,13 @@ void generate(Node_t *node){
 
 	case ND_BLOCK:
 
-		while (node->right ->kind != ND_BLOCKEND){
-			
-			
+		while (node ->kind != ND_BLOCKEND)
+		{
+					
 			generate(node -> left);
 			node = node ->right;
 
 		}
-		generate(node ->left);
 		
 		return;
 

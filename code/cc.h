@@ -1,5 +1,6 @@
 #define VOID_TYPE_VALUE 0
 #define POINTER_TYPE_VALUE 10
+#define VEC_MIN_SIZE 8
 
 #include<stdbool.h>
 #include<stdlib.h>
@@ -8,12 +9,104 @@
 #include<stdio.h>
 #include<string.h>
 
+/**
+ * @brief 汎用のvector
+ * 
+ */
 
+typedef struct vector Vector;
+
+struct vector{
+	void **container;
+	size_t allocsize;
+	unsigned long length;
+};
+
+// Vector.c====================================================
+/**
+ * @brief 新しいVector *を作成する\n
+ * length * 2 > allocate size のときは　allocate size = 2 * lengthとして初期化 
+ * @param size_t length
+ * @param size_t allocate size
+ */
+Vector *new_Vector(size_t);
+
+/**
+ * @brief 空のvector を作る
+ * 
+ * @return Vecotr* 
+ */
+Vector* make_vector();
+
+/**
+ * @brief 受け取った長さの要素を受理できるか判定する
+ * @param Vector* vector
+ * @param size_t _rsvlen
+ * @return int
+ */
+int _is_acceptable(Vector *,size_t);
+
+/**
+ * @brief 更新が必要なときは更新を行う
+ * @param Vector** vector
+ */
+void _maybe_realloc(Vector* vector);
+
+/**
+ * @brief vector の長さを取得
+ * 
+ * @param vec 
+ * @return int 
+ */
+int Vector_get_length(Vector* vec);
+
+/**
+ * @brief 要素を末尾に追加する
+ * 
+ * @param vec 
+ * @param x 
+ */
+void Vector_push(Vector *vec, void* x);
+
+/**
+ * @brief 末尾をひとつ減らす
+ * 
+ */
+void* Vector_pop(Vector* vec);
+
+/**
+ * @brief 要素を代入
+ * 
+ * @param Vector* vec
+ * @param size_t index
+ * @param void* pointer which will be assigned to vector
+ * 
+ */
+void Vector_replace(Vector*,size_t,void*);
+
+/**
+ * @brief index の要素にアクセスする
+ * 
+ * @param vec 
+ * @param index 
+ * @return void* 
+ */
+void* Vector_at(Vector* vec, size_t index);
+
+/**
+ * @brief 末尾の要素にアクセスする
+ * 
+ * @param vec 
+ * @return void* 
+ */
+void* Vector_get_tail(Vector *vec);
+
+// ====================================================
 
 
 /**
- * @brief 
- * 変数型
+ * @brief 識別子の実行型を表現する
+ * 
  * @param Type_label 変数の型ラベル
  * @param Type_* pointer_to : ポインタの示す先
  * @param size_t size : メモリでのサイズ
@@ -48,8 +141,8 @@ struct type{
 
 
 /**
- * @brief 
- * local varの実装
+ * @brief 識別子として保持する必要のある情報をストアする
+ * 
  * @param Lvar_* next
  * @param char_* name
  * @param int length : length of name
@@ -73,25 +166,26 @@ struct lvar{
 Lvar *string_iter;
 Lvar *global;
 
-/**
- * @brief 
- * function scope で管理する識別子テーブル
- * @param Tables_* head
- * @param Tables_* next
- * @param Lvar_* locals
- *
- * */
-typedef struct NameSpace Tables;
+// /**
+//  * @brief 名前空間
+//  * 
+//  * @param Tables_* head
+//  * @param Tables_* next
+//  * @param Lvar_* locals
+//  *
+//  * */
+// typedef struct NameSpace Tables;
 
-struct NameSpace{
+// struct NameSpace{
 
-	Tables *head;
-	Tables *next;
-	Lvar *locals;
-};
+// 	Tables *head;
+// 	Tables *next;
+// 	Lvar *locals;
+// };
 
 //関数ごとのlocal 変数
-Tables *nametable;
+Vector *nameTable;
+void** scope;
 
 
 // =========================Token =========================
@@ -382,6 +476,31 @@ Node_t* new_node_stringiter(Token_t**);
 Node_t *new_node_funcCall(Token_t **token);
 
 /**
+ * @brief 関数の引数を読み込む
+ * 
+ * @param Tokent_t** token
+ * @param Node_t** vector which holds arg types
+ * @return int : a number of argment 
+ */
+int Node_readarg(Token_t **, Node_t**);
+
+/**
+ * @brief 関数定義をパース
+ * 
+ * @param Token_t **
+ * @return Node_t*
+ */
+Node_t *new_node_funcDef(Token_t **token);
+
+/**
+ * @brief 変数を表すノードを作る
+ * 
+ * @param token 
+ * @return Node_t* 
+ */
+Node_t *new_node_var(Token_t **token);
+
+/**
  * @brief 識別子の末端ノードを作る
  * 
  * @param Token_t** token
@@ -580,11 +699,9 @@ Lvar *find_lvar(char *,int,Lvar **locals);
 Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
 
-
-
 /**
- * @brief 型チェックをする関数 両辺が違う方の時は2を返す
- * 
+ * @brief 型チェックをする関数 \n
+ * 型がないときは0 型が一致するときは 1 両辺が違う型の時は2を返す
  * @param Node_t node
  * @return int 
  */
@@ -624,6 +741,25 @@ Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table);
  * @param Lvar** table
  */
 Lvar *declere_glIdent(Type *,char*,int,Lvar**);
+
+/**
+ * @brief トークン列が配列要素へのアクセスかどうか判定する
+ * 与えられたtoken へのポインタを先頭として
+ *  "[" expression "]" 
+ * の形の構文かどうかを判定する
+ * @param token 
+ * @return int 
+ */
+int is_arrmemaccess(Token_t **token);
+
+/**
+ * @brief 配列要素アクセスを構文木に変換する
+ * 
+ * @param Token_t** token
+ * @param Node_t** prev
+ * @return Node_t* 
+ */
+Node_t* arrmemaccess(Token_t **token , Node_t**);
 
 
 /**

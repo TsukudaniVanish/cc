@@ -63,6 +63,77 @@ Node_t *new_node_funcCall(Token_t **token)
 	return node;
 }
 
+int Node_read_funcarg(Token_t **token,Node_t **vector)
+{
+	expect("(",token);
+
+	int to_return = 0;
+	Node_t* v = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
+	*vector = v;
+	while (!find(")",token))
+	{
+		v -> left = Lvardec(token);
+		find(",",token);
+
+		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
+		v -> right = next;
+
+		to_return ++;
+
+		v = next;
+	}
+
+	v -> kind = ND_BLOCKEND;
+	return to_return;
+	
+}
+
+Node_t *new_node_funcDef(Token_t **token)
+{
+	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
+	node -> tp = read_type(&node -> name,token);
+
+	declere_glIdent(node -> tp,node -> name,strlen(node -> name),&global);
+
+	node -> val = Node_read_funcarg(token,&node -> left);
+	
+	node -> right = stmt(token);
+	return node;
+
+}
+
+Node_t *new_node_var(Token_t **token)
+{
+	Lvar *lvar = NULL;
+	Lvar *table = Vector_get_tail(nameTable);
+	Token_t *ident = consume(token);
+	if(ident)
+		lvar = find_lvar(ident -> str,ident -> length,&table);
+	else
+	{
+		fprintf(stderr,"Fail to consume token\n");
+	}
+	if(lvar)
+	{//local 変数
+		if(
+			lvar -> tp -> Type_label == TP_POINTER
+			&& lvar -> next
+			&& lvar -> next -> tp -> Type_label == TP_ARRAY
+		)//size of 用の処理
+			return new_Node_t(ND_LVAL,NULL,NULL,lvar -> next -> tp -> size,lvar -> offset,lvar -> tp,lvar -> name);
+		return new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,NULL);
+	}
+	lvar = find_lvar(ident -> str,ident -> length,&global);
+	if(lvar)
+	{//グローバル変数
+		if(lvar -> tp -> Type_label != TP_ARRAY)//暗黙にpointer 型にキャストする
+			return new_Node_t(ND_GLOBVALCALL,NULL,NULL,0,0,lvar -> tp,lvar -> name);
+		else
+			return new_Node_t(ND_GLOBVALCALL,NULL,NULL,0,0,new_tp(TP_POINTER,lvar -> tp,8),lvar -> name);
+	}
+	error_at(ident -> str,"不明な識別子");
+}
+
 Node_t *new_node_ident(Token_t**token)
 {
 
@@ -71,71 +142,8 @@ Node_t *new_node_ident(Token_t**token)
 		return new_node_funcCall(token);
 	}
 
-	int flag_def = 0;// 0 : 型宣言なし
-	Type *tp;
-
-	if((*token)-> kind > 299){
-
-
-		tp = (*token) -> tp;
-		flag_def = 1;//型宣言あり
-		(*token) = (*token)->next; 
-	}
-
-	Token_t *ident = consume(token);//識別子読み込み
-	Node_t *node;
-
-	if(ident){
-		
-
-		node = calloc(1,sizeof(Node_t));
-		
-
-		Lvar *lvar = find_lvar( ident -> str,ident -> length,&(nametable->locals) );
-		Lvar *globvar = find_lvar(ident -> str,ident -> length,&global);
-
-		if(lvar){
-			node -> kind = ND_LVAL;
-
-			node -> tp = lvar -> tp;
-
-			if(lvar -> tp -> Type_label == TP_POINTER 
-				&& lvar -> next 
-				&& lvar -> next -> tp -> Type_label == TP_ARRAY)
-			{
-				node -> val = lvar -> next -> tp -> size;
-			}
-			node -> offset = lvar -> offset;
-			return node;
-
-		}
-		else if( globvar ){// global var call 
-
-			node -> kind = ND_GLOBVALCALL;
-			
-			//名前コピー
-			node -> name = calloc((ident -> length),sizeof(char));
-			memcpy( node -> name , ident -> str, ident -> length);
-
-			
-			if( globvar -> tp -> Type_label == TP_ARRAY )
-			{
-
-				node -> tp = new_tp(TP_POINTER,globvar -> tp,8);
-			}
-			else
-			{
-				node -> tp = globvar -> tp;
-			}
-			return node;
-
-
-		
-		}else
-		{// local var def なし=========================
-			error_at(ident -> str, "不明な識別子");
-		}//=========================
-	}
+	return new_node_var(token);
+	
 }
 
 
@@ -170,18 +178,18 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 		
 		if( (*token)->kind == TK_ELSE ){
 
-			Node_t *nodeup = calloc(1,sizeof(Node_t));
-			nodeup ->kind = ND_ELSE;
-			nodeup -> left = node;
+			Node_t *uppernode = calloc(1,sizeof(Node_t));
+			uppernode ->kind = ND_ELSE;
+			uppernode -> left = node;
 			node -> kind = ND_IFE;
 
 			(*token) = (*token)->next;
 
-			nodeup -> right = calloc(1,sizeof(Node_t));
-			nodeup -> right =stmt(token);
+			uppernode -> right = calloc(1,sizeof(Node_t));
+			uppernode -> right =stmt(token);
 			
 			
-			return nodeup;
+			return uppernode;
 
 		}else{
 			
@@ -270,71 +278,24 @@ Node_t *new_node_stringiter(Token_t ** token)
 
 Node_t *new_node_globalident(Token_t**token){
 
+	if(is_functioncall(token))
+	{
+		return new_node_funcDef(token);
+	}
 
-	Node_t *node = calloc(1,sizeof(Node_t));
+	//グローバル変数の定義
+	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 
 	node -> tp = read_type(&node -> name,token);
+	Lvar *lvar = declere_glIdent(node -> tp,node -> name, strlen(node -> name),&global);
 
-	if(find("(",token)){//関数定義
-
-		//関数をname table に登録
-        declere_glIdent(node -> tp,node -> name,strlen(node -> name),&global);
-
-		if(nametable != 0){//関数の変数情報更新
-
-			nametable ->next = calloc(1,sizeof(Tables));
-			nametable -> next -> head = nametable -> head;
-			nametable = nametable -> next;
-			
-		}else{
-
-			nametable = calloc(1,sizeof(Tables));
-			nametable -> head = nametable;
-
-		}
-
-
-		node -> kind = ND_FUNCTIONDEF;
-		
-
-		node -> val = 0; // 引数の個数
-	
-		Node_t *left_argnames = calloc(1,sizeof(Node_t));
-		node -> left = left_argnames;
-		while (!find(")",token) && node -> val < 7){
-			
-			node -> val ++;
-
-			left_argnames -> kind = ND_ARGMENT;
-			left_argnames ->left = Lvardec(token);
-
-			Node_t *node_rightend = calloc(1,sizeof(Node_t));
-			left_argnames -> right = node_rightend;
-			left_argnames = node_rightend;
-
-			find(",",token);
-		}
-		if( node -> val > 6){
-
-			error_at((*token) -> str,"引数の個数が6個より大きいです");
-		}
-		left_argnames -> kind = ND_BLOCKEND;//引数読み込み終了
-		
-		node -> right = stmt(token);// 定義本文
-		return node;
-	
-	}else{//グローバル変数の定義
-
-		node -> kind = ND_GLOBVALDEF;
-		Lvar *lvar = declere_glIdent(node -> tp,node -> name, strlen(node -> name),&global);
-
-		if (find("=",token))//変数の代入
-		{
-			node -> val = expect_num(token);
-		}
-		expect(";",token);
-		return node;
+	if (find("=",token))//変数の代入
+	{
+		node -> val = expect_num(token);
 	}
+	expect(";",token);
+	return node;
+	
 }
 
 Node_t *new_node_block(Token_t ** token){
@@ -344,26 +305,20 @@ Node_t *new_node_block(Token_t ** token){
 		
 	node -> kind = ND_BLOCK;
 
-	node -> left = stmt(token);
-
 	Node_t *node_top = node;
 
 	while (!find("}",token))
 	{
-		
-		Node_t *right = calloc(1,sizeof(Node_t));
+		node -> kind = ND_BLOCK;
+		node -> left = stmt(token);
 
+		Node_t *right = calloc(1,sizeof(Node_t));
 		node -> right = right;
 
 		node = right;
-		node -> kind = ND_BLOCK;
-		node -> left = stmt(token);
 	}
 
-	Node_t *end = calloc(1,sizeof(Node_t));
-	end -> kind = ND_BLOCKEND;
-	
-	node -> right = end;
+	node -> kind = ND_BLOCKEND;
 	return node_top;
 }
 

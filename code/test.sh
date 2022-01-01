@@ -84,7 +84,7 @@ echo -n "Disply integer another one"
 assert 42 42
 echo -n "sum and sub test"
 assert 21 "5+20-4"
-echo -n "tokenize test"
+echo -n "tokenize test" 
 assert 21 "5 + 20 -4"
 echo -n "mul test"
 assert 47 '5+6*7'
@@ -178,6 +178,6 @@ assert 3 'char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y'
 assert 10 'char *b = "hi hello"; int a = 10; return a'
 
 echo  "Error test"
-assert_e '20+++3;'
+./cc 'int main(){20+++3;}'
 
-assert_type 'a = 0;return a;'
+./cc 'int main(){a = 0;return a;}'

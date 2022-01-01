@@ -73,8 +73,10 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 
 	Lvar *lvar = calloc(1,sizeof(Lvar));
 	lvar -> next = next;
+	//名前コピー
 	lvar -> name = calloc(length,sizeof(char));
 	memcpy(lvar -> name,name,length);
+	// 名前コピー終わり
 	lvar -> length = length;
 	lvar -> tp = tp;
 
@@ -88,6 +90,9 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 	}
 	return lvar;
 }
+
+
+
 
 
 
@@ -195,6 +200,42 @@ Lvar *declere_glIdent(Type *tp,char *name, int len, Lvar **table)
 	return lvar;	
 }
 
+int is_arrmemaccess(Token_t **token)
+{
+	Token_t *buf = *token;
+
+	if(find("[",&buf))
+	{
+		while (buf -> kind !=TK_EOF)
+		{
+			if(find("]",token))
+				break;
+			buf = buf -> next;
+		}
+		return 1;
+	}
+	return 0;
+}
+
+Node_t* arrmemaccess(Token_t **token , Node_t** prev)
+{
+	expect("[",token);
+	Node_t *node = assign(token);
+	expect("]",token);
+
+	if(
+		(node -> tp -> Type_label == TP_POINTER && (*prev) -> tp -> Type_label == TP_INT) ||
+		(node -> tp -> Type_label == TP_INT && (*prev) -> tp -> Type_label == TP_POINTER)
+	){
+		Node_t *get_address = new_node(ND_ADD,*prev,node);
+		return get_address -> tp -> pointer_to -> Type_label == TP_ARRAY?
+			new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to -> pointer_to,NULL) :
+			new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
+	}
+
+	error_at((*token) -> str,"無効な要素アクセスです");
+}
+
 
 
 
@@ -250,15 +291,16 @@ void program(Token_t **token,Node_t **code){
 	int i = 0;
 	while(!at_eof(token)){
 
+		Vector_push(nameTable,NULL);
 		code[i] = func(token);
 		i++;
 	}
 	code[i] = NULL;
-	nametable -> next = NULL;
+	Vector_push(nameTable,NULL);
+	//nametable -> next = NULL;
 }
 
 Node_t *func(Token_t **token){
-
 
 	if ((*token) -> kind <= 299 ){
 
@@ -308,9 +350,11 @@ Node_t *stmt(Token_t **token){
 
 Node_t *Lvardec(Token_t **token)
 {
+	Lvar *table = Vector_get_tail(nameTable);
 	char *name = NULL;
 	Type *tp = read_type(&name,token);
-	Lvar *lvar = declere_ident(tp,name,strlen(name),&(nametable -> locals));
+	Lvar *lvar = declere_ident(tp,name,strlen(name),&table);
+	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
 	Node_t *node = new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	if(find("=",token))
 	{
@@ -467,7 +511,7 @@ Node_t *unitary(Token_t **token){
 			node = new_node_num(  node -> val );
 		}else{
 
-
+			
 			node = new_node_num(  node ->tp -> size );
 		}	
 		return node;		
@@ -484,7 +528,6 @@ Node_t *unitary(Token_t **token){
 
 
 		node = new_node(ND_SUB,new_node_num(0),primary(token));
-		node -> tp = calloc(1,sizeof(Type));
 		node -> tp = node -> right -> tp;
 		
 	}else if((*token) -> kind == TK_OPERATOR && ( (*token) -> str[0] == '*' || (*token) -> str[0] == '&')){
@@ -522,34 +565,9 @@ Node_t *primary(Token_t **token){
 	{
 		node = new_node_num(expect_num(token));
 	}
-	if(find("[",token)){// a[...] -> *(a + ...)
 
-		if( node -> tp -> Type_label !=TP_POINTER)
-		{//識別子を読んでいるかチェック
-			fprintf(stderr,"N kind : %d\n",node -> kind);
-			fprintf(stderr,"Type label : %d\n",node -> tp -> Type_label);
-			error_at((*token) -> str,"識別子がありません");
-		}
-		Node_t *node_top = calloc(1,sizeof(Node_t));
-		node_top -> kind = ND_DEREF;
-		if(node -> tp -> pointer_to -> Type_label == TP_ARRAY)
-		{
-			node_top -> tp = node -> tp -> pointer_to -> pointer_to;
-		}
-		else
-		{
-			node_top -> tp = node -> tp -> pointer_to;
-		}
-		node_top -> val = -1;
-
-		parsing_here = (*token) -> str;
-		node_top -> left = new_node(ND_ADD,node,mul(token));
-
-		expect("]",token);
-
-		return node_top;
-
-	}
+	if(is_arrmemaccess(token))
+		return arrmemaccess(token,&node);
 	return node;
 }
 
