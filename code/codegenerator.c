@@ -133,10 +133,12 @@ void set_stringiter()
 
 void set_array_header(){
 
-	if( nametable == 0 )
+	Lvar* nametable = *scope;
+
+	if(nametable == NULL)
 		return;
 
-	for( Lvar *var = (nametable -> locals) ; var ; var = var -> next ){
+	for( Lvar *var = nametable ; var ; var = var -> next ){
 
 
 		if (var ->tp -> Type_label == TP_ARRAY){
@@ -283,6 +285,7 @@ void argment_set(int arg_index , long int offset , long int size){
 
 void gen_function_def(Node_t *node){
 
+	Lvar* nametable = *scope;
 
 	printf("%s:",node -> name);
 	int return_rsp_number = rsp_counter;
@@ -292,11 +295,11 @@ void gen_function_def(Node_t *node){
 	rsp_counter+= 8;
 	printf("	mov rbp ,rsp\n");
 
-	if(nametable && nametable ->locals){
+	if(nametable){
 
 
-		printf("	sub rsp, %ld\n",nametable ->locals -> offset);
-		rsp_counter += nametable ->locals->offset;
+		printf("	sub rsp, %ld\n",nametable -> offset);
+		rsp_counter += nametable ->offset;
 	}//=======================================
 
 	Node_t *arg = node -> left;

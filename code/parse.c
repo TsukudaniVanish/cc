@@ -92,28 +92,7 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 }
 
 
-Tables *new_Tables(Tables *head,Tables *next,Lvar *locals)
-{
-	Tables *table = calloc(1,sizeof(Tables));
-	table -> head = head;
-	table -> next = next;
-	table -> locals = locals;
-	return table;
-}
 
-
-void make_nametable(Tables **table)
-{
-	if(*table)
-	{
-		(*table) -> next = new_Tables((*table) -> head,NULL,NULL);
-		(*table) = (*table) -> next;
-		return;
-	}
-	*table = new_Tables(NULL,NULL,NULL);
-	(*table) -> head = *table;
-	return;
-}
 
 
 
@@ -312,15 +291,16 @@ void program(Token_t **token,Node_t **code){
 	int i = 0;
 	while(!at_eof(token)){
 
+		Vector_push(nameTable,NULL);
 		code[i] = func(token);
 		i++;
 	}
 	code[i] = NULL;
-	nametable -> next = NULL;
+	Vector_push(nameTable,NULL);
+	//nametable -> next = NULL;
 }
 
 Node_t *func(Token_t **token){
-
 
 	if ((*token) -> kind <= 299 ){
 
@@ -370,9 +350,11 @@ Node_t *stmt(Token_t **token){
 
 Node_t *Lvardec(Token_t **token)
 {
+	Lvar *table = Vector_get_tail(nameTable);
 	char *name = NULL;
 	Type *tp = read_type(&name,token);
-	Lvar *lvar = declere_ident(tp,name,strlen(name),&(nametable -> locals));
+	Lvar *lvar = declere_ident(tp,name,strlen(name),&table);
+	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
 	Node_t *node = new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	if(find("=",token))
 	{
@@ -583,6 +565,7 @@ Node_t *primary(Token_t **token){
 	{
 		node = new_node_num(expect_num(token));
 	}
+
 	if(is_arrmemaccess(token))
 		return arrmemaccess(token,&node);
 	return node;

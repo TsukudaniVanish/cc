@@ -105,9 +105,10 @@ Node_t *new_node_funcDef(Token_t **token)
 Node_t *new_node_var(Token_t **token)
 {
 	Lvar *lvar = NULL;
+	Lvar *table = Vector_get_tail(nameTable);
 	Token_t *ident = consume(token);
 	if(ident)
-		lvar = find_lvar(ident -> str,ident -> length,&nametable -> locals);
+		lvar = find_lvar(ident -> str,ident -> length,&table);
 	else
 	{
 		fprintf(stderr,"Fail to consume token\n");
@@ -279,7 +280,6 @@ Node_t *new_node_globalident(Token_t**token){
 
 	if(is_functioncall(token))
 	{
-		make_nametable(&nametable);
 		return new_node_funcDef(token);
 	}
 

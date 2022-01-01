@@ -1,5 +1,6 @@
 #define VOID_TYPE_VALUE 0
 #define POINTER_TYPE_VALUE 10
+#define VEC_MIN_SIZE 8
 
 #include<stdbool.h>
 #include<stdlib.h>
@@ -16,9 +17,91 @@
 typedef struct vector Vector;
 
 struct vector{
-	Vector *next;
-	void *value;
+	void **container;
+	size_t allocsize;
+	unsigned long length;
 };
+
+// Vector.c====================================================
+/**
+ * @brief 新しいVector *を作成する\n
+ * length * 2 > allocate size のときは　allocate size = 2 * lengthとして初期化 
+ * @param size_t length
+ * @param size_t allocate size
+ */
+Vector *new_Vector(size_t);
+
+/**
+ * @brief 空のvector を作る
+ * 
+ * @return Vecotr* 
+ */
+Vector* make_vector();
+
+/**
+ * @brief 受け取った長さの要素を受理できるか判定する
+ * @param Vector* vector
+ * @param size_t _rsvlen
+ * @return int
+ */
+int _is_acceptable(Vector *,size_t);
+
+/**
+ * @brief 更新が必要なときは更新を行う
+ * @param Vector** vector
+ */
+void _maybe_realloc(Vector* vector);
+
+/**
+ * @brief vector の長さを取得
+ * 
+ * @param vec 
+ * @return int 
+ */
+int Vector_get_length(Vector* vec);
+
+/**
+ * @brief 要素を末尾に追加する
+ * 
+ * @param vec 
+ * @param x 
+ */
+void Vector_push(Vector *vec, void* x);
+
+/**
+ * @brief 末尾をひとつ減らす
+ * 
+ */
+void* Vector_pop(Vector* vec);
+
+/**
+ * @brief 要素を代入
+ * 
+ * @param Vector* vec
+ * @param size_t index
+ * @param void* pointer which will be assigned to vector
+ * 
+ */
+void Vector_replace(Vector*,size_t,void*);
+
+/**
+ * @brief index の要素にアクセスする
+ * 
+ * @param vec 
+ * @param index 
+ * @return void* 
+ */
+void* Vector_at(Vector* vec, size_t index);
+
+/**
+ * @brief 末尾の要素にアクセスする
+ * 
+ * @param vec 
+ * @return void* 
+ */
+void* Vector_get_tail(Vector *vec);
+
+// ====================================================
 
 
 /**
@@ -83,25 +166,26 @@ struct lvar{
 Lvar *string_iter;
 Lvar *global;
 
-/**
- * @brief 名前空間
- * 
- * @param Tables_* head
- * @param Tables_* next
- * @param Lvar_* locals
- *
- * */
-typedef struct NameSpace Tables;
+// /**
+//  * @brief 名前空間
+//  * 
+//  * @param Tables_* head
+//  * @param Tables_* next
+//  * @param Lvar_* locals
+//  *
+//  * */
+// typedef struct NameSpace Tables;
 
-struct NameSpace{
+// struct NameSpace{
 
-	Tables *head;
-	Tables *next;
-	Lvar *locals;
-};
+// 	Tables *head;
+// 	Tables *next;
+// 	Lvar *locals;
+// };
 
 //関数ごとのlocal 変数
-Tables *nametable;
+Vector *nameTable;
+void** scope;
 
 
 // =========================Token =========================
@@ -614,27 +698,10 @@ Lvar *find_lvar(char *,int,Lvar **locals);
  */
 Lvar *new_lvar(Type *tp,char *name, int length,Lvar *);
 
-/**
- * @brief 新しい名前空間を作成する
- * 
- * @param head 
- * @param next 
- * @param locals 
- * @return Tables* 
- */
-Tables *new_Tables(Tables *head,Tables *next,Lvar *locals);
-/**
- * @brief　識別子の名前空間を更新する
- * 
- * @param Tables** table
- */
-void make_nametable(Tables **table);
-
-
 
 /**
- * @brief 型チェックをする関数 両辺が違う方の時は2を返す
- * 
+ * @brief 型チェックをする関数 \n
+ * 型がないときは0 型が一致するときは 1 両辺が違う型の時は2を返す
  * @param Node_t node
  * @return int 
  */

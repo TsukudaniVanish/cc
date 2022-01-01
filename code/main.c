@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv){
 
-	
+	nameTable = make_vector();
 
 	char *buffer;
 	if( strncmp(argv[1],"-f",2) == 0)
@@ -46,8 +46,7 @@ int main(int argc, char **argv){
 	program(&token,code);
 
 	//関数スコープ識別子テーブルを先頭にセット
-	nametable = nametable -> head;
-
+	scope = nameTable -> container;
 	
 
 //アセンブリ前半を出力
@@ -69,8 +68,8 @@ int main(int argc, char **argv){
 			funcflag = 0;
 		}
 		generate(code[i]);
-		if(funcflag == 0 && nametable)
-			nametable = nametable -> next;
+		if(funcflag == 0)
+			scope++;
 
 	}
 
