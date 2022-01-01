@@ -24,22 +24,20 @@ struct vector{
 
 // Vector.c====================================================
 /**
- * @brief 新しいVector *を作成する\n
- * length * 2 > allocate size のときは　allocate size = 2 * lengthとして初期化 
- * @param size_t length
+ * @brief make new Vecotr*\n
  * @param size_t allocate size
  */
 Vector *new_Vector(size_t);
 
 /**
- * @brief 空のvector を作る
+ * @brief make empty vector
  * 
  * @return Vecotr* 
  */
 Vector* make_vector();
 
 /**
- * @brief 受け取った長さの要素を受理できるか判定する
+ * @brief return if receved length can be accepted or not 
  * @param Vector* vector
  * @param size_t _rsvlen
  * @return int
@@ -47,13 +45,13 @@ Vector* make_vector();
 int _is_acceptable(Vector *,size_t);
 
 /**
- * @brief 更新が必要なときは更新を行う
+ * @brief  if vector needs to reallocate memory then do. This function will use in Vector_push.
  * @param Vector** vector
  */
 void _maybe_realloc(Vector* vector);
 
 /**
- * @brief vector の長さを取得
+ * @brief get vec -> length if vec is aviable.
  * 
  * @param vec 
  * @return int 
@@ -61,7 +59,7 @@ void _maybe_realloc(Vector* vector);
 int Vector_get_length(Vector* vec);
 
 /**
- * @brief 要素を末尾に追加する
+ * @brief append element to tail of the vector
  * 
  * @param vec 
  * @param x 
@@ -69,13 +67,13 @@ int Vector_get_length(Vector* vec);
 void Vector_push(Vector *vec, void* x);
 
 /**
- * @brief 末尾をひとつ減らす
+ * @brief reduce length
  * 
  */
 void* Vector_pop(Vector* vec);
 
 /**
- * @brief 要素を代入
+ * @brief replace element of vec at index by assinged pointer.
  * 
  * @param Vector* vec
  * @param size_t index
@@ -85,7 +83,7 @@ void* Vector_pop(Vector* vec);
 void Vector_replace(Vector*,size_t,void*);
 
 /**
- * @brief index の要素にアクセスする
+ * @brief access element of vec at index if index < vec -> length .
  * 
  * @param vec 
  * @param index 
@@ -94,7 +92,7 @@ void Vector_replace(Vector*,size_t,void*);
 void* Vector_at(Vector* vec, size_t index);
 
 /**
- * @brief 末尾の要素にアクセスする
+ * @brief get elemnt of vec at tail.
  * 
  * @param vec 
  * @return void* 
@@ -105,11 +103,11 @@ void* Vector_get_tail(Vector *vec);
 
 
 /**
- * @brief 識別子の実行型を表現する
+ * @brief 識別子の実行型を表現する represent type of identifier.
  * 
- * @param Type_label 変数の型ラベル
- * @param Type_* pointer_to : ポインタの示す先
- * @param size_t size : メモリでのサイズ
+ * @param Type_label 変数の型ラベル lable of identifer which stands for type.
+ * @param Type_* pointer_to 
+ * @param size_t size : actuall memory size.
  * 
  */
 typedef struct type Type;
@@ -117,18 +115,17 @@ typedef struct type Type;
 struct type{
 	enum{
 		TP_VOID = VOID_TYPE_VALUE,
-		TP_INT ,//int 型 8bite
-		TP_CHAR,//char 型
-		TP_POINTER = POINTER_TYPE_VALUE,// pointer 型 8bite
-		TP_ARRAY,// 配列型
+		TP_INT ,//int type 8byte
+		TP_CHAR,//char type
+		TP_POINTER = POINTER_TYPE_VALUE,// pointer type 8byte
+		TP_ARRAY,// array type
 
 	}Type_label;
 
-	Type *pointer_to;// 配列型or pinter 型の時に意味があるメンバ変数
+	Type *pointer_to;// this member has meaning when Type_label == TP_POINTER or TP_ARRAY.
 
 	/**
-	 * @b
-	 * 変数のメモリサイズ
+	 * @brief size of type 
 	 * 		
 	 * @param int 8
 	 * @param pointer 8
@@ -141,7 +138,7 @@ struct type{
 
 
 /**
- * @brief 識別子として保持する必要のある情報をストアする
+ * @brief Container which store data needed for dealing with identifier.
  * 
  * @param Lvar_* next
  * @param char_* name
@@ -157,7 +154,7 @@ struct lvar{
 	char *name;
 	int length;
 	/**
-	 * @brief ローカル変数の時 : rbp からのオフセット 文字列の時はラベル番号
+	 * @brief local variavle : offset from rbp , string : label number of string literal
 	 * 
 	 */
 	long int offset;
@@ -166,24 +163,7 @@ struct lvar{
 Lvar *string_iter;
 Lvar *global;
 
-// /**
-//  * @brief 名前空間
-//  * 
-//  * @param Tables_* head
-//  * @param Tables_* next
-//  * @param Lvar_* locals
-//  *
-//  * */
-// typedef struct NameSpace Tables;
-
-// struct NameSpace{
-
-// 	Tables *head;
-// 	Tables *next;
-// 	Lvar *locals;
-// };
-
-//関数ごとのlocal 変数
+//table of identifier which has block scope.
 Vector *nameTable;
 void** scope;
 
