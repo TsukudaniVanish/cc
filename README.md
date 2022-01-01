@@ -4,20 +4,27 @@ cc is a my c compiler making project.
 
 ## Files
 
-
-
 ### cc.h
-header file
+header file which all used functions are declared in.
+Also, briefs of those functions  are written here.
+
+### Token.c  
+new token functions which make  new tokens.
+
+### Node.c
+new node functions which make new nodes for abstract syntax tree.
+
+### Vector.c
+this file serves vector utilities.
 
 ### tokenize.c
-a tokenizer function and token making functions 
+a tokenizer function
 
 ### main.c 
-
 expect functions and  a main function are written in this file.
 
 ### parse.c
-a parser function and node making functions 
+a parser function
 
 ### codegenerator.c
 a generating local variable function  

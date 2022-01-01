@@ -165,7 +165,7 @@ Token_t *tokenize(char *p){//入力文字列
 			continue;	
 		}
 		else if(is_comment(p))
-		{
+		{//コメント
 			comment_skip(&p);
 			continue;
 		}
@@ -196,8 +196,8 @@ Token_t *tokenize(char *p){//入力文字列
 			cur -> val = strtol(p,&p,10);
 			continue;
 		
-		}else if(*p != ';'){//識別子
-			
+		}else if(*p != ';')
+		{//識別子
 
 			cur = new_token(TK_IDENT,cur,p);
 			//length 取得
@@ -217,9 +217,9 @@ Token_t *tokenize(char *p){//入力文字列
 			}
 			continue;
 		
-		}else if(*p == ';'){
+		}else if(*p == ';')
+		{
 		
-
 			cur = new_token(TK_PUNCTUATOR,cur,p++);
 			cur -> length =1;
 			continue;
