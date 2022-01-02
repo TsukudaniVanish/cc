@@ -52,19 +52,43 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 	return cur;
 }
 
+char *get_operator(int kind)
+{
+	switch(kind)
+	{
+	case EQUAL:
+		return "==";
+	case NEQ:
+		return "!=";
+	case LEQ:
+		return "<=";
+	case GEQ:
+		return	">=";
+	default:
+		fprintf(stderr,"invalid kind of operator : %d",kind);
+		exit(1);
+	}
+}
 
+bool find(int kind,Token_t **token){
 
-bool find(char *string,Token_t **token){
+	if(kind > MULTOPERATOR_START){ // len >= 2 identifier
+		char *multoper = get_operator(kind);
+		if((*token) -> length == strlen(multoper) && !strncmp(multoper,(*token) -> str,strlen(multoper)))
+		{	consume(token);
+			return true;
+		}
+		return false;
+	}
 
-	if( (*token) -> kind > 100 | strlen(string) != (*token) -> length | memcmp( (*token) -> str,string,(*token)-> length ) != 0  ){
-
+	if((*token) -> str[0] != kind){
 
 		return false;
 
 	}else{
 
 
-		*token = (*token) -> next;
+		consume(token);
 		return true;
 	}
 }
@@ -151,12 +175,12 @@ int is_functioncall(Token_t **token)
 
     expect_ident(&buf);
 
-    if(find("[",&buf))
+    if(find('[',&buf))
     {
         expect_num(&buf);
         expect("]",&buf);
     }
-    if(find("(",&buf))
+    if(find('(',&buf))
         return 1;
         
     return 0;

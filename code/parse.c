@@ -32,7 +32,7 @@ Type *read_type(char **name,Token_t **token)
 
 	consume(token);
 
-	if(find("[",token))
+	if(find('[',token))
 	{//配列定義
 		int array_size = expect_num(token) * (buf -> tp -> size);
 		expect("]",token);
@@ -204,11 +204,11 @@ int is_arrmemaccess(Token_t **token)
 {
 	Token_t *buf = *token;
 
-	if(find("[",&buf))
+	if(find('[',&buf))
 	{
 		while (buf -> kind !=TK_EOF)
 		{
-			if(find("]",token))
+			if(find(']',token))
 				break;
 			buf = buf -> next;
 		}
@@ -325,7 +325,7 @@ Node_t *stmt(Token_t **token){
 
 		node = new_node_keyword( (*token) -> kind,token);
 
-	}else if( find("{",token) ){
+	}else if( find('{',token) ){
 		
 
 		node = new_node_block(token);
@@ -356,7 +356,7 @@ Node_t *Lvardec(Token_t **token)
 	Lvar *lvar = declere_ident(tp,name,strlen(name),&table);
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
 	Node_t *node = new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
-	if(find("=",token))
+	if(find('=',token))
 	{
 		parsing_here = (*token) -> str;
 		node = new_node(ND_ASSIGN,node,assign(token));
@@ -371,7 +371,7 @@ Node_t *assign(Token_t **token){
 
 	Node_t *node = equality(token);
 	
-	if( find("=",token) ){
+	if( find('=',token) ){
 		
 		parsing_here = (*token) -> str;
 		node = new_node(ND_ASSIGN,node,assign(token));
@@ -388,12 +388,12 @@ Node_t *equality(Token_t **token){
 	for(;;){
 		
 		parsing_here = (*token) -> str;
-		if( find("==",token) ){
+		if( find(EQUAL,token) ){
 		
 
 			node = new_node(ND_EQL,node,relational(token));
 		
-		}else if( find("!=",token) ){
+		}else if( find(NEQ,token) ){
 
 			
 			node = new_node(ND_NEQ,node,relational(token));
@@ -414,22 +414,22 @@ Node_t *relational(Token_t **token){
 	for (;;){
 
 		parsing_here = (*token) -> str;
-		if( find("<=",token) ){
+		if( find(LEQ,token) ){
 			
 			
 			node = new_node(ND_LEQ,node,add(token));
 		
-		}else if( find("<",token) ){
+		}else if( find('<',token) ){
 			
 	
 			node = new_node(ND_LES,node,add(token));
 		
-		}else if( find(">=",token) ){
+		}else if( find(GEQ,token) ){
 	
 	
 			node = new_node(ND_LEQ,add(token),node);
 	
-		}else if( find(">",token) ){
+		}else if( find('>',token) ){
 		
 	
 			node = new_node(ND_LES,add(token),node);
@@ -450,12 +450,12 @@ Node_t *add(Token_t **token){
 	for(;;){
 
 		parsing_here = (*token) -> str;
-		if( find("+",token) ){
+		if( find('+',token) ){
 
 
 			node = new_node(ND_ADD,node,mul(token));
 
-		}else if( find("-",token) ){
+		}else if( find('-',token) ){
 
 
 			node = new_node(ND_SUB,node,mul(token));
@@ -477,12 +477,12 @@ Node_t *mul(Token_t **token){
 	for(;;){
 
 		parsing_here = (*token) -> str;
-		if( find("*",token) ){
+		if( find('*',token) ){
 
 
 			node = new_node(ND_MUL,node,unitary(token));
 
-		}else if( find("/",token) ){
+		}else if( find('/',token) ){
 
 
 			node = new_node(ND_DIV,node,unitary(token));
@@ -519,12 +519,12 @@ Node_t *unitary(Token_t **token){
 
 	parsing_here = (*token) -> str;
 
-	if( find("+",token) ){
+	if( find('+',token) ){
 
 
 		node = primary(token);
 		
-	}else if( find("-",token) ){
+	}else if( find('-',token) ){
 
 
 		node = new_node(ND_SUB,new_node_num(0),primary(token));
@@ -546,7 +546,7 @@ Node_t *primary(Token_t **token){
 
 	Node_t *node;
 
-	if( find("(",token) ){ // '(' の次は expr
+	if( find('(',token) ){ // '(' の次は expr
 
 
 		node = assign(token);
@@ -557,7 +557,7 @@ Node_t *primary(Token_t **token){
 
 		node = new_node_ident(token);
 	}
-	else if(find("\"",token))
+	else if(find('\"',token))
 	{
 		node = new_node_stringiter(token);
 	}
