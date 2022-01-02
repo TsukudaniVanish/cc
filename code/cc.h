@@ -10,7 +10,7 @@
 #include<string.h>
 
 /**
- * @brief 汎用のvector
+ * @brief vector that contains void*
  * 
  */
 
@@ -103,9 +103,9 @@ void* Vector_get_tail(Vector *vec);
 
 
 /**
- * @brief 識別子の実行型を表現する represent type of identifier.
+ * @brief represent type of identifier.
  * 
- * @param Type_label 変数の型ラベル lable of identifer which stands for type.
+ * @param Type_label lable of identifer which stands for type.
  * @param Type_* pointer_to 
  * @param size_t size : actuall memory size.
  * 
@@ -169,13 +169,20 @@ void** scope;
 
 
 // =========================Token =========================
+enum { 
+	MULTOPERATOR_START=1000,
+	EQUAL,
+	NEQ,
+	LEQ,
+	GEQ,
+};
 /**
- * @b
- * Token の種類を列挙する
+ * @brief this is list of Type of tokens
  * 
  *
  * tokens:
- * 		operator:
+ * 		operator: 
+ * 		number 	1001 1002 1003 1004
  * 				"==","!=","<=",">=",
  * 				"<",">","+","-","*","/","&","=",
  * 		key word:
@@ -194,24 +201,24 @@ void** scope;
  */
 typedef enum{
 	// token ====================================================
-	TK_IDENT=0, //識別子
-	TK_CONST=1, //整数
-	TK_OPERATOR=2, // 演算子
-	TK_PUNCTUATOR=3,// 区切り文字
-	TK_STRINGLITERAL,//文字列
+	TK_IDENT=0, //identifier
+	TK_CONST=1, //integer
+	TK_OPERATOR=2, // operator
+	TK_PUNCTUATOR=3,// punctuator
+	TK_STRINGLITERAL,//string
 	//key words=====================================================
-	TK_IF=100,//制御構文
+	TK_IF=100,//flow operation
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
 	TK_RETURN,
-	TK_SIZEOF=200,// 演算子としてふるまうので別にする
+	TK_SIZEOF=200,// this keyword acts like operator.
 	//type of variable =====================================================
-	TK_TypeVOID=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeVOID=300,//this list is sorted as in Type_label
 	TK_TypeINT,
 	TK_TypeCHAR,
 	//=====================================================
-	TK_EOF=-1, //終了記号
+	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
 }Token_kind;
 
@@ -232,7 +239,7 @@ struct token {
 
 //========================= Node =========================
 
-//抽象構文木のノードの識別に使用する
+//Mostly used abstruct syntax tree
 typedef enum{
 	//operator =========================
 	ND_EQL,// <-> ==
@@ -249,15 +256,15 @@ typedef enum{
 	ND_NUM, // <-> integer
 	ND_STRINGLITERAL,
 	//型=========================
-	ND_GLOBVALDEF,// グローバル変数定義
-	ND_GLOBVALCALL,//グローバル変数呼び出し
-	ND_LVAL, // ローカル変数
-	ND_FUNCTIONCALL,//関数呼び出し
-	ND_FUNCTIONDEF,//関数定義
-	ND_ARGMENT,//関数の引数
+	ND_GLOBVALDEF,//  a definition of global variable
+	ND_GLOBVALCALL,// a left value which represents global variable
+	ND_LVAL, // a local variable
+	ND_FUNCTIONCALL,//A function call
+	ND_FUNCTIONDEF,//Definition of a function call
+	ND_ARGMENT,// an argument of a function
 	// key word=========================
 	ND_RETURN,
-	ND_IF,// else なしのif
+	ND_IF,// if state ment which has no else block.
 	ND_ELSE,
 	ND_IFE, //if ... else
 	ND_WHILE,
@@ -271,15 +278,14 @@ typedef enum{
 }Node_kind;
 
 /**
- * @brief 
- * 抽象構文木の実装に使用する
+ * @brief represent  an ast 
  * @param Node_kind kind
  * @param Node_t_* left
  * @param Node_t_* right
- * @param int val : kind が ND_FUNCTION..,ND_IDENT,ND_LVALの時に使用する
- * @param long_int offset
- * @param Type tp : kind がND_LVALの時に使用する
- * @param char_* name : kind がND_LVAL の時に使用する
+ * @param int val : When kind is ND_FUNCTION..,ND_IDENT,ND_LVAL this member has a role
+ * @param long_int offsett
+ * @param Type*   when kind is ND_LVAL this memeber has a role
+ * @param char_* name : if kind is  ND_LVAL  this has a role
  */
 typedef struct node Node_t;
 
@@ -292,9 +298,10 @@ struct node {
 	/**
 	 * 
 	 * @brief of member variable : val 
-	 * ND_FUNCTION... -> 引数の個数
+	 * ND_FUNCTION... -> number of arguments
 	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_label == TP_POINTER -> 配列が暗黙にキャストされたなら 配列サイズ 他 0
+	 * ND_Lval && node -> tp -> Type_label == TP_POINTER and pointer_to == TP_ARRY -> size of array
+	 *
 	 * 
 	 */
 	int val;
@@ -306,7 +313,7 @@ struct node {
 
 //file.c====================================================
 /**
- * @brief 指定されたファイルの内容を返す
+ * @brief return cintents of a resived file
  * @param char* path
  * @return char*
  */
@@ -315,17 +322,17 @@ char *file_open(char *);
 
 // error_point.c====================================================
 
-//エラー報告用
+//error assert
 char* user_input;
 
-//エラー報告用
+//error assert
 char* filepah;
 
-//エラー報告用
+//error assert
 char *parsing_here;
 
 /**
- * @brief エラーが起きた場所を指摘する関数
+ * @brief this function points out the code that has some eroor in syntax.
  * @param char_* location
  * @param char_* format
  * @param ... 
@@ -335,8 +342,7 @@ void error_at(char *,char *,...);
 
 //Token.c ======================================================
 /**
- * @b
- * 新しいtokenを作り　cur->nextに代入する 代入後 cur を次のtoken に送る
+ * @brief make new token
  * @param Token_kind kind
  * @param Token_t_* cur
  * @param char_* str
@@ -346,7 +352,6 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 
 /**
  * @brief 
- * key word を受け取ってトークンを生成する
  * @param Token_kind
  * @param 
  * @return Token_t* 
@@ -354,13 +359,12 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 Token_t *new_keyword(Token_kind,Token_t *,char *);
 
 /**
- * @b
- * token -> strとstring が一致するか見る
- * @param char_* string
+ * @brief Compair if *token -> str and given string are equal.
+ * @param int kind
  * @param Token_t_** token 
  * @return bool
  */
-bool find(char *,Token_t **);
+bool find(int ,Token_t **);
 
 /**
  * @brief 
