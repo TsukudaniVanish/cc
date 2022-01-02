@@ -10,7 +10,7 @@
 #include<string.h>
 
 /**
- * @brief 汎用のvector
+ * @brief vector that contains void*
  * 
  */
 
@@ -24,22 +24,20 @@ struct vector{
 
 // Vector.c====================================================
 /**
- * @brief 新しいVector *を作成する\n
- * length * 2 > allocate size のときは　allocate size = 2 * lengthとして初期化 
- * @param size_t length
+ * @brief make new Vecotr*\n
  * @param size_t allocate size
  */
 Vector *new_Vector(size_t);
 
 /**
- * @brief 空のvector を作る
+ * @brief make empty vector
  * 
  * @return Vecotr* 
  */
 Vector* make_vector();
 
 /**
- * @brief 受け取った長さの要素を受理できるか判定する
+ * @brief return if receved length can be accepted or not 
  * @param Vector* vector
  * @param size_t _rsvlen
  * @return int
@@ -47,13 +45,13 @@ Vector* make_vector();
 int _is_acceptable(Vector *,size_t);
 
 /**
- * @brief 更新が必要なときは更新を行う
+ * @brief  if vector needs to reallocate memory then do. This function will use in Vector_push.
  * @param Vector** vector
  */
 void _maybe_realloc(Vector* vector);
 
 /**
- * @brief vector の長さを取得
+ * @brief get vec -> length if vec is aviable.
  * 
  * @param vec 
  * @return int 
@@ -61,7 +59,7 @@ void _maybe_realloc(Vector* vector);
 int Vector_get_length(Vector* vec);
 
 /**
- * @brief 要素を末尾に追加する
+ * @brief append element to tail of the vector
  * 
  * @param vec 
  * @param x 
@@ -69,13 +67,13 @@ int Vector_get_length(Vector* vec);
 void Vector_push(Vector *vec, void* x);
 
 /**
- * @brief 末尾をひとつ減らす
+ * @brief reduce length
  * 
  */
 void* Vector_pop(Vector* vec);
 
 /**
- * @brief 要素を代入
+ * @brief replace element of vec at index by assinged pointer.
  * 
  * @param Vector* vec
  * @param size_t index
@@ -85,7 +83,7 @@ void* Vector_pop(Vector* vec);
 void Vector_replace(Vector*,size_t,void*);
 
 /**
- * @brief index の要素にアクセスする
+ * @brief access element of vec at index if index < vec -> length .
  * 
  * @param vec 
  * @param index 
@@ -94,7 +92,7 @@ void Vector_replace(Vector*,size_t,void*);
 void* Vector_at(Vector* vec, size_t index);
 
 /**
- * @brief 末尾の要素にアクセスする
+ * @brief get elemnt of vec at tail.
  * 
  * @param vec 
  * @return void* 
@@ -105,11 +103,11 @@ void* Vector_get_tail(Vector *vec);
 
 
 /**
- * @brief 識別子の実行型を表現する
+ * @brief represent type of identifier.
  * 
- * @param Type_label 変数の型ラベル
- * @param Type_* pointer_to : ポインタの示す先
- * @param size_t size : メモリでのサイズ
+ * @param Type_label lable of identifer which stands for type.
+ * @param Type_* pointer_to 
+ * @param size_t size : actuall memory size.
  * 
  */
 typedef struct type Type;
@@ -117,18 +115,17 @@ typedef struct type Type;
 struct type{
 	enum{
 		TP_VOID = VOID_TYPE_VALUE,
-		TP_INT ,//int 型 8bite
-		TP_CHAR,//char 型
-		TP_POINTER = POINTER_TYPE_VALUE,// pointer 型 8bite
-		TP_ARRAY,// 配列型
+		TP_INT ,//int type 8byte
+		TP_CHAR,//char type
+		TP_POINTER = POINTER_TYPE_VALUE,// pointer type 8byte
+		TP_ARRAY,// array type
 
 	}Type_label;
 
-	Type *pointer_to;// 配列型or pinter 型の時に意味があるメンバ変数
+	Type *pointer_to;// this member has meaning when Type_label == TP_POINTER or TP_ARRAY.
 
 	/**
-	 * @b
-	 * 変数のメモリサイズ
+	 * @brief size of type 
 	 * 		
 	 * @param int 8
 	 * @param pointer 8
@@ -141,7 +138,7 @@ struct type{
 
 
 /**
- * @brief 識別子として保持する必要のある情報をストアする
+ * @brief Container which store data needed for dealing with identifier.
  * 
  * @param Lvar_* next
  * @param char_* name
@@ -157,7 +154,7 @@ struct lvar{
 	char *name;
 	int length;
 	/**
-	 * @brief ローカル変数の時 : rbp からのオフセット 文字列の時はラベル番号
+	 * @brief local variavle : offset from rbp , string : label number of string literal
 	 * 
 	 */
 	long int offset;
@@ -166,36 +163,26 @@ struct lvar{
 Lvar *string_iter;
 Lvar *global;
 
-// /**
-//  * @brief 名前空間
-//  * 
-//  * @param Tables_* head
-//  * @param Tables_* next
-//  * @param Lvar_* locals
-//  *
-//  * */
-// typedef struct NameSpace Tables;
-
-// struct NameSpace{
-
-// 	Tables *head;
-// 	Tables *next;
-// 	Lvar *locals;
-// };
-
-//関数ごとのlocal 変数
+//table of identifier which has block scope.
 Vector *nameTable;
 void** scope;
 
 
 // =========================Token =========================
+enum { 
+	MULTOPERATOR_START=1000,
+	EQUAL,
+	NEQ,
+	LEQ,
+	GEQ,
+};
 /**
- * @b
- * Token の種類を列挙する
+ * @brief this is list of Type of tokens
  * 
  *
  * tokens:
- * 		operator:
+ * 		operator: 
+ * 		number 	1001 1002 1003 1004
  * 				"==","!=","<=",">=",
  * 				"<",">","+","-","*","/","&","=",
  * 		key word:
@@ -214,24 +201,24 @@ void** scope;
  */
 typedef enum{
 	// token ====================================================
-	TK_IDENT=0, //識別子
-	TK_CONST=1, //整数
-	TK_OPERATOR=2, // 演算子
-	TK_PUNCTUATOR=3,// 区切り文字
-	TK_STRINGLITERAL,//文字列
+	TK_IDENT=0, //identifier
+	TK_CONST=1, //integer
+	TK_OPERATOR=2, // operator
+	TK_PUNCTUATOR=3,// punctuator
+	TK_STRINGLITERAL,//string
 	//key words=====================================================
-	TK_IF=100,//制御構文
+	TK_IF=100,//flow operation
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
 	TK_RETURN,
-	TK_SIZEOF=200,// 演算子としてふるまうので別にする
+	TK_SIZEOF=200,// this keyword acts like operator.
 	//type of variable =====================================================
-	TK_TypeVOID=300,//変数の型名 Type_label と順番はそろえる
+	TK_TypeVOID=300,//this list is sorted as in Type_label
 	TK_TypeINT,
 	TK_TypeCHAR,
 	//=====================================================
-	TK_EOF=-1, //終了記号
+	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
 }Token_kind;
 
@@ -252,7 +239,7 @@ struct token {
 
 //========================= Node =========================
 
-//抽象構文木のノードの識別に使用する
+//Mostly used abstruct syntax tree
 typedef enum{
 	//operator =========================
 	ND_EQL,// <-> ==
@@ -269,15 +256,15 @@ typedef enum{
 	ND_NUM, // <-> integer
 	ND_STRINGLITERAL,
 	//型=========================
-	ND_GLOBVALDEF,// グローバル変数定義
-	ND_GLOBVALCALL,//グローバル変数呼び出し
-	ND_LVAL, // ローカル変数
-	ND_FUNCTIONCALL,//関数呼び出し
-	ND_FUNCTIONDEF,//関数定義
-	ND_ARGMENT,//関数の引数
+	ND_GLOBVALDEF,//  a definition of global variable
+	ND_GLOBVALCALL,// a left value which represents global variable
+	ND_LVAL, // a local variable
+	ND_FUNCTIONCALL,//A function call
+	ND_FUNCTIONDEF,//Definition of a function call
+	ND_ARGMENT,// an argument of a function
 	// key word=========================
 	ND_RETURN,
-	ND_IF,// else なしのif
+	ND_IF,// if state ment which has no else block.
 	ND_ELSE,
 	ND_IFE, //if ... else
 	ND_WHILE,
@@ -291,15 +278,14 @@ typedef enum{
 }Node_kind;
 
 /**
- * @brief 
- * 抽象構文木の実装に使用する
+ * @brief represent  an ast 
  * @param Node_kind kind
  * @param Node_t_* left
  * @param Node_t_* right
- * @param int val : kind が ND_FUNCTION..,ND_IDENT,ND_LVALの時に使用する
- * @param long_int offset
- * @param Type tp : kind がND_LVALの時に使用する
- * @param char_* name : kind がND_LVAL の時に使用する
+ * @param int val : When kind is ND_FUNCTION..,ND_IDENT,ND_LVAL this member has a role
+ * @param long_int offsett
+ * @param Type*   when kind is ND_LVAL this memeber has a role
+ * @param char_* name : if kind is  ND_LVAL  this has a role
  */
 typedef struct node Node_t;
 
@@ -312,9 +298,10 @@ struct node {
 	/**
 	 * 
 	 * @brief of member variable : val 
-	 * ND_FUNCTION... -> 引数の個数
+	 * ND_FUNCTION... -> number of arguments
 	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_label == TP_POINTER -> 配列が暗黙にキャストされたなら 配列サイズ 他 0
+	 * ND_Lval && node -> tp -> Type_label == TP_POINTER and pointer_to == TP_ARRY -> size of array
+	 *
 	 * 
 	 */
 	int val;
@@ -326,7 +313,7 @@ struct node {
 
 //file.c====================================================
 /**
- * @brief 指定されたファイルの内容を返す
+ * @brief return cintents of a resived file
  * @param char* path
  * @return char*
  */
@@ -335,17 +322,17 @@ char *file_open(char *);
 
 // error_point.c====================================================
 
-//エラー報告用
+//error assert
 char* user_input;
 
-//エラー報告用
+//error assert
 char* filepah;
 
-//エラー報告用
+//error assert
 char *parsing_here;
 
 /**
- * @brief エラーが起きた場所を指摘する関数
+ * @brief this function points out the code that has some eroor in syntax.
  * @param char_* location
  * @param char_* format
  * @param ... 
@@ -355,8 +342,7 @@ void error_at(char *,char *,...);
 
 //Token.c ======================================================
 /**
- * @b
- * 新しいtokenを作り　cur->nextに代入する 代入後 cur を次のtoken に送る
+ * @brief make new token
  * @param Token_kind kind
  * @param Token_t_* cur
  * @param char_* str
@@ -366,7 +352,6 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 
 /**
  * @brief 
- * key word を受け取ってトークンを生成する
  * @param Token_kind
  * @param 
  * @return Token_t* 
@@ -374,13 +359,12 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 Token_t *new_keyword(Token_kind,Token_t *,char *);
 
 /**
- * @b
- * token -> strとstring が一致するか見る
- * @param char_* string
+ * @brief Compair if *token -> str and given string are equal.
+ * @param int kind
  * @param Token_t_** token 
  * @return bool
  */
-bool find(char *,Token_t **);
+bool find(int ,Token_t **);
 
 /**
  * @brief 

@@ -47,7 +47,7 @@ Node_t *new_node_funcCall(Token_t **token)
 	Node_t *node_end = calloc(1,sizeof(Node_t));
 	node -> left = node_end;
 
-	while (!find(")",token))
+	while (!find(')',token))
 	{
 
 		node -> val++;
@@ -57,7 +57,7 @@ Node_t *new_node_funcCall(Token_t **token)
 		node_end ->left = add(token);
 		node_end ->right = node_rightend;
 		node_end = node_rightend;
-		find(",",token);
+		find(',',token);
 	}
 	node_end -> kind = ND_BLOCKEND;
 	return node;
@@ -70,10 +70,10 @@ int Node_read_funcarg(Token_t **token,Node_t **vector)
 	int to_return = 0;
 	Node_t* v = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
 	*vector = v;
-	while (!find(")",token))
+	while (!find(')',token))
 	{
 		v -> left = Lvardec(token);
-		find(",",token);
+		find(',',token);
 
 		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
 		v -> right = next;
@@ -289,7 +289,7 @@ Node_t *new_node_globalident(Token_t**token){
 	node -> tp = read_type(&node -> name,token);
 	Lvar *lvar = declere_glIdent(node -> tp,node -> name, strlen(node -> name),&global);
 
-	if (find("=",token))//変数の代入
+	if (find('=',token))//変数の代入
 	{
 		node -> val = expect_num(token);
 	}
@@ -307,7 +307,7 @@ Node_t *new_node_block(Token_t ** token){
 
 	Node_t *node_top = node;
 
-	while (!find("}",token))
+	while (!find('}',token))
 	{
 		node -> kind = ND_BLOCK;
 		node -> left = stmt(token);
