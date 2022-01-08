@@ -35,7 +35,7 @@ Type *read_type(char **name,Token_t **token)
 	if(find('[',token))
 	{//配列定義
 		int array_size = expect_num(token) * (buf -> tp -> size);
-		expect("]",token);
+		expect(']',token);
 		return new_tp(TP_ARRAY,buf -> tp,array_size);
 	}
 	return buf -> tp;
@@ -219,9 +219,9 @@ int is_arrmemaccess(Token_t **token)
 
 Node_t* arrmemaccess(Token_t **token , Node_t** prev)
 {
-	expect("[",token);
+	expect('[',token);
 	Node_t *node = assign(token);
-	expect("]",token);
+	expect(']',token);
 
 	if(
 		(node -> tp -> Type_label == TP_POINTER && (*prev) -> tp -> Type_label == TP_INT) ||
@@ -323,7 +323,7 @@ Node_t *stmt(Token_t **token){
 	if( (*token) -> kind > 99 && (*token) -> kind < 200 ){//if (else) while for return をパース
 
 
-		node = new_node_keyword( (*token) -> kind,token);
+		node = new_node_keyword(consume(token) -> kind,token);
 
 	}else if( find('{',token) ){
 		
@@ -334,7 +334,7 @@ Node_t *stmt(Token_t **token){
 	else if(is_lvardec(token))
 	{
 		node = Lvardec(token);
-		expect(";",token);
+		expect(';',token);
 		if(node -> kind == ND_LVAL)
 			return NULL;
 		return node;
@@ -342,7 +342,7 @@ Node_t *stmt(Token_t **token){
 	else{
 
 		node = assign(token);
-		expect(";",token);
+		expect(';',token);
 	}
 	
 	return node;
@@ -550,7 +550,7 @@ Node_t *primary(Token_t **token){
 
 
 		node = assign(token);
-		expect(")",token);// ')'かcheck
+		expect(')',token);// ')'かcheck
 
 	}else if( (*token)-> kind == TK_IDENT || ( (*token) -> kind >299) )
 	{

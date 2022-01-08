@@ -75,7 +75,8 @@ bool find(int kind,Token_t **token){
 	if(kind > MULTOPERATOR_START){ // len >= 2 identifier
 		char *multoper = get_operator(kind);
 		if((*token) -> length == strlen(multoper) && !strncmp(multoper,(*token) -> str,strlen(multoper)))
-		{	consume(token);
+		{	
+			consume(token);
 			return true;
 		}
 		return false;
@@ -96,10 +97,10 @@ bool find(int kind,Token_t **token){
 
 
 
-void expect(char *string ,Token_t **token){
+void expect(int kind ,Token_t **token){
 
 
-	if( (*token) -> kind > 100 | (*token) -> length != strlen(string) | memcmp( (*token) -> str,string,(*token) -> length ) ){
+	if( (*token) -> kind > 100 |  kind != (*token) -> str[0]){
 		
 		error_at( (*token) -> str ,"不正な文字");
 	
@@ -178,7 +179,7 @@ int is_functioncall(Token_t **token)
     if(find('[',&buf))
     {
         expect_num(&buf);
-        expect("]",&buf);
+        expect(']',&buf);
     }
     if(find('(',&buf))
         return 1;

@@ -370,12 +370,12 @@ bool find(int ,Token_t **);
  * @brief 
  * token -> strとstring が一致するか確認 一致しない場合はエラーをはく
  * @sa error_at
- * @param char_* string 
+ * @param int kind 
  * @param Token_t token
  * @return void
  * @sa error_at
  */
-void expect(char *string ,Token_t **token);
+void expect(int kind,Token_t **token);
 /**
  * @brief 
  * 識別子か確認する　識別子ではない場合はエラーを吐く

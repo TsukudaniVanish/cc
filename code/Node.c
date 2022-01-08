@@ -42,9 +42,9 @@ Node_t *new_node_funcCall(Token_t **token)
 	Node_t *node = new_Node_t(ND_FUNCTIONCALL,NULL,NULL,0,0,NULL,NULL);
 	node -> tp = Type_function_return(&node -> name,token);
 
-	expect("(",token);
+	expect('(',token);
 
-	Node_t *node_end = calloc(1,sizeof(Node_t));
+	Node_t *node_end = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);
 	node -> left = node_end;
 
 	while (!find(')',token))
@@ -53,7 +53,7 @@ Node_t *new_node_funcCall(Token_t **token)
 		node -> val++;
 
 		node_end -> kind = ND_ARGMENT;
-		Node_t *node_rightend = calloc(1,sizeof(Node_t));
+		Node_t *node_rightend = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);
 		node_end ->left = add(token);
 		node_end ->right = node_rightend;
 		node_end = node_rightend;
@@ -65,7 +65,7 @@ Node_t *new_node_funcCall(Token_t **token)
 
 int Node_read_funcarg(Token_t **token,Node_t **vector)
 {
-	expect("(",token);
+	expect('(',token);
 
 	int to_return = 0;
 	Node_t* v = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
@@ -150,120 +150,96 @@ Node_t *new_node_ident(Token_t**token)
 Node_t *new_node_num(int val){
 
 
-	Node_t *node=calloc(1,sizeof( Node_t ));
-	node -> kind = ND_NUM;
-	node -> val = val;
-	node -> tp = new_tp(TP_INT,NULL,4);
+	Node_t *node = new_Node_t(ND_NUM,NULL,NULL,val,0,new_tp(TP_INT,NULL,4),NULL);
+	return node;
+}
+
+Node_t *new_node_if(Token_t** token)
+{
+	expect('(',token);
+	Node_t *condition = assign(token);
+	expect(')',token);
+	Node_t *statement = stmt(token);
+	if((*token) -> kind == TK_ELSE)
+	{
+		consume(token);
+		return new_Node_t(
+				ND_ELSE,
+				new_Node_t(ND_IFE,condition,statement,0,0,NULL,NULL),
+				stmt(token),
+				0,0,NULL,NULL);
+	}
+	return new_Node_t(
+			ND_IF,
+			condition,
+			statement,
+			0,0,NULL,NULL);
+}
+
+Node_t *new_node_while(Token_t **token)
+{
+	Node_t *condition = assign(token);
+	Node_t *statement = stmt(token);
+	return new_Node_t(ND_WHILE,condition,statement,0,0,NULL,NULL);
+}
+
+Node_t *new_node_for(Token_t **token)
+{
+	Node_t *init,*check,*update = NULL;
+	expect('(',token);
+	if(!find(';',token))
+	{// this is not infinite loop
+		if(is_lvardec(token))
+			init = Lvardec(token);
+		else
+			init = assign(token);
+		expect(';',token);
+		check =assign(token);
+		expect(';',token);
+		update = assign(token);
+	}
+	else
+	{
+		expect(';',token);
+	}
+	expect(')',token);
+	return new_Node_t(
+			ND_FOR,
+			new_Node_t(
+				ND_FORUPDATE,
+				new_Node_t(
+					ND_FORINITCONDITION,
+					init,
+					check,
+					0,0,NULL,NULL),
+				update,
+				0,0,NULL,NULL),
+			stmt(token),
+			0,0,NULL,NULL);
+}
+
+Node_t *new_node_return(Token_t **token)
+{
+	Node_t *node = new_Node_t(ND_RETURN,assign(token),NULL,0,0,NULL,NULL);
+	expect(';',token);
 	return node;
 }
 
 Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 
-	(*token) = (*token) -> next;
-
 	Node_t *node = calloc(1,sizeof(Node_t));
 
 	switch(kind){
-	case TK_IF:
-
-		node -> kind = ND_IF;
-
-		expect("(",token);
-
-		node -> left = assign(token);
-
-		expect(")",token);
-
-		node -> right = stmt(token);
-		
-		if( (*token)->kind == TK_ELSE ){
-
-			Node_t *uppernode = calloc(1,sizeof(Node_t));
-			uppernode ->kind = ND_ELSE;
-			uppernode -> left = node;
-			node -> kind = ND_IFE;
-
-			(*token) = (*token)->next;
-
-			uppernode -> right = calloc(1,sizeof(Node_t));
-			uppernode -> right =stmt(token);
-			
-			
-			return uppernode;
-
-		}else{
-			
-
-			return node;
-		}
-	
-	case TK_WHILE:
-		
-		node -> left = calloc(1,sizeof(Node_t));
-		node ->right = calloc(1,sizeof(Node_t));
-
-		node -> kind = ND_WHILE;
-		node-> left = assign(token);
-		node ->right =stmt(token);
-		return node;
-	
-	case TK_FOR:
-
-		node -> kind = ND_FOR;
-
-		if((*token)-> str[0] != ';'){// no conditions
-			
-			
-			expect("(",token);
-
-			Node_t *conditions = calloc(1,sizeof(Node_t));
-			conditions -> kind = ND_FORUPDATE;
-			
-			Node_t *init_condition = calloc(1,sizeof(Node_t));
-			init_condition -> kind = ND_FORINITCONDITION;
-			if(is_lvardec(token))
-			{
-				init_condition -> left = Lvardec(token);
-				expect(";",token);
-			}
-			else
-			{
-				init_condition -> left = assign(token);
-				expect(";",token);
-			}
-
-			init_condition -> right = assign(token);
-
-			expect(";",token);
-
-			conditions -> left = init_condition;// first two conditions 
-			conditions ->right = assign(token);// last update segment
-
-			expect(")",token);
-
-			node -> left = conditions;
-
-		}
-
-		node -> right = stmt(token);
-		
-		
-		return node;
-	
-	case TK_RETURN:
-
-		node -> kind = ND_RETURN;
-		node -> left = assign(token);
-		expect(";",token);
-		return node;
+	case TK_IF: return new_node_if(token);			
+	case TK_WHILE: return new_node_while(token);
+	case TK_FOR: return new_node_for(token);
+	case TK_RETURN: return new_node_return(token);
 	}
 }
 
 Node_t *new_node_stringiter(Token_t ** token)
 {
-	Node_t * node = calloc(1,sizeof(Node_t));
-	node -> kind = ND_STRINGLITERAL;
-	node -> tp = new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8);
+	Node_t *node = new_Node_t(ND_STRINGLITERAL,NULL,NULL,0,0,new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8),NULL);
 	
 	Lvar *iter = declere_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
 	
@@ -272,7 +248,7 @@ Node_t *new_node_stringiter(Token_t ** token)
 	node -> offset = iter -> offset;
 	
 	consume(token);
-	expect("\"",token);
+	expect('\"',token);
 	return node;
 }
 
@@ -293,7 +269,7 @@ Node_t *new_node_globalident(Token_t**token){
 	{
 		node -> val = expect_num(token);
 	}
-	expect(";",token);
+	expect(';',token);
 	return node;
 	
 }
