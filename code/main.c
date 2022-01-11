@@ -3,13 +3,21 @@
 //#include<stdbool.h>
 //#include<string.h>
 
+extern void unit_test_Vector();
 
 int main(int argc, char **argv){
+
+	//unit test
+	if(strlen(argv[1]) == 2 && strncmp(argv[1],"-T",2) == 0)
+	{
+		unit_test_Vector();
+		return 0;
+	}
 
 	nameTable = make_vector();
 
 	char *buffer;
-	if( strncmp(argv[1],"-f",2) == 0)
+	if(strlen(argv[1]) == 2 && strncmp(argv[1],"-f",2) == 0)
 	{
 		filepah = argv[2];
 		buffer = file_open(argv[2]);
