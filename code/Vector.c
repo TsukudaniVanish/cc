@@ -61,7 +61,13 @@ void Vector_push(Vector* vec,void* x)
 void* Vector_pop(Vector *vec)
 {
     vec -> length --;
-    return vec -> container[vec -> length];
+    if(vec -> length >= 0)
+        return vec -> container[vec -> length];
+    else
+    {
+        fprintf(stderr,"invailed pointer access");
+        exit(1);
+    }
 }
 
 void Vector_replace(Vector* vec, size_t index,void * p)

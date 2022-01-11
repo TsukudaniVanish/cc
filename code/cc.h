@@ -24,7 +24,7 @@ struct vector{
 
 // Vector.c====================================================
 /**
- * @brief make new Vecotr*\n
+ * @brief make new Vector*\n
  * @param size_t allocate size
  */
 Vector *new_Vector(size_t);
@@ -32,12 +32,12 @@ Vector *new_Vector(size_t);
 /**
  * @brief make empty vector
  * 
- * @return Vecotr* 
+ * @return Vector* 
  */
 Vector* make_vector();
 
 /**
- * @brief return if receved length can be accepted or not 
+ * @brief return if received length can be accepted or not 
  * @param Vector* vector
  * @param size_t _rsvlen
  * @return int
@@ -73,7 +73,7 @@ void Vector_push(Vector *vec, void* x);
 void* Vector_pop(Vector* vec);
 
 /**
- * @brief replace element of vec at index by assinged pointer.
+ * @brief replace element of vec at index by assigned pointer.
  * 
  * @param Vector* vec
  * @param size_t index
@@ -92,7 +92,7 @@ void Vector_replace(Vector*,size_t,void*);
 void* Vector_at(Vector* vec, size_t index);
 
 /**
- * @brief get elemnt of vec at tail.
+ * @brief get element of vec at tail.
  * 
  * @param vec 
  * @return void* 
@@ -105,9 +105,9 @@ void* Vector_get_tail(Vector *vec);
 /**
  * @brief represent type of identifier.
  * 
- * @param Type_label lable of identifer which stands for type.
+ * @param Type_label label of identifier which stands for type.
  * @param Type_* pointer_to 
- * @param size_t size : actuall memory size.
+ * @param size_t size : actall memory size.
  * 
  */
 typedef struct type Type;
@@ -154,7 +154,7 @@ struct lvar{
 	char *name;
 	int length;
 	/**
-	 * @brief local variavle : offset from rbp , string : label number of string literal
+	 * @brief local variable : offset from rbp , string : label number of string literal
 	 * 
 	 */
 	long int offset;
@@ -239,7 +239,7 @@ struct token {
 
 //========================= Node =========================
 
-//Mostly used abstruct syntax tree
+//Mostly used abstract syntax tree
 typedef enum{
 	//operator =========================
 	ND_EQL,// <-> ==
@@ -264,7 +264,7 @@ typedef enum{
 	ND_ARGMENT,// an argument of a function
 	// key word=========================
 	ND_RETURN,
-	ND_IF,// if state ment which has no else block.
+	ND_IF,// if statement which has no else block.
 	ND_ELSE,
 	ND_IFE, //if ... else
 	ND_WHILE,
@@ -284,7 +284,7 @@ typedef enum{
  * @param Node_t_* right
  * @param int val : When kind is ND_FUNCTION..,ND_IDENT,ND_LVAL this member has a role
  * @param long_int offsett
- * @param Type*   when kind is ND_LVAL this memeber has a role
+ * @param Type*   when kind is ND_LVAL this member has a role
  * @param char_* name : if kind is  ND_LVAL  this has a role
  */
 typedef struct node Node_t;
@@ -300,7 +300,7 @@ struct node {
 	 * @brief of member variable : val 
 	 * ND_FUNCTION... -> number of arguments
 	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_label == TP_POINTER and pointer_to == TP_ARRY -> size of array
+	 * ND_Lval && node -> tp -> Type_label == TP_POINTER and pointer_to == TP_ARRAY -> size of array
 	 *
 	 * 
 	 */
@@ -313,7 +313,7 @@ struct node {
 
 //file.c====================================================
 /**
- * @brief return cintents of a resived file
+ * @brief return char* of a received file
  * @param char* path
  * @return char*
  */
@@ -332,7 +332,7 @@ char* filepah;
 char *parsing_here;
 
 /**
- * @brief this function points out the code that has some eroor in syntax.
+ * @brief this function points out the code that has some error in syntax.
  * @param char_* location
  * @param char_* format
  * @param ... 

@@ -4,8 +4,8 @@
 
 
 
-long int rsp_counter = 0;//rsp/8 の値 function callの時 rspを16の倍数にそろえるため
-int filenumber =0;//制御構文のラベル指定で使用する
+long int rsp_counter = 0;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
+int filenumber = 0; // use for operarion flow
 
 
 
@@ -20,10 +20,11 @@ char * get_registername(char *register_name,long int size)
 	char *register_rcx[] = {"cl","cx","ecx","rcx"};
 	char *register_r8[] = {"r8b","r8w","r8d","r8"};
 	char *register_r9[] = {"r9b","r9w","r9d","r9"};
-	char **arg_register[] = {register_rax,register_rdi , register_rsi , register_rdx , register_rcx , register_r8 , register_r9};
-	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9",NULL};
+	char* register_r11[] = {"r11b","r11w","r11d","r11"};
+	char **arg_register[] = {register_rax,register_rdi , register_rsi , register_rdx , register_rcx , register_r8 , register_r9,register_r11,NULL};
+	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9","r11",NULL};
 
-	//名前検索
+	//name search
 	for(char ** name = registers; *name ; name++)
 	{
 		if(strlen(*name) <= strlen(register_name) && strncmp(register_name,*name,strlen(*name)) == 0)
@@ -114,6 +115,15 @@ void pop_stack(int long size,char *register_name){
 	}
 }
 
+//set value of register to stack
+void set_register_to_stack(long int offset,long int size,char* reg)
+{
+	printf("	mov r11,rbp\n");
+	printf("	sub r11, %ld\n",offset);
+	printf("	mov %s[r11], %s\n",get_pointerpref(size),get_registername(reg,size));
+
+}
+
 
 
 
@@ -178,109 +188,59 @@ void gen_lval(Node_t *node){
 	}
 }
 
+void gen_arg_entry(Node_t* node){
+
+	Vector *arg_types = make_vector();
+
+	for(int i = 0; node -> kind != ND_BLOCKEND; i++ , node = node -> right){
+		generate(node -> left);
+		Vector_push(arg_types,node -> left -> tp);
+	}
+	int len = Vector_get_length(arg_types);
+
+	Type* arg_type;
+	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9",NULL};
+	for (int i = len; i >0 ; i--)
+	{
+		arg_type = Vector_pop(arg_types);
+		pop_stack(arg_type -> size,registers[i]);
+	}
+	
+	return;
+}
+
 
 
 void gen_function_call(Node_t *node){
 
+	gen_arg_entry(node -> left);
 
-	//引数読み込み
-	Node_t *node_arg = node -> left;
+	if(rsp_counter%16 !=0)
+	{//rsp を調整
 
-	Type *arg_types[node -> val];
-
-	int i = 1;
-
-	while (node_arg ->kind != ND_BLOCKEND){
-		
-		generate(node_arg -> left);
-
-		arg_types[i - 1] = node_arg -> left -> tp; 
-
-		node_arg = node_arg -> right;
-
-		i++;
-
+		printf("	sub rsp , %ld\n", 16 - rsp_counter % 16);
 	}
-		
 
-		switch(node ->val){//読み込んだ引数をレジスタに
-		case 6:
-
-			pop_stack(arg_types[5] -> size,"r9");
-			
-
-		case 5:
-
-			pop_stack(arg_types[4] -> size,"r8");
-
-		case 4:
-
-			pop_stack(arg_types[3] -> size,"rcx");
-			
-
-		case 3:
-
-			pop_stack(arg_types[2] -> size,"rdx");
-			
-
-		case 2:
-
-			pop_stack(arg_types[1] -> size,"rsi");
-			
-
-		case 1:
-
-			pop_stack(arg_types[0] -> size,"rdi");
-			
-		}
-
-		if(rsp_counter%16 !=0)
-		{//rsp を調整
-
-			printf("	sub rsp , %ld\n", 16 - rsp_counter % 16);
-		}
-
-		printf("	call %s\n",node -> name);
-		
-		if(rsp_counter%16 !=0)
-		{
-			printf("	add rsp, %ld\n", 16 - rsp_counter %16);
-		}
+	printf("	call %s\n",node -> name);
+	
+	if(rsp_counter%16 !=0)
+	{
+		printf("	add rsp, %ld\n", 16 - rsp_counter %16);
+	}
 
 
-		push_stack(node -> tp -> size,"rax");
-		
-		return;
+	push_stack(node -> tp -> size,"rax");
+	
+	return;
 }
 
 void argment_set(int arg_index , long int offset , long int size){
 
-	//register names
-	char *register_rax[] = {"al","ax","eax","rax"};
-	char *register_rdi[] = {"dil","di","edi","rdi"};
-	char *register_rsi[] = {"sil","si","esi","rsi"};
-	char *register_rdx[] = {"dl","dx","edx","rdx"};
-	char *register_rcx[] = {"cl","cx","ecx","rcx"};
-	char *register_r8[] = {"r8b","r8w","r8d","r8"};
-	char *register_r9[] = {"r9b","r9w","r9d","r9"};
-	char **arg_register[] = {register_rdi , register_rsi , register_rdx , register_rcx , register_r8 , register_r9};
-	
+	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9",NULL};
 	//use register set 
-	char **use = arg_register[arg_index-1];
-	printf("	mov rax, rbp\n");
-	printf("	sub rax, %ld\n",offset );
-	if(size < 5 && size >1)
-	{
-		printf("	mov DWORD PTR [rax], %s\n",use[2]);
-	}
-	else if(0 < size && size < 2)
-	{
-		printf("	mov BYTE PTR [rax], %s\n",use[0]);
-	}
-	else
-	{
-		printf("	mov QWORD PTR [rax], %s\n",use[3]);
-	}
+	char *use = registers[arg_index];
+	set_register_to_stack(offset,size,use);
+	return;
 }
 
 void gen_function_def(Node_t *node){
@@ -318,36 +278,11 @@ void gen_function_def(Node_t *node){
 			offset[i] = size[i];
 		}
 	}
-	
 	//引数代入
-	switch (node->val)
+	for (size_t i = node -> val; i > 0; i--)
 	{
-	case 6:
-		
-		argment_set(6,offset[5],size[5]);
-	
-	case 5:
-		
-		argment_set(5,offset[4],size[4]);
-
-
-	case 4:
-
-		argment_set(4,offset[3],size[3]);
-
-	case 3:
-
-		argment_set(3,offset[2],size[2]);
-
-	case 2:
-
-		argment_set(2,offset[1],size[1]);
-
-	case 1:
-
-		argment_set(1,offset[0],size[0]);
+		argment_set(i,offset[i-1],size[i-1]);
 	}
-
 	set_array_header();
 	
 
