@@ -1,22 +1,6 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include "cc.h"
 
 #define TABLESIZE 128
-
-typedef struct conteiner Container;
-struct conteiner {
-	char* key;
-	void* data;
-	Container* next;
-	Container* prev;
-};
-
-
-typedef struct {
-	unsigned long size;
-	unsigned long bodySize;
-	Container** body;
-}Map;
 
 int Character_conpair(char c, char d) {
 	if(c == d) return 1;
@@ -109,7 +93,6 @@ void* Map_delete(Map* m, char* key) {
 	{
 		if(String_conpair(p -> key, key, String_len(key))) 
 		{
-			printf("find %s!\n", key);
 			if(p -> prev != NULL)
 			{
 				p -> prev -> next = p -> next;
@@ -118,80 +101,11 @@ void* Map_delete(Map* m, char* key) {
 			{
 				p -> next -> prev = p -> prev;
 			}
-			if(m -> body[index] -> next == NULL)
-					m -> body[index] = NULL;
+			if(m -> body[index] == p)
+					m -> body[index] = p -> next;
 			m -> size --;
 			return p -> data;
 		}
 	}
 	return NULL;
 }
-
-/*
-typedef struct {
-	char* name;
-	int age;
-} Person;
-
-Person* recode_Person(char* n, int a) {
-	Person *p = malloc(sizeof(Person));
-	p -> name = n;
-	p -> age = a;
-	return p;
-}
-
-void Person_show(Person* p) {
-	printf("name : %s, age : %d\n", p -> name, p -> age);
-}
-
-void Map_show(Map* m) {
-	for(long i = 0; i < m -> bodySize; i++)
-	{
-		
-	}
-}
-
-int main() {
-
-	printf("ab ,len : %ld\n",String_len("ab"));
-	printf("len of Empty string is %ld\n", String_len("\0"));
-	printf("ab and ac is %s", String_conpair("ab","ac",String_len("ab"))? "equal\n": "not equal\n");
-	printf("ab and ab is %s", String_conpair("ab","ab",String_len("ab"))? "equal\n": "not equal\n");
-	
-	Map *m = make_Map();
-	Map_add(m,"a", recode_Person("James", 34));
-	Map_add(m, "b", recode_Person("Bob",46));
-	Map_add(m,"c", recode_Person("Alice", 54));
-	Map_add(m, "d", recode_Person("Yu",14));
-	Map_add(m,"aa", recode_Person("Kelie", 24));
-	Map_add(m, "bb", recode_Person("Geoge",15));
-	Map_add(m,"cc", recode_Person("Jackson", 22));
-	Map_add(m, "dd", recode_Person("Maline",27));
-
-	Map_delete(m, "a");
-	Map_delete(m,"cc");
-
-	printf("Start---\n");
-	for(long i = 0; i < m -> bodySize; i++)
-	{
-		printf("	%ld:\n",i);
-		if(m -> body[i] == NULL)
-		{
-			printf("		---None---\n");
-			continue;
-		}
-		Person *person = NULL; 
-		for(Container* p = m -> body[i]; p; p = p -> next)
-		{
-			person = p -> data;
-			printf("		key : %s\n", p -> key);
-			printf("		data : ");
-			Person_show(person);
-		}
-	}
-	printf("End---\n");
-	printf("map size : %ld\n", m -> size);
-	return 0;
-}
-*/
-

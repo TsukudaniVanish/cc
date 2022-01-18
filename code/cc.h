@@ -100,7 +100,30 @@ void* Vector_at(Vector* vec, size_t index);
 void* Vector_get_tail(Vector *vec);
 
 // ====================================================
+// Map.c====================================================
+typedef struct conteiner Container;
+struct conteiner {
+	char* key;
+	void* data;
+	Container* next;
+	Container* prev;
+};
 
+
+typedef struct {
+	unsigned long size;
+	unsigned long bodySize;
+	Container** body;
+}Map;
+
+/*
+ * @brief make empty Map
+ */
+Map* make_Map();
+void Map_add(Map*, char*, void*);
+void* Map_at(Map*, char*);
+void* Map_delete(Map*, char*);
+// ====================================================
 
 /**
  * @brief represent type of identifier.
