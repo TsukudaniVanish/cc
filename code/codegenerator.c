@@ -2,8 +2,8 @@
 //#include<stdio.h>
 //#include<stdlib.h>
 
-
-
+extern unsigned int String_len(char* );
+extern int String_conpair(char* ,char* ,unsigned int);
 long int rsp_counter = 0;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
 int filenumber = 0; // use for operarion flow
 
@@ -27,7 +27,7 @@ char * get_registername(char *register_name,long int size)
 	//name search
 	for(char ** name = registers; *name ; name++)
 	{
-		if(strlen(*name) <= strlen(register_name) && strncmp(register_name,*name,strlen(*name)) == 0)
+		if(String_len(*name) <= String_len(register_name) && String_conpair(register_name,*name,String_len(*name)))
 		{
 			int i = name - registers;
 			if( size < 5 && size > 1)

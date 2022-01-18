@@ -3,8 +3,9 @@
 //#inclide<string.h>
 
 
-
-
+extern unsigned int String_len(char*);
+extern int String_conpair(char*,char*,unsigned int);
+extern void Memory_copy(void*,void*,unsigned int);
 
 
 Type* new_tp(int label,Type* pointer_to,long int size){
@@ -28,7 +29,7 @@ Type *read_type(char **name,Token_t **token)
 	if(*name)
 		free(*name);
 	*name = calloc((*token) -> length, sizeof(char));
-	memcpy(*name,(*token) -> str, (*token) -> length);
+	Memory_copy(*name,(*token) -> str, (*token) -> length);
 
 	consume(token);
 
@@ -48,7 +49,7 @@ Type *Type_function_return(char **name,Token_t** token)
 	if(*name)
 		free(*name);
 	*name = calloc(buf -> length, sizeof(char));
-	memcpy(*name,buf -> str,buf -> length);
+	Memory_copy(*name,buf -> str,buf -> length);
 
 	return find_lvar(*name,buf -> length,&global) -> tp;
 }
@@ -61,7 +62,7 @@ Lvar *find_lvar(char *name,int length,Lvar **locals){//array は飛ばす
 
 	for(Lvar *var = *locals; var;var = var -> next)
 	{
-		if( var -> length == length && !memcmp( name, var ->name,length))
+		if( var -> length == length && String_conpair( name, var ->name,length))
 		{
 			return var; 
 		}
@@ -75,7 +76,7 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 	lvar -> next = next;
 	//名前コピー
 	lvar -> name = calloc(length,sizeof(char));
-	memcpy(lvar -> name,name,length);
+	Memory_copy(lvar -> name,name,length);
 	// 名前コピー終わり
 	lvar -> length = length;
 	lvar -> tp = tp;
@@ -353,7 +354,7 @@ Node_t *Lvardec(Token_t **token)
 	Lvar *table = Vector_get_tail(nameTable);
 	char *name = NULL;
 	Type *tp = read_type(&name,token);
-	Lvar *lvar = declere_ident(tp,name,strlen(name),&table);
+	Lvar *lvar = declere_ident(tp,name,String_len(name),&table);
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
 	Node_t *node = new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	if(find('=',token))

@@ -9,7 +9,7 @@
  * 
  */
 #include "cc.h"
-
+extern void Memory_copy(void*,void*,unsigned int);
 
 Vector *new_Vector(size_t alloc)
 {
@@ -37,7 +37,7 @@ void _maybe_realloc(Vector* vec)
     if(_is_acceptable(vec,1) == 0)
         return;
     void* new_container = malloc(vec -> length * 2 * sizeof(void*));
-    memcpy(new_container,vec -> container,vec -> length * sizeof(void *));
+    Memory_copy(new_container,vec -> container,vec -> length * sizeof(void *));
 
     vec -> container = new_container;
     vec -> allocsize = vec -> length *2;

@@ -1,7 +1,8 @@
 #include "cc.h"
 
-
-
+extern unsigned int String_len(char*);
+extern int String_conpair(char* ,char* ,unsigned int);
+extern void Memory_copy(void*, void*, unsigned int);
 Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
 
 
@@ -74,7 +75,7 @@ bool find(int kind,Token_t **token){
 
 	if(kind > MULTOPERATOR_START){ // len >= 2 identifier
 		char *multoper = get_operator(kind);
-		if((*token) -> length == strlen(multoper) && !strncmp(multoper,(*token) -> str,strlen(multoper)))
+		if((*token) -> length == String_len(multoper) && String_conpair(multoper,(*token) -> str,String_len(multoper)))
 		{	
 			consume(token);
 			return true;
@@ -123,7 +124,7 @@ char *expect_ident(Token_t **token){
 
 
 		char *name = calloc((*token) -> length, sizeof(char));
-		memcpy(name,(*token) -> str, (*token) -> length);
+		Memory_copy(name,(*token) -> str, (*token) -> length);
 		consume(token);
 		return name;
 	}

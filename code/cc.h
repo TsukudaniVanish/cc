@@ -7,7 +7,7 @@
 //#include<ctype.h>
 #include<stdarg.h>
 #include<stdio.h>
-#include<string.h>
+//#include<string.h>
 
 /**
  * @brief vector that contains void*
@@ -18,8 +18,8 @@ typedef struct vector Vector;
 
 struct vector{
 	void **container;
-	size_t allocsize;
 	unsigned long length;
+	unsigned int allocsize;
 };
 
 // Vector.c====================================================
@@ -100,7 +100,30 @@ void* Vector_at(Vector* vec, size_t index);
 void* Vector_get_tail(Vector *vec);
 
 // ====================================================
+// Map.c====================================================
+typedef struct conteiner Container;
+struct conteiner {
+	char* key;
+	void* data;
+	Container* next;
+	Container* prev;
+};
 
+
+typedef struct {
+	unsigned long size;
+	unsigned long bodySize;
+	Container** body;
+}Map;
+
+/*
+ * @brief make empty Map
+ */
+Map* make_Map();
+void Map_add(Map*, char*, void*);
+void* Map_at(Map*, char*);
+void* Map_delete(Map*, char*);
+// ====================================================
 
 /**
  * @brief represent type of identifier.
@@ -126,11 +149,8 @@ struct type{
 
 	/**
 	 * @brief size of type 
-	 * 		
-	 * @param int 8
-	 * @param pointer 8
-	 **/
-	size_t size;
+	 */
+	unsigned long size;
 
 };
 
@@ -229,8 +249,8 @@ struct token {
 	Token_kind kind;
 	Token_t *next;
 	int val;//if kind == TK_DIGIT　-> val = the number
-	char *str;//string of token
 	int length;//length of operator or length of local variable name
+	char *str;//string of token
 	Type *tp;
 
 

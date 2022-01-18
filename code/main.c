@@ -4,20 +4,26 @@
 //#include<string.h>
 
 extern void unit_test_Vector();
+extern void unit_test_Map();
+extern void unit_test_String();
 
+extern unsigned int String_len(char*);
+extern int String_conpair(char*, char*,unsigned int);
 int main(int argc, char **argv){
 
 	//unit test
-	if(strlen(argv[1]) == 2 && strncmp(argv[1],"-T",2) == 0)
+	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-T",2))
 	{
 		unit_test_Vector();
+		unit_test_String();
+		unit_test_Map();
 		return 0;
 	}
 
 	nameTable = make_vector();
 
 	char *buffer;
-	if(strlen(argv[1]) == 2 && strncmp(argv[1],"-f",2) == 0)
+	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-f",2))
 	{
 		filepah = argv[2];
 		buffer = file_open(argv[2]);
@@ -32,13 +38,13 @@ int main(int argc, char **argv){
 
 	//helperfunction input
 	char *test_print = "test_print";
-	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print,strlen(test_print),&global);
+	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print,String_len(test_print),&global);
 
 	char *test_print_int = "test_print_int";
-	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print_int,strlen(test_print_int),&global);
+	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print_int,String_len(test_print_int),&global);
 
 	char *test_error = "test_error";
-	declere_glIdent(new_tp(TP_VOID,NULL,0),test_error,strlen(test_error),&global);
+	declere_glIdent(new_tp(TP_VOID,NULL,0),test_error,String_len(test_error),&global);
 		
 	
 

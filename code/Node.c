@@ -1,5 +1,7 @@
 #include "cc.h"
 
+extern unsigned int String_len(char*);
+extern void Memory_copy(void*, void*, unsigned int);
 Node_t *new_Node_t(Node_kind kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name)
 {
 	Node_t *node = calloc(1,sizeof(Node_t));
@@ -93,7 +95,7 @@ Node_t *new_node_funcDef(Token_t **token)
 	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
 	node -> tp = read_type(&node -> name,token);
 
-	declere_glIdent(node -> tp,node -> name,strlen(node -> name),&global);
+	declere_glIdent(node -> tp,node -> name,String_len(node -> name),&global);
 
 	node -> val = Node_read_funcarg(token,&node -> left);
 	
@@ -244,7 +246,7 @@ Node_t *new_node_stringiter(Token_t ** token)
 	Lvar *iter = declere_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
 	
 	node -> name = calloc(iter -> length, sizeof(char));
-    memcpy(node -> name,iter -> name,iter -> length);
+    Memory_copy(node -> name,iter -> name,iter -> length);
 	node -> offset = iter -> offset;
 	
 	consume(token);
@@ -263,8 +265,7 @@ Node_t *new_node_globalident(Token_t**token){
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 
 	node -> tp = read_type(&node -> name,token);
-	Lvar *lvar = declere_glIdent(node -> tp,node -> name, strlen(node -> name),&global);
-
+	Lvar *lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))//変数の代入
 	{
 		node -> val = expect_num(token);
