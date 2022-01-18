@@ -1,5 +1,6 @@
 #include "cc.h"
 //#include<stdarg.h>
+#include<string.h>
 #include<errno.h>
 
 void error(char *fmt,...)

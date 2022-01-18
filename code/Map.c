@@ -2,25 +2,8 @@
 
 #define TABLESIZE 128
 
-int Character_conpair(char c, char d) {
-	if(c == d) return 1;
-	return 0;
-}
-
-long String_len(char* s) {
-	long res = 0;
-	while(s[res]) res++;
-	return res;
-}
-
-int String_conpair(char* s1, char* s2, long size) {
-	if(String_len(s1) == 0 || String_len(s2) == 0 || String_len(s1) < size || String_len(s2) < size) return 0;
-	int res = 1;
-	for(int i = 0; i < size; i++) {
-		res = res & Character_conpair(s1[i], s2[i]);
-	}
-	return res;
-}
+extern unsigned int String_len(char* s);
+extern int String_conpair(char* s1, char* s2, unsigned int size);
 
 unsigned long hash(char* key){
 

@@ -7,7 +7,7 @@
 //#include<ctype.h>
 #include<stdarg.h>
 #include<stdio.h>
-#include<string.h>
+//#include<string.h>
 
 /**
  * @brief vector that contains void*
@@ -18,8 +18,8 @@ typedef struct vector Vector;
 
 struct vector{
 	void **container;
-	size_t allocsize;
 	unsigned long length;
+	unsigned int allocsize;
 };
 
 // Vector.c====================================================
@@ -149,11 +149,8 @@ struct type{
 
 	/**
 	 * @brief size of type 
-	 * 		
-	 * @param int 8
-	 * @param pointer 8
-	 **/
-	size_t size;
+	 */
+	unsigned long size;
 
 };
 
@@ -252,8 +249,8 @@ struct token {
 	Token_kind kind;
 	Token_t *next;
 	int val;//if kind == TK_DIGIT　-> val = the number
-	char *str;//string of token
 	int length;//length of operator or length of local variable name
+	char *str;//string of token
 	Type *tp;
 
 

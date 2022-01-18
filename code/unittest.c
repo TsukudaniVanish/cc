@@ -1,5 +1,6 @@
 #include "cc.h"
 
+
 void assert(char *test_name,char *format,...)
 {
 	va_list arg;
@@ -50,7 +51,8 @@ void unit_test_Vector()
  * for Map test
  */
 extern int String_len(char*);
-extern int String_conpair(char*, char*, long);
+extern int String_conpair(char*, char*, unsigned int);
+extern void Memory_copy(void*, void*, unsigned int);
 typedef struct {
 	char* name;
 	int age;
@@ -121,13 +123,27 @@ void __Map_show(Map* m) {
 	
 }
 
-void unit_test_Map() {
-	char *test = "Map test";
+void unit_test_String(){
+	
 	assert_int("String length: ab",2,String_len("ab"));
 	assert_int("String length: empty",0, String_len("\0"));
 	assert_int("String cmp: ab, ac",0, String_conpair("ab","ac",String_len("ab")));
 	assert_int("String cmp: ab, ab",1, String_conpair("ab","ab",String_len("ab")));
-	
+	assert_int("long string cmp:",1,String_conpair("==","== 1llls}",2));
+
+	char *test = "String copy test";
+	char * x = calloc(3,sizeof(char));
+	Memory_copy(x,"abc",3);
+	assert_int(test,'a',*x);
+	assert_int(test,'b',*(x+1));
+	assert_int(test,'c',*(x+2));
+
+	printf("	Unit test: %s \x1b[32mpassed!!\x1b[m\n","String test");
+	return;
+}
+
+void unit_test_Map() {
+	char *test = "Map test";
 	Map *m = make_Map();
 	Map_add(m,"a", recode_Person("James", 34));
 	Map_add(m, "b", recode_Person("Bob",46));

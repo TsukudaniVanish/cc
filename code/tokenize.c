@@ -3,8 +3,8 @@
 //#include<stdbool.h>
 #include<ctype.h>
 
-
-
+extern unsigned int String_len(char*);
+extern int String_conpair(char* ,char*, unsigned int);
 int sizeof_token(int kind){
 
 	switch (kind)
@@ -62,9 +62,9 @@ int is_ope_or_pun(char *p){
 
 	for(char **str = tokens ; *str ; str++ ){
 		
-		int len = strlen(*str);
+		int len = String_len(*str);
 
-		if( !strncmp(p,*str,len) ){
+		if( String_conpair(p,*str,len) ){
 
 			if(str - tokens < 12)
 				return len;
@@ -79,7 +79,7 @@ int is_comment(char *p)
 {
 	if(*p == '/')
 	{
-		return strncmp(p,"/*",2) ? 0 : 1;
+		return String_conpair(p,"/*",2);
 	}
 	return 0;
 }
@@ -91,7 +91,7 @@ void comment_skip(char **p)
 {
 	while (1)
 	{
-		if( **p == '*' && !strncmp(*p,"*/",2))
+		if( **p == '*' && String_conpair(*p,"*/",2))
 		{
 			*p += 2;
 			return;
@@ -118,7 +118,7 @@ Token_kind is_keyword(char *p){
 	for( char **q = assign; *q ; q++ ){
 
 
-		if(!( strncmp(p,*q,strlen(*q)) || is_alnum(p[strlen(*q)]) ) ){
+		if( String_conpair(p,*q,String_len(*q)) && !is_alnum(p[String_len(*q)])){
 
 
 			return *v;
