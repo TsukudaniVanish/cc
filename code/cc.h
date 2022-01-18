@@ -191,10 +191,12 @@ void** scope;
 // =========================Token =========================
 enum { 
 	MULTOPERATOR_START=1000,
-	EQUAL,
-	NEQ,
-	LEQ,
-	GEQ,
+	EQUAL, // ==
+	NEQ,// !=
+	LEQ,// <=
+	GEQ,// >=
+	INC,// ++
+	DEC,// --
 };
 /**
  * @brief this is list of Type of tokens
@@ -266,13 +268,15 @@ typedef enum{
 	ND_NEQ,// <-> !=
 	ND_LES,// <-> <
 	ND_LEQ,// <-> <=
+	ND_INC,// <-> ++
+	ND_DEC,// <-> --
 	ND_ADD, // <-> +
 	ND_SUB, // <-> -
 	ND_MUL, // <-> *
 	ND_DIV, // <-> /
 	ND_ASSIGN, // <-> = 
-	ND_ADDR, //<-> * dereference
-	ND_DEREF,// <-> & reference
+	ND_ADDR, //<-> & reference
+	ND_DEREF,// <-> * dereference
 	ND_NUM, // <-> integer
 	ND_STRINGLITERAL,
 	//型=========================
@@ -384,7 +388,7 @@ Token_t *new_keyword(Token_kind,Token_t *,char *);
  * @param Token_t_** token 
  * @return bool
  */
-bool find(int ,Token_t **);
+int find(int ,Token_t **);
 
 /**
  * @brief 
@@ -599,12 +603,11 @@ int is_alnum(char c);
 
 /**
  * 
- * @b
- * operator か punctuatorのどちらかであるか判定する
- * @param char_*
+ * @brief judge if it is simbol or not 
+ * @param char*
  * @return int : len of operator
  * */
-int is_ope_or_pun(char *);
+int is_simbol(char *);
 
 /**
  * @brief コメントかどうか判定する
@@ -785,6 +788,7 @@ Node_t *equality(Token_t **);
 Node_t *relational(Token_t **);
 Node_t *add(Token_t **);
 Node_t *mul(Token_t **);
+Node_t *postfix(Token_t **);
 Node_t *unitary(Token_t **);
 Node_t *primary(Token_t **);
 //=====================================================

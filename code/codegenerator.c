@@ -335,8 +335,69 @@ void gen_global_store_arr(char *name,char *register_name,long int size,long int 
 	}
 }
 
+void gen_incement(Node_t* node) {
+	if(node -> left == NULL && node -> right != NULL)
+	{// postfix
+		char *rax = get_registername("rax",node -> right -> tp -> size);
+		char *rdi = get_registername("rdi", node -> right -> tp -> size);
+		char *pref = get_pointerpref(node -> right -> tp -> size);
+		gen_lval(node -> right);// result of node -> right is stored in rax
+		pop_stack(8,"rax");
+		printf("	mov rcx, rax\n");
+		printf("	mov %s, %s[rax]\n", rax,pref);
+		push_stack(node -> right -> tp -> size, "rax");
+		printf("	mov %s, %s[rcx]\n", rdi, pref);
+		// increment
+		int add;
+		switch(node -> right -> tp -> Type_label){
+		case TP_POINTER: 
+			add = node -> right -> tp -> pointer_to -> size;
+			break;
+		case TP_CHAR:
+			add = 1;
+			break;
+		case TP_INT:
+			add = 1;
+			break;
+		default:
+			add = 0;
+		}
+		printf("	add %s, %d\n", rdi, add);
+		printf("	mov %s[rcx], %s\n", pref, rdi);
+	}
+}
 
-
+void gen_decrement(Node_t* node) {
+	if(node -> left == NULL && node -> right != NULL)
+	{// postfix
+		char *rax = get_registername("rax",node -> right -> tp -> size);
+		char *rdi = get_registername("rdi", node -> right -> tp -> size);
+		char *pref = get_pointerpref(node -> right -> tp -> size);
+		gen_lval(node -> right);// result of node -> right is stored in rax
+		pop_stack(8,"rax");
+		printf("	mov rcx, rax\n");
+		printf("	mov %s, %s[rax]\n", rax,pref);
+		push_stack(node -> right -> tp -> size, "rax");
+		printf("	mov %s, %s[rcx]\n", rdi, pref);
+		// increment
+		int sub;
+		switch(node -> right -> tp -> Type_label){
+		case TP_POINTER: 
+			sub = node -> right -> tp -> pointer_to -> size;
+			break;
+		case TP_CHAR:
+			sub = 1;
+			break;
+		case TP_INT:
+			sub = 1;
+			break;
+		default:
+			sub = 0;
+		}
+		printf("	sub %s, %d\n", rdi, sub);
+		printf("	mov %s[rcx], %s\n", pref, rdi);
+	}	// some thing will be written there.
+}
 
 void gen_formula(Node_t *node){
 
@@ -465,6 +526,7 @@ void generate(Node_t *node){
 		long int size[2];
 		char *register_name[3];
 
+		
 		if( node -> left && node -> left ->  kind != ND_DEREF){
 
 			if(node -> left -> kind == ND_GLOBVALCALL)
@@ -593,15 +655,19 @@ void generate(Node_t *node){
 		char * pointer_pref = get_pointerpref(node -> tp -> size);
 		
 		
-		printf("	pop rax\n");
-		rsp_counter -= 8;
+		pop_stack(node -> left -> tp -> size,"rax");
 		printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
-		printf("	mov %s, %s\n",get_registername("rax",node -> tp -> size),get_registername("rcx",node -> tp -> size));
+		printf("	mov %s, %s\n",get_registername("rax",node -> tp -> size),register_name);
 		
 		push_stack(node -> tp -> size,"rax");
 		return;
 	}
-	
+	case ND_INC: 
+		gen_incement(node);
+		return;
+	case ND_DEC: 
+		gen_decrement(node); 
+		return;
 	case ND_LVAL:
 	{
 

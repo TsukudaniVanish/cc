@@ -20,7 +20,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 	cur = new_token( kind,cur,p);
 	// keywordのlength を計算 TK_Typeの時はポインタ型の読み取りに使用する
 	char *q = p;
-	while (!(is_ope_or_pun(q) || is_space(*q))){
+	while (!(is_simbol(q) || is_space(*q))){
 		q++;
 	}
 	
@@ -45,7 +45,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 			q++;
 		}//qには識別子の名前があるはず
 	
-		if(kind > 299  && is_ope_or_pun(q)  ){//識別子があるか判定
+		if(kind > 299  && is_simbol(q)  ){//識別子があるか判定
 
 			error_at(p,"識別子が必要です");
 		}
@@ -57,41 +57,39 @@ char *get_operator(int kind)
 {
 	switch(kind)
 	{
-	case EQUAL:
-		return "==";
-	case NEQ:
-		return "!=";
-	case LEQ:
-		return "<=";
-	case GEQ:
-		return	">=";
+	case EQUAL: return "==";
+	case NEQ: return "!=";
+	case LEQ: return "<=";
+	case GEQ: return	">=";
+	case INC: return "++";
+	case DEC: return "--";
 	default:
 		fprintf(stderr,"invalid kind of operator : %d",kind);
 		exit(1);
 	}
 }
 
-bool find(int kind,Token_t **token){
+int find(int kind,Token_t **token){
 
 	if(kind > MULTOPERATOR_START){ // len >= 2 identifier
 		char *multoper = get_operator(kind);
 		if((*token) -> length == String_len(multoper) && String_conpair(multoper,(*token) -> str,String_len(multoper)))
 		{	
 			consume(token);
-			return true;
+			return 1;
 		}
-		return false;
+		return 0;
 	}
 
 	if((*token) -> str[0] != kind){
 
-		return false;
+		return 0;
 
 	}else{
 
 
 		consume(token);
-		return true;
+		return 1;
 	}
 }
 

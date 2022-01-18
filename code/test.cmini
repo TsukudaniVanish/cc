@@ -88,6 +88,14 @@ int main(){
     }
     test_passed("array index access test");
 
-
-    return 0;
+	char *test = "increment test";
+	int zz = 0;
+	zz++;
+	if(zz != 1)
+	{
+		error_template_int(test,1,zz);
+	}/*
+	test_passed("postfix increment test");
+	return 0;*/
+	return 0;
 }

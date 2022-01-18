@@ -31,6 +31,13 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	node -> tp = imptypecast(node);
 	if(node -> tp)
 	{
+		if(node -> tp -> Type_label == TP_POINTER && (node -> kind == ND_ADD || node -> kind == ND_SUB))
+		{
+			if(l -> kind == ND_NUM)
+				l -> val = l -> val * node -> tp -> pointer_to -> size;
+			if(r -> kind == ND_NUM)
+				r -> val = r -> val * node -> tp -> pointer_to -> size;
+		}
 		return node;
 	}
 	else
@@ -278,9 +285,7 @@ Node_t *new_node_globalident(Token_t**token){
 Node_t *new_node_block(Token_t ** token){
 
 
-	Node_t *node = calloc(1,sizeof(Node_t));
-		
-	node -> kind = ND_BLOCK;
+	Node_t *node = new_Node_t(ND_BLOCK,NULL,NULL,0,0,NULL,NULL);
 
 	Node_t *node_top = node;
 
@@ -289,7 +294,7 @@ Node_t *new_node_block(Token_t ** token){
 		node -> kind = ND_BLOCK;
 		node -> left = stmt(token);
 
-		Node_t *right = calloc(1,sizeof(Node_t));
+		Node_t *right = new_Node_t(ND_BLOCK,NULL,NULL,0,0,NULL,NULL);
 		node -> right = right;
 
 		node = right;
@@ -301,18 +306,14 @@ Node_t *new_node_block(Token_t ** token){
 
 Node_t *new_node_ref_deref(Token_t **token){
 
-	Node_t *node;
+	Node_t *node = NULL;
 	switch ((*token)->str[0])
 		{
 		case '*':
 
 			(*token) = (*token) -> next;
 
-			node = calloc(1,sizeof(Node_t));
-			node -> kind = ND_DEREF;
-			
-			node -> left = unitary(token);
-
+			node = new_Node_t(ND_DEREF, unitary(token), NULL,0,0,NULL,NULL);
 			if( node -> left -> tp -> Type_label != TP_POINTER ){
 
 
@@ -332,10 +333,9 @@ Node_t *new_node_ref_deref(Token_t **token){
 
 			(*token) = (*token) -> next;
 
-			node = calloc(1,sizeof(Node_t));
-			node -> kind = ND_ADDR;
-			node -> left = unitary(token);
+			node = new_Node_t(ND_ADDR,unitary(token), NULL,0,0,NULL,NULL);
 			node -> tp = new_tp(TP_POINTER,node -> left -> tp,8);
 			return node;
 		}
+	return node;
 }

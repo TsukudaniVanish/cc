@@ -46,19 +46,17 @@ int is_space(char p)
 
 char *skip(char * p)
 {
-	while (' ' == *p || '\t' == *p || '\n' == *p || '\r' == *p || '\f' == *p)
+	while (' ' == *p || '\t' == *p || '\n' == *p || '\r' == *p || '\f' == *p || '\v' == *p)
 	{
 		p++;
 	}
 	return p;	
 }
 
-
-
-int is_ope_or_pun(char *p){
+int is_simbol(char *p){
 
 	
-	char *tokens[] ={"==","!=","<=",">=","<",">","+","-","*","/","=","&",";","(",")","{","}","[","]",",",NULL};
+	char *tokens[] ={"==","!=","<=",">=","<",">", "++", "--","+","-","*","/","=","&",";","(",")","{","}","[","]",",",NULL};
 
 	for(char **str = tokens ; *str ; str++ ){
 		
@@ -66,9 +64,9 @@ int is_ope_or_pun(char *p){
 
 		if( String_conpair(p,*str,len) ){
 
-			if(str - tokens < 12)
-				return len;
-			return len + 1000;
+			if(str - tokens < 14)
+				return len;// this is operator
+			return len + 1000;// this is punctuator
 		}
 	}
 	return false;
@@ -176,12 +174,13 @@ Token_t *tokenize(char *p){//入力文字列
 			p += cur -> length;
 			continue;
 
-		}else if(is_ope_or_pun(p))
+		}else if(is_simbol(p))
 		{//演算子または区切り文字
 			
 			cur = new_token(TK_OPERATOR,cur,p);
-			cur -> length =is_ope_or_pun(p);
-			if(cur -> length > 1000){
+			cur -> length = is_simbol(p);
+			if(cur -> length > 1000)
+			{// puctuator or not
 				cur -> kind = TK_PUNCTUATOR;
 				cur -> length -= 1000;
 			}
@@ -206,7 +205,7 @@ Token_t *tokenize(char *p){//入力文字列
 			
 			while(1){
 			
-				if( isspace(*q) || q[0] == ','  || is_ope_or_pun(q)){ 
+				if( isspace(*q) || q[0] == ','  || is_simbol(q)){ 
 				//q が演算子をさしたらやめる
 
 					cur -> length = q-p;

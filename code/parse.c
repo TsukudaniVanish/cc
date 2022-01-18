@@ -234,7 +234,7 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev)
 			new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
 	}
 
-	error_at((*token) -> str,"無効な要素アクセスです");
+	error_at((*token) -> str,"lval is expected");
 }
 
 
@@ -263,12 +263,16 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev)
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
  * add = mul( "+"mul | "-"mul)* 
  * mul = unitary ("*" unitary | "/" unitary )*
- * unitary = "sizeof" unitary
- * 			| ('+' | '-' )? primary
- * 			| '*' unitary
- * 			| '&' unitary
+ * unitary = postfix
+ * 			|"sizeof" unitary
+ * 			| ('+' | '-' | '*' | '&' ) unitary
+ * 			| ('++' | '--') postfix
+ * postfix = primary
+ * 			| postfix [ assign ]
+ * 			| postfix '++'
+ * 			| postfix '--'
  * primary = num 
- * 			| type? indent  ( "["add"]" )? 
+ * 			| indent 
  * 			| "(" assign ")"
  * 			| "\"" strring literal "\""
  *
@@ -518,34 +522,87 @@ Node_t *unitary(Token_t **token){
 		return node;		
 	}
 
-	parsing_here = (*token) -> str;
+	if(find(INC,token))
+	{
+		if((*token) -> kind != TK_IDENT)
+		{
+			error_at((*token) -> str, "lval is expected");
+		}
+		node = new_Node_t(ND_INC,unitary(token),NULL,0,0,NULL,NULL);
+		return node;
+	}
+	else if(find(DEC,token))
+	{
+		if((*token) -> kind != TK_IDENT)
+		{
+			error_at((*token) -> str, "lval is expected");
+		}
+		node = new_Node_t(ND_DEC,unitary(token),NULL,0,0,NULL,NULL);
+		return node;
+	}
 
 	if( find('+',token) ){
 
-
-		node = primary(token);
+		node = unitary(token);
+		return node;
 		
 	}else if( find('-',token) ){
 
-
-		node = new_node(ND_SUB,new_node_num(0),primary(token));
+		node = new_node(ND_SUB,new_node_num(0),unitary(token));
 		node -> tp = node -> right -> tp;
+		return node;
 		
 	}else if((*token) -> kind == TK_OPERATOR && ( (*token) -> str[0] == '*' || (*token) -> str[0] == '&')){
 
-		node = new_node_ref_deref(token);		
+		node = new_node_ref_deref(token);
+		return node;
 	
-	}else{
-		
-		
-		node = primary(token);
 	}
+		
+	node = postfix(token);
 	return node;
+}
+
+Node_t *postfix(Token_t **token) {
+	Node_t *node = primary(token);
+	if(node == NULL)
+	{
+		error_at((*token) -> str, "Failed to parse");
+	}
+	for(;;)
+	{
+		if(is_arrmemaccess(token))
+		{
+			node = arrmemaccess(token, &node);
+			parsing_here = (*token) -> str;
+			continue;
+		}
+		if(find(INC,token))
+		{
+			if(node -> kind != ND_LVAL)
+			{
+				error_at(parsing_here, "lval is expected");
+			}
+			node = new_Node_t(ND_INC,NULL,node,0,0,NULL,NULL);
+			return node;
+		}
+		if(find(DEC,token))
+		{
+			if(node -> kind != ND_LVAL)
+			{
+				error_at(parsing_here, "lval is expected");
+			}
+			node = new_Node_t(ND_DEC,NULL,node,0,0,NULL,NULL);
+			return node;
+		}
+		return node;
+	}
 }
 
 Node_t *primary(Token_t **token){
 
-	Node_t *node;
+	parsing_here = (*token) -> str;
+	Node_t *node = NULL;
 
 	if( find('(',token) ){ // '(' の次は expr
 
@@ -566,9 +623,6 @@ Node_t *primary(Token_t **token){
 	{
 		node = new_node_num(expect_num(token));
 	}
-
-	if(is_arrmemaccess(token))
-		return arrmemaccess(token,&node);
 	return node;
 }
 
