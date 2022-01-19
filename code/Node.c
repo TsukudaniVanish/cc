@@ -48,9 +48,13 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 
 Node_t *new_node_funcCall(Token_t **token)
 {
+	if(find_lvar((*token) -> str, (*token) -> length, &global) == NULL)
+	{
+		error_at((*token) -> str, "this is not exist int name space");
+	}
 	Node_t *node = new_Node_t(ND_FUNCTIONCALL,NULL,NULL,0,0,NULL,NULL);
 	node -> tp = Type_function_return(&node -> name,token);
-
+	
 	expect('(',token);
 
 	Node_t *node_end = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);

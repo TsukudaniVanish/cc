@@ -50,8 +50,10 @@ Type *Type_function_return(char **name,Token_t** token)
 		free(*name);
 	*name = calloc(buf -> length, sizeof(char));
 	Memory_copy(*name,buf -> str,buf -> length);
-
-	return find_lvar(*name,buf -> length,&global) -> tp;
+	Lvar *lvar = find_lvar(*name,buf -> length,&global);
+	if(lvar != NULL)
+		return lvar -> tp;
+	return NULL;
 }
 
 
@@ -235,6 +237,21 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev)
 	}
 
 	error_at((*token) -> str,"lval is expected");
+}
+
+int is_lval(Node_t* node)
+{
+	if(node -> tp)
+	switch(node -> kind)
+	{
+		case ND_FUNCTIONCALL: return 1;
+		case ND_GLOBVALCALL: return 1;
+		case ND_LVAL: return 1;
+		case ND_DEREF: return 1;
+		case ND_STRINGLITERAL: return 1;
+		default:
+			return 0;
+	}
 }
 
 
@@ -525,19 +542,21 @@ Node_t *unitary(Token_t **token){
 	if(find(INC,token))
 	{
 		if((*token) -> kind != TK_IDENT)
-		{
+		{// this is not enouth condition for detect Left value.
 			error_at((*token) -> str, "lval is expected");
 		}
 		node = new_Node_t(ND_INC,unitary(token),NULL,0,0,NULL,NULL);
+		node -> tp = node -> left -> tp;
 		return node;
 	}
 	else if(find(DEC,token))
-	{
+	{// this is not enouth condition for detect Left value.	
 		if((*token) -> kind != TK_IDENT)
 		{
 			error_at((*token) -> str, "lval is expected");
 		}
 		node = new_Node_t(ND_DEC,unitary(token),NULL,0,0,NULL,NULL);
+		node -> tp = node -> left -> tp;
 		return node;
 	}
 
@@ -579,20 +598,22 @@ Node_t *postfix(Token_t **token) {
 		}
 		if(find(INC,token))
 		{
-			if(node -> kind != ND_LVAL)
+			if(!is_lval(node))
 			{
 				error_at(parsing_here, "lval is expected");
 			}
 			node = new_Node_t(ND_INC,NULL,node,0,0,NULL,NULL);
+			node -> tp = node -> right -> tp;
 			return node;
 		}
 		if(find(DEC,token))
 		{
-			if(node -> kind != ND_LVAL)
+			if(!is_lval(node))
 			{
 				error_at(parsing_here, "lval is expected");
 			}
 			node = new_Node_t(ND_DEC,NULL,node,0,0,NULL,NULL);
+			node -> tp = node -> right -> tp;
 			return node;
 		}
 		return node;

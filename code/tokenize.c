@@ -141,6 +141,7 @@ Token_t *tokenize(char *p){//入力文字列
 
 
 		p = skip(p);
+		if(*p == '\0') break;
 		if(*p == '"')
 		{//文字列リテラル
 			cur = new_token(TK_PUNCTUATOR,cur,p);

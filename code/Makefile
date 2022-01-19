@@ -1,5 +1,7 @@
 CFLAGS=-std=c11 -g -static
-SRCS=$(wildcard *.c)
+SRC=$(wildcard *.c)
+SRCSS=$(filter-out test.c, $(SRC))
+SRCS=$(filter-out test_2.c, $(SRCSS))
 OBJS=$(SRCS:.c=.o)
 
 cc: $(OBJS)
@@ -15,5 +17,5 @@ clean:
 
 db:
 	gdb cc
-
+	
 .PHONY: test clean

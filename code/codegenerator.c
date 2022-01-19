@@ -172,10 +172,12 @@ void gen_lval(Node_t *node){
 
 
 
-	if(node -> kind != ND_LVAL){
+	if(!is_lval(node)){
 		
-		
-		fprintf(stderr,"代入の左辺値が変数ではありません");
+
+		fprintf(stderr, "error at code generating\n");
+		fprintf(stderr,"	this is not variables\n");
+		fprintf(stderr, "generating node kind : %d\n", node -> kind);
 		exit(1);
 
 	}
@@ -341,7 +343,10 @@ void gen_incement(Node_t* node) {
 		char *rax = get_registername("rax",node -> right -> tp -> size);
 		char *rdi = get_registername("rdi", node -> right -> tp -> size);
 		char *pref = get_pointerpref(node -> right -> tp -> size);
-		gen_lval(node -> right);// result of node -> right is stored in rax
+		if(node -> right -> kind == ND_DEREF)
+			generate(node -> right -> left);
+		else
+			gen_lval(node -> right);// result of node -> right is stored in rax
 		pop_stack(8,"rax");
 		printf("	mov rcx, rax\n");
 		printf("	mov %s, %s[rax]\n", rax,pref);
@@ -599,67 +604,16 @@ void generate(Node_t *node){
 
 	case ND_DEREF:
 	{
-
-		if(node -> left -> kind == ND_ADD)
-		{// global 変数処理
-
-			Node_t *node_l = node -> left;
-			if( node_l -> left -> kind == ND_GLOBVALCALL )
-			{
-
-				Type *tp_l = node_l -> left -> tp;
-
-				if(tp_l -> Type_label == TP_POINTER && tp_l -> pointer_to -> Type_label == TP_ARRAY)
-				{	
-
-					if(node_l -> right -> val >= 0)
-					{
-
-						printf("	mov rax, QWORD PTR %s[rip+%d]\n",node_l -> left -> name,node_l -> right -> val);
-						printf("	push rax\n");
-						return;
-					}
-					else
-					{
-
-						fprintf(stderr,"添え字が配列範囲外です");
-						exit(1);
-					}
-					
-				}
-			}
-			else if( node_l -> right -> kind == ND_GLOBVALCALL )
-			{
-
-				Type *tp_r = node_l -> right -> tp;
-				
-				if(tp_r -> Type_label == TP_POINTER && tp_r -> pointer_to -> Type_label == TP_ARRAY)
-				{
-
-					if( node_l -> left -> val >= 0)
-					{
-
-						printf("	mov rax, QWORD PTR %s[rip+%d]\n",node_l -> right -> name,node_l -> left -> val);
-						return;
-					}else
-					{
-						fprintf(stderr,"添え字が配列の範囲外です");
-						exit(1);
-					}
-				}
-			}
-		}
+		
 		generate(node -> left);
 		
-		char * register_name = get_registername("rcx",node -> tp -> size);
+		char* rax = get_registername("rax",node -> tp -> size);
+		char* rcx = get_registername("rcx", node -> tp -> size); 
 		char * pointer_pref = get_pointerpref(node -> tp -> size);
 		
-		
 		pop_stack(node -> left -> tp -> size,"rax");
-		printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
-		printf("	mov %s, %s\n",get_registername("rax",node -> tp -> size),register_name);
-		
-		push_stack(node -> tp -> size,"rax");
+		printf("	mov %s, %s [rax]\n",rcx,pointer_pref);	
+		push_stack(node -> tp -> size,"rcx");
 		return;
 	}
 	case ND_INC: 
@@ -693,6 +647,12 @@ void generate(Node_t *node){
 			printf("	sub rsp, 4\n");
 			printf("	mov DWORD PTR [rsp], eax\n");
 			rsp_counter += 4;
+		}
+		else if(node -> tp -> Type_label == TP_POINTER && node -> tp -> pointer_to -> Type_label == TP_ARRAY)
+		{
+			printf("	lea rax, QWARD PTR %s[rip]\n", node -> name);
+			printf("	push rax\n");
+			rsp_counter += 8;
 		}
 		else
 		{

@@ -768,6 +768,8 @@ int is_arrmemaccess(Token_t **token);
  */
 Node_t* arrmemaccess(Token_t **token , Node_t**);
 
+// Identify node is lvar or not
+int is_lval(Node_t* node);
 
 /**
  * @brief パーサ本体
