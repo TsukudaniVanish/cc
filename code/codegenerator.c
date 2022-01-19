@@ -404,6 +404,32 @@ void gen_decrement(Node_t* node) {
 	}	// some thing will be written there.
 }
 
+char* get_cmpInstruction(Node_kind kind) {
+	switch(kind) {
+	case ND_EQL : return "sete";
+	case ND_NEQ : return "setne";
+	case ND_LES : return "setl";
+	case ND_LEQ : return "setle";
+	default:
+		return NULL;
+	}
+}
+
+void gen_compair(Node_t* node) {
+	long size = node -> left -> tp -> size;
+	char* rax = get_registername("rax",node -> left -> tp -> size);
+	char* rdi = get_registername("rdi", node -> right -> tp -> size);
+	char* set = get_cmpInstruction(node -> kind);
+
+	printf("	cmp %s, %s\n",rax,rdi);
+	printf("	%s al\n", set);
+	if(size > 1)
+		printf("	movzb %s, al\n",rax);
+	else
+		printf("	movzb rax, al\n");
+	return;
+}
+
 void gen_formula(Node_t *node){
 
 	//サイズ確認
@@ -434,31 +460,21 @@ void gen_formula(Node_t *node){
 
 	switch (node -> kind){
 	case ND_EQL:
-		
-		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
-		printf("	sete al\n");
-		printf("	movzb %s, al\n",register_name[0]);
+		gen_compair(node);
 		break;
 		
 	case ND_NEQ:
 
-		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
-		printf("	setne al\n");
-		printf("	movzb %s, al\n",register_name[0]);
+		gen_compair(node);
 		break;
 
 	case ND_LES:
 
-		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
-		printf("	setl al\n");
-		printf("	movzb %s, al\n",register_name[0]);
+		gen_compair(node);
 		break;
-
 	case ND_LEQ:
 
-		printf("	cmp %s, %s\n",register_name[0],register_name[1]);
-		printf("	setle al\n");
-		printf("	movzb %s, al\n",register_name[0]);
+		gen_compair(node);
 		break;
 
 	case ND_ADD:
@@ -747,19 +763,7 @@ void generate(Node_t *node){
 		int size = node -> left -> tp -> size;		
 
 		generate(node -> left);
-
-		if(size < 5 && size > 1)
-		{
-			printf("	mov eax, DWORD PTR [rsp]\n");
-			printf("	add rsp, 4\n");
-			rsp_counter -= 4;
-		}
-		else
-		{
-			printf("	pop rax\n");
-			rsp_counter -= 8;
-		}
-		rsp_counter --;
+		pop_stack(size, "rax");
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lend%d\n",filenumber);
 		int endnumber_if = filenumber;
@@ -797,17 +801,8 @@ void generate(Node_t *node){
 	{
 		generate(node -> left);
 		int size = node -> left -> tp -> size;
-		if(size < 5 && size > 1)
-		{
-			printf("	mov eax, DWORD PTR [rsp]\n");
-			printf("	add rsp, 4\n");
-			rsp_counter -= 4;
-		}
-		else
-		{
-			printf("	pop rax\n");
-			rsp_counter -= 8;
-		}
+		pop_stack(size,"rax");
+		
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lelse%d\n",filenumber);
 		int elsenumber = filenumber;
@@ -827,19 +822,10 @@ void generate(Node_t *node){
 		int beginnumber_while = filenumber;
 		
 		generate(node -> left);
-
+		
 		int size_l = node -> left -> tp -> size;
-		if(size_l < 5 && size_l > 1)
-		{
-			printf("	mov eax, DWORD PTR [rsp]\n");
-			printf("	add rsp, 4\n");
-			rsp_counter -= 4;
-		}
-		else
-		{
-			printf("	pop rax\n");
-			rsp_counter -= 8;
-		}
+		pop_stack(size_l, "rax");
+		
 		printf("	cmp rax, 0\n");
 		printf("	je	.Lend%d\n",filenumber);
 		int endnumber_while = filenumber;
@@ -855,17 +841,8 @@ void generate(Node_t *node){
 		{
 			size_r = 0;
 		}
-		if(size_r < 5 && size_r > 1)
-		{
-			printf("	mov eax, DWORD PTR [rsp]\n");
-			printf("	add rsp, 4\n");
-			rsp_counter -= 4;
-		}
-		else
-		{
-			printf("	pop rax\n");
-			rsp_counter -= 8;
-		}
+		pop_stack(size_r, "rax");
+		
 		printf("	jmp .Lbegin%d\n",beginnumber_while);
 		printf(".Lend%d:\n",endnumber_while);
 		filenumber++;
@@ -904,17 +881,8 @@ void generate(Node_t *node){
 			{
 				size = 0;
 			}
-			if(size < 5 && size > 1)
-			{
-				printf("	mov eax, DWORD PTR [rsp]\n");
-				printf("	add rsp, 4\n");
-				rsp_counter -= 4;
-			}
-			else
-			{
-				printf("	pop rax\n");
-				rsp_counter -= 8;
-			}
+			pop_stack(size, "rax");
+			
 			printf("	cmp rax, 0\n");
 			printf("	je .Lend%d\n",endnumber_for);
 
