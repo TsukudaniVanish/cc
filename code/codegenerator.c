@@ -302,18 +302,18 @@ void gen_function_def(Node_t *node){
 
 void gen_global_store(char *name,char *register_name,long int size)
 {
-	char *regi_name = get_registername(register_name,size);
+	char *Register_name = get_registername(register_name,size);
 	if( size < 5 &&  size > 1)
 	{
-		printf("	mov DWORD PTR %s[rip], %s\n",name,regi_name);
+		printf("	mov DWORD PTR %s[rip], %s\n",name,Register_name);
 	}
 	else if(0 <  size && size < 2)
 	{
-		printf("	mov BYTE PTR %s[rip], %s\n", name,regi_name);
+		printf("	mov BYTE PTR %s[rip], %s\n", name,Register_name);
 	}
 	else
 	{
-		printf("	mov QWORD PTR %s[rip], %s\n", name,regi_name);
+		printf("	mov QWORD PTR %s[rip], %s\n", name,Register_name);
 	}
 }
 
@@ -322,22 +322,22 @@ void gen_global_store(char *name,char *register_name,long int size)
 
 void gen_global_store_arr(char *name,char *register_name,long int size,long int index)
 {
-	char *regi_name = get_registername(register_name,size);
+	char *Register_name = get_registername(register_name,size);
 	if( size < 5 &&  size > 1)
 	{
-		printf("	mov DWORD PTR %s[rip+%ld], %s\n",name,index,regi_name);
+		printf("	mov DWORD PTR %s[rip+%ld], %s\n",name,index,Register_name);
 	}
 	else if(0 <  size && size < 2)
 	{
-		printf("	mov BYTE PTR %s[rip+%ld], %s\n",name,index,regi_name);
+		printf("	mov BYTE PTR %s[rip+%ld], %s\n",name,index,Register_name);
 	}
 	else
 	{
-		printf("	mov QWORD PTR %s[rip+%ld], %s\n",name,index,regi_name);
+		printf("	mov QWORD PTR %s[rip+%ld], %s\n",name,index,Register_name);
 	}
 }
 
-void gen_incement(Node_t* node) {
+void gen_increment(Node_t* node) {
 	if(node -> left == NULL && node -> right != NULL)
 	{// postfix
 		char *rax = get_registername("rax",node -> right -> tp -> size);
@@ -633,7 +633,7 @@ void generate(Node_t *node){
 		return;
 	}
 	case ND_INC: 
-		gen_incement(node);
+		gen_increment(node);
 		return;
 	case ND_DEC: 
 		gen_decrement(node); 
