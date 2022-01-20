@@ -140,34 +140,6 @@ void set_stringiter()
 	
 }
 
-
-void set_array_header(){
-
-	Lvar* nametable = *scope;
-
-	if(nametable == NULL)
-		return;
-
-	for( Lvar *var = nametable ; var ; var = var -> next ){
-
-
-		if (var ->tp -> Type_label == TP_ARRAY){
-
-			printf("	mov rax, rbp\n");
-			printf("	sub rax, %ld\n",var ->  offset);
-			printf("	mov rdi, rax\n");
-			printf("	sub rax, 8\n");
-			printf("	mov [rax], rdi\n");
-		}
-	}
-	
-	
-	return;
-}
-
-
-
-
 long gen_lval(Node_t *node){
 
 
@@ -312,20 +284,6 @@ void gen_function_def(Node_t *node){
 	return;
 }
 
-void gen_global_store(char *name,char *register_name,long int size)
-{
-	char *Register_name = get_registername(register_name,size);
-	char* pref = get_pointerpref(size);
-	printf("	mov %s %s[rip], %s\n",pref,name,Register_name);
-}
-
-void gen_global_store_arr(char *name,char *register_name,long int size,long int index)
-{
-	char *Register_name = get_registername(register_name,size);
-	char* pref = get_pointerpref(size);
-	printf("	mov %s %s[rip+%ld], %s\n",pref,name,index,Register_name);
-}
-
 int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, char* name_register1, char* name_register2, char** pref) {
 	*size = node -> tp -> size;
 	*register1 = get_registername(name_register1, *size);
@@ -408,10 +366,15 @@ char* get_cmpInstruction(Node_kind kind) {
 }
 
 void gen_compair(Node_t* node) {
-	long size = node -> left -> tp -> size;
-	char* rax = get_registername("rax",node -> left -> tp -> size);
-	char* rdi = get_registername("rdi", node -> right -> tp -> size);
+	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
+	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
+	long size = size_r > size_l? size_r: size_l;
+	char* rax = get_registername("rax", size);
+	char* rdi = get_registername("rdi", size);
 	char* set = get_cmpInstruction(node -> kind);
+
+	pop_stack(size_r, "rdi");
+	pop_stack(size_l, "rax");
 
 	printf("	cmp %s, %s\n",rax,rdi);
 	printf("	%s al\n", set);
@@ -419,92 +382,77 @@ void gen_compair(Node_t* node) {
 		printf("	movzb %s, al\n",rax);
 	else
 		printf("	movzb rax, al\n");
+	push_stack(size_l, "rax");
 	return;
+}
+
+char* get_arithmetic_instruction(int kind) {
+	switch(kind)
+	{
+		case ND_ADD : return "add";
+		case ND_SUB : return "sub";
+		case ND_MUL : return "imul";
+		case ND_DIV : return "idiv";
+	}
+}
+
+//sign extension rax and store to rdx:rax
+char* get_sign_extension(long size) {
+	if(0 < size && size < 5)
+		return "cdq";
+	if(5 <size && size < 9)
+		return "cqo";
+	fprintf(stderr, "invailed size at signExtension\n");
+	exit(1);
+}
+
+void gen_arithmetic_instruction(Node_t *node) {
+	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
+	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
+	long size = size_r > size_l? size_r: size_l;
+	char* rax = get_registername("rax",size);
+	char* rdi = get_registername("rdi",size);
+	char* arithmetic_instruction = get_arithmetic_instruction(node -> kind);
+
+	pop_stack(size_r, "rdi");
+	pop_stack(size_l, "rax");
+
+	if(node -> kind == ND_DIV)
+	{
+		char* singExtension = get_sign_extension(size);
+		printf("	%s\n", singExtension);
+		printf("	%s %s\n", arithmetic_instruction, rdi);
+		push_stack(size, "rax");
+		return;
+	}
+
+	printf("	%s %s, %s\n",arithmetic_instruction, rax, rdi);
+	push_stack(size_l, "rax");
 }
 
 void gen_formula(Node_t *node){
 
-	//サイズ確認
-	long size[2] = { node -> left -> tp -> size, node -> right -> tp -> size};
-	char *register_name[2];
-	if(node -> left -> tp -> Type_label == TP_ARRAY)
-		size[0] = 8;
-	if(node -> right -> tp -> Type_label == TP_ARRAY)
-		size[1] = 8;
-
-	// right side of operator
-	pop_stack(size[1],"rdi");
-	register_name[1] = get_registername("rdi",size[1]);
-
-	// left side of operator
-	pop_stack(size[0],"rax");
-	register_name[0] = get_registername("rax",size[0]);
-
-	if(size[0] < size[1])
+	switch (node -> kind)
 	{
-		register_name[0] = get_registername("rax",size[1]);
-	}
-	else
-	{
-		register_name[1] = get_registername("rdi",size[0]);
-	}
-	
-	
-
-	
-	rsp_counter-=2;
-
-	switch (node -> kind){
 	case ND_EQL:
-		gen_compair(node);
-		break;
-		
 	case ND_NEQ:
-
-		gen_compair(node);
-		break;
-
 	case ND_LES:
-
-		gen_compair(node);
-		break;
 	case ND_LEQ:
-
 		gen_compair(node);
 		break;
 
 	case ND_ADD:
-		
-		printf("	add %s, %s\n",register_name[0],register_name[1]);
-		break;
-
 	case ND_SUB:
-		
-		printf("	sub %s, %s\n",register_name[0],register_name[1]);
-		break;
-	
 	case ND_MUL:
-		
-		printf("	imul %s, %s\n",register_name[0],register_name[1]);
-		break;
-	
 	case ND_DIV:
-
-		if( size[0] < 5 )
-		{
-			printf("	cdq\n");
-		}
-		else if( size[0] < 9 )
-		{
-			printf("	cqo\n");
-		}
-		printf("	idiv %s\n",register_name[1]);
+		gen_arithmetic_instruction(node);
 		break;
+
 	default:
 		return;
 	}
 
-	push_stack(size[0],"rax");
+	return;
 }
 
 

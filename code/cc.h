@@ -814,9 +814,6 @@ void argment_set(int,long int,long int);
 //関数定義をコンパイル
 void gen_function_def(Node_t *node);
 
-//配列自身の先頭をさすポインタをセット
-void set_array_header();
-
 /**
  * @brief Get the register name
  * 
@@ -855,24 +852,6 @@ void pop_stack(long int size,char *);
  * 
  */
 void set_stringiter();
-/**
- * @brief register の値をストレージにストア
- * 
- * @param  char* name : 変数名
- * @param char* register name
- * @param long_int size
- */
-void gen_global_store(char*,char*,long int);
-
-/**
- * @brief registerの値の値をストレージにストア
- * 
- * @param  char* name : 変数名
- * @param char* register name
- * @param long_int size
- * @param long_int index
- */
-void gen_global_store_arr(char*,char*,long int,long int);
 //式をコンパイル
 void gen_formula(Node_t*);
 
