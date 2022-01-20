@@ -101,8 +101,8 @@ void* Vector_get_tail(Vector *vec);
 
 // ====================================================
 // Map.c====================================================
-typedef struct conteiner Container;
-struct conteiner {
+typedef struct container Container;
+struct container {
 	char* key;
 	void* data;
 	Container* next;
@@ -802,7 +802,7 @@ Node_t *primary(Token_t **);
  */
 
 //変数情報をコンパイルする
-void gen_lval(Node_t *node);
+long gen_lval(Node_t *node);
 
 
 //関数呼びたしをコンパイル

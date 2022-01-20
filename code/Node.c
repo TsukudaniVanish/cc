@@ -31,7 +31,9 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	node -> tp = imptypecast(node);
 	if(node -> tp)
 	{
-		if(node -> tp -> Type_label == TP_POINTER && (node -> kind == ND_ADD || node -> kind == ND_SUB))
+		int node_tp = node -> tp -> Type_label;
+		if(node_tp == TP_ARRAY) node_tp = TP_POINTER;
+		if(node_tp == TP_POINTER && (node -> kind == ND_ADD || node -> kind == ND_SUB))
 		{
 			if(l -> kind == ND_NUM)
 				l -> val = l -> val * node -> tp -> pointer_to -> size;
@@ -128,21 +130,13 @@ Node_t *new_node_var(Token_t **token)
 	}
 	if(lvar)
 	{//local 変数
-		if(
-			lvar -> tp -> Type_label == TP_POINTER
-			&& lvar -> next
-			&& lvar -> next -> tp -> Type_label == TP_ARRAY
-		)//size of 用の処理
-			return new_Node_t(ND_LVAL,NULL,NULL,lvar -> next -> tp -> size,lvar -> offset,lvar -> tp,lvar -> name);
-		return new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,NULL);
+	
+		return new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	}
 	lvar = find_lvar(ident -> str,ident -> length,&global);
 	if(lvar)
 	{//グローバル変数
-		if(lvar -> tp -> Type_label != TP_ARRAY)//暗黙にpointer 型にキャストする
-			return new_Node_t(ND_GLOBVALCALL,NULL,NULL,0,0,lvar -> tp,lvar -> name);
-		else
-			return new_Node_t(ND_GLOBVALCALL,NULL,NULL,0,0,new_tp(TP_POINTER,lvar -> tp,8),lvar -> name);
+		return new_Node_t(ND_GLOBVALCALL,NULL,NULL,0,0,lvar -> tp,lvar -> name);
 	}
 	error_at(ident -> str,"不明な識別子");
 }
@@ -318,20 +312,20 @@ Node_t *new_node_ref_deref(Token_t **token){
 			(*token) = (*token) -> next;
 
 			node = new_Node_t(ND_DEREF, unitary(token), NULL,0,0,NULL,NULL);
-			if( node -> left -> tp -> Type_label != TP_POINTER ){
-
-
-				error_at((*token)->str,"ポインタ型ではありません\n");
-			}
-			if( node -> left -> tp -> pointer_to -> Type_label == TP_ARRAY)
+			if( node -> left -> tp -> Type_label == TP_ARRAY)
 			{
-				node -> tp = node -> left -> tp -> pointer_to -> pointer_to;
+				node -> tp = node -> left -> tp -> pointer_to;
+				return node;
+			}
+			if( node -> left -> tp -> Type_label != TP_POINTER )
+			{
+				error_at((*token)->str, "Cannot accsess this variable\n");
 			}
 			else
 			{
 				node -> tp = node -> left -> tp -> pointer_to;
+				return node;
 			}
-			return node;
 		
 		case '&':
 

@@ -16,12 +16,12 @@ unsigned long hash(char* key){
 }
 
 Container* new_Container(char* k, void* d, Container* n, Container* p) {
-	Container* conteiner = calloc(1,sizeof(Container));
-	conteiner -> key = k;
-	conteiner -> data = d;
-	conteiner -> next = n;
-	conteiner -> prev = p;
-	return conteiner;
+	Container* container = calloc(1,sizeof(Container));
+	container -> key = k;
+	container -> data = d;
+	container -> next = n;
+	container -> prev = p;
+	return container;
 }
 
 Container* make_container() {
