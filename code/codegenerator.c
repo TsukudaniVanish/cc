@@ -168,7 +168,7 @@ void set_array_header(){
 
 
 
-void gen_lval(Node_t *node){
+long gen_lval(Node_t *node){
 
 
 
@@ -181,13 +181,26 @@ void gen_lval(Node_t *node){
 		exit(1);
 
 	}
-	else
+	if(node -> kind == ND_GLOBVALCALL)
 	{
-		printf("	mov rax, rbp\n");
-		printf("	sub rax, %ld\n",  node -> offset  );
+		char* pref = get_pointerpref(node -> tp -> size);
+		printf("	lea rax, %s %s[rip]\n", pref, node -> name);
 		printf("	push rax\n");
 		rsp_counter += 8;
+		return node -> tp -> size;
 	}
+	if(node -> kind == ND_DEREF)
+	{
+		generate(node -> left);
+		return node -> tp -> size;
+	}
+	
+	printf("	mov rax, rbp\n");
+	printf("	sub rax, %ld\n",  node -> offset  );
+	printf("	push rax\n");
+	rsp_counter += 8;
+	return node -> tp -> size;
+	
 }
 
 void gen_arg_entry(Node_t* node){
@@ -285,7 +298,6 @@ void gen_function_def(Node_t *node){
 	{
 		argment_set(i,offset[i-1],size[i-1]);
 	}
-	set_array_header();
 	
 
 	generate(node -> right);//定義本文をコンパイル
@@ -303,106 +315,86 @@ void gen_function_def(Node_t *node){
 void gen_global_store(char *name,char *register_name,long int size)
 {
 	char *Register_name = get_registername(register_name,size);
-	if( size < 5 &&  size > 1)
-	{
-		printf("	mov DWORD PTR %s[rip], %s\n",name,Register_name);
-	}
-	else if(0 <  size && size < 2)
-	{
-		printf("	mov BYTE PTR %s[rip], %s\n", name,Register_name);
-	}
-	else
-	{
-		printf("	mov QWORD PTR %s[rip], %s\n", name,Register_name);
-	}
+	char* pref = get_pointerpref(size);
+	printf("	mov %s %s[rip], %s\n",pref,name,Register_name);
 }
-
-
-
 
 void gen_global_store_arr(char *name,char *register_name,long int size,long int index)
 {
 	char *Register_name = get_registername(register_name,size);
-	if( size < 5 &&  size > 1)
-	{
-		printf("	mov DWORD PTR %s[rip+%ld], %s\n",name,index,Register_name);
-	}
-	else if(0 <  size && size < 2)
-	{
-		printf("	mov BYTE PTR %s[rip+%ld], %s\n",name,index,Register_name);
-	}
-	else
-	{
-		printf("	mov QWORD PTR %s[rip+%ld], %s\n",name,index,Register_name);
-	}
+	char* pref = get_pointerpref(size);
+	printf("	mov %s %s[rip+%ld], %s\n",pref,name,index,Register_name);
 }
 
-void gen_increment(Node_t* node) {
-	if(node -> left == NULL && node -> right != NULL)
-	{// postfix
-		char *rax = get_registername("rax",node -> right -> tp -> size);
-		char *rdi = get_registername("rdi", node -> right -> tp -> size);
-		char *pref = get_pointerpref(node -> right -> tp -> size);
-		if(node -> right -> kind == ND_DEREF)
-			generate(node -> right -> left);
-		else
-			gen_lval(node -> right);// result of node -> right is stored in rax
-		pop_stack(8,"rax");
-		printf("	mov rcx, rax\n");
-		printf("	mov %s, %s[rax]\n", rax,pref);
-		push_stack(node -> right -> tp -> size, "rax");
-		printf("	mov %s, %s[rcx]\n", rdi, pref);
-		// increment
-		int add;
-		switch(node -> right -> tp -> Type_label){
-		case TP_POINTER: 
-			add = node -> right -> tp -> pointer_to -> size;
-			break;
-		case TP_CHAR:
-			add = 1;
-			break;
-		case TP_INT:
-			add = 1;
-			break;
-		default:
-			add = 0;
-		}
-		printf("	add %s, %d\n", rdi, add);
-		printf("	mov %s[rcx], %s\n", pref, rdi);
+int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, char* name_register1, char* name_register2, char** pref) {
+	*size = node -> tp -> size;
+	*register1 = get_registername(name_register1, *size);
+	*register2 = get_registername(name_register2, *size);
+	*pref = get_pointerpref(*size);
+	int operand;
+	switch(node -> tp -> Type_label) {
+	case TP_POINTER:
+		return node -> tp -> pointer_to -> size;
+	case TP_CHAR: return 1;
+	case TP_INT: return 1;
+	default:
+		return 0;
 	}
 }
-
-void gen_decrement(Node_t* node) {
+void gen_inc_dec(Node_t *node) {
+	char* instruction;
+	switch(node -> kind) {
+	case ND_INC: 
+		instruction = "add";
+		break;
+	case ND_DEC: 
+		instruction = "sub";
+		break;
+	default:
+		fprintf(stderr,"conpile error\n	unexpected node at increment, decrement");
+		exit(1);
+	}
+	long size;
+	char* rax;
+	char* rdi;
+	char* pref;
 	if(node -> left == NULL && node -> right != NULL)
 	{// postfix
-		char *rax = get_registername("rax",node -> right -> tp -> size);
-		char *rdi = get_registername("rdi", node -> right -> tp -> size);
-		char *pref = get_pointerpref(node -> right -> tp -> size);
+		
+		int operand = get_inc_dec_registers(node -> right, &size, &rax, &rdi, "rax", "rdi", &pref);
+		
 		gen_lval(node -> right);// result of node -> right is stored in rax
+		
 		pop_stack(8,"rax");
 		printf("	mov rcx, rax\n");
 		printf("	mov %s, %s[rax]\n", rax,pref);
-		push_stack(node -> right -> tp -> size, "rax");
+
+		push_stack(size, "rax");
+		
 		printf("	mov %s, %s[rcx]\n", rdi, pref);
-		// increment
-		int sub;
-		switch(node -> right -> tp -> Type_label){
-		case TP_POINTER: 
-			sub = node -> right -> tp -> pointer_to -> size;
-			break;
-		case TP_CHAR:
-			sub = 1;
-			break;
-		case TP_INT:
-			sub = 1;
-			break;
-		default:
-			sub = 0;
-		}
-		printf("	sub %s, %d\n", rdi, sub);
+		printf("	%s %s, %d\n",instruction, rdi, operand);
+
 		printf("	mov %s[rcx], %s\n", pref, rdi);
-	}	// some thing will be written there.
+		return;
+	}
+	if(node -> right == NULL && node -> left != NULL)
+	{// prefix
+		int operand = get_inc_dec_registers(node -> left, &size, &rax, &rdi, "rax", "rdi", &pref);	
+		gen_lval(node -> left);
+		
+		pop_stack(8, "rax");
+		printf("	mov rcx, rax\n");
+		printf("	mov %s, %s[rax]\n", rax, pref);
+
+		printf("	%s %s, %d\n", instruction, rax, operand);
+		
+		push_stack(size, "rax");
+
+		printf("	mov %s[rcx], %s\n", pref, rax);
+		return;
+	}
 }
+
 
 char* get_cmpInstruction(Node_kind kind) {
 	switch(kind) {
@@ -435,6 +427,10 @@ void gen_formula(Node_t *node){
 	//サイズ確認
 	long size[2] = { node -> left -> tp -> size, node -> right -> tp -> size};
 	char *register_name[2];
+	if(node -> left -> tp -> Type_label == TP_ARRAY)
+		size[0] = 8;
+	if(node -> right -> tp -> Type_label == TP_ARRAY)
+		size[1] = 8;
 
 	// right side of operator
 	pop_stack(size[1],"rdi");
@@ -544,74 +540,21 @@ void generate(Node_t *node){
 
 	case ND_ASSIGN:
 	{
+	
 		long int size[2];
-		char *register_name[3];
-
-		
-		if( node -> left && node -> left ->  kind != ND_DEREF){
-
-			if(node -> left -> kind == ND_GLOBVALCALL)
-			{//グローバル変数処理
-				generate(node -> right);
-				pop_stack(node -> tp -> size,"rax");
-				gen_global_store(node -> left -> name,"rax",node -> tp -> size);
-				return;
-			}
-			gen_lval(node->left);
-			size[0] = node -> left -> tp -> size;
-		
-		}else{
-			
-			if(node -> left -> left -> kind == ND_ADD)
-			{//global 変数処理
-				Node_t *node_ll = node -> left -> left;
-				if(node_ll -> left -> kind == ND_GLOBVALCALL)
-				{
-					Type *tp_lll = node_ll -> left -> tp;
-					if(tp_lll -> Type_label == TP_POINTER && tp_lll -> pointer_to -> Type_label == TP_ARRAY)
-					{
-						generate(node -> right);
-						pop_stack(node -> tp -> size,"rax");
-						gen_global_store_arr(node_ll -> left -> name,"rax",node -> tp -> size,node_ll -> right -> val);
-						return;
-					}
-				}
-				else if(node_ll -> right -> kind == ND_GLOBVALCALL)
-				{
-					Type *tp_llr = node_ll -> right -> tp;
-					if(tp_llr -> Type_label == TP_POINTER && tp_llr -> pointer_to -> Type_label == TP_ARRAY)
-					{
-						generate(node -> right);
-						pop_stack(node -> tp -> size,"rax");
-						gen_global_store_arr(node_ll -> right -> name,"rax",node -> tp -> size,node_ll -> val);
-						return;
-					}
-				}
-			}
-			generate(node -> left -> left);
-			size[0] = node -> left -> left -> tp -> pointer_to -> size;
-		}	
-		
-		generate(node -> right);
+		size[0] = gen_lval(node -> left);
 		size[1] = node -> right -> tp -> size;
+		char *rdi = get_registername("rdi",size[0]);
+		char* pref = get_pointerpref(size[0]);gen_lval(node -> left);
+		generate(node -> right);
 
-
-		// right side of operator
-		pop_stack(size[1],"rdi");
-		register_name[1] = get_registername("rdi",size[0]);
-
-		// left side of operator
-		printf("	pop rax\n");
-		rsp_counter -= 8;
-		register_name[2] = get_pointerpref(size[0]);
-		
-
-		//代入
-		printf("	mov %s [rax], %s\n",register_name[2],register_name[1]);
-		printf("	sub rsp, %ld\n",node -> right -> tp -> size );
-		printf("	mov %s [rsp], %s\n",register_name[2],register_name[1]);
-		rsp_counter++;
-		return;
+		pop_stack(size[1],"rdi");// right
+		pop_stack(8, "rax");// left
+	
+		printf("	mov %s [rax], %s\n", pref,rdi);//代入
+		push_stack(size[1], "rdi");
+	
+	return;
 	}
 	case ND_ADDR:
 
@@ -627,55 +570,45 @@ void generate(Node_t *node){
 		char* rcx = get_registername("rcx", node -> tp -> size); 
 		char * pointer_pref = get_pointerpref(node -> tp -> size);
 		
-		pop_stack(node -> left -> tp -> size,"rax");
+		pop_stack(8,"rax");
 		printf("	mov %s, %s [rax]\n",rcx,pointer_pref);	
 		push_stack(node -> tp -> size,"rcx");
 		return;
 	}
 	case ND_INC: 
-		gen_increment(node);
+		gen_inc_dec(node);
 		return;
 	case ND_DEC: 
-		gen_decrement(node); 
+		gen_inc_dec(node); 
 		return;
 	case ND_LVAL:
 	{
 
 		gen_lval(node);
-
 		char * register_name = get_registername("rax",node -> tp -> size);
 		char * pointer_pref = get_pointerpref(node -> tp -> size);
 		
 		
-		printf("	pop rax\n");
-		rsp_counter -= 8;
+		if(node -> tp -> Type_label == TP_ARRAY) return;
+		pop_stack(8, "rax");
+
 		printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
-		
 		push_stack(node -> tp -> size,"rax");
 		return;
 	}
 
 	case ND_GLOBVALCALL://調整=====================
 	{
-		if(node -> tp && node -> tp -> size < 5 && node -> tp -> size > 1)
-		{
-			printf("	mov eax, DWORD PTR %s[rip]\n",node -> name);
-			printf("	sub rsp, 4\n");
-			printf("	mov DWORD PTR [rsp], eax\n");
-			rsp_counter += 4;
-		}
-		else if(node -> tp -> Type_label == TP_POINTER && node -> tp -> pointer_to -> Type_label == TP_ARRAY)
-		{
-			printf("	lea rax, QWARD PTR %s[rip]\n", node -> name);
-			printf("	push rax\n");
-			rsp_counter += 8;
-		}
-		else
-		{
-			printf("	mov rax, QWORD PTR %s[rip]\n",node -> name);
-			printf("	push rax\n");
-			rsp_counter += 8;
-		}
+		long size = node -> tp -> size;
+		char* rax = get_registername("rax", size);
+		char* pref = get_pointerpref(size);
+
+		gen_lval(node);
+		if(node -> tp -> Type_label == TP_ARRAY) return;
+
+		pop_stack(8, "rax");
+		printf("	mov %s, %s [rax]\n", rax, pref);
+		push_stack(size, "rax");
 		return;
 	}//調整=====================
 

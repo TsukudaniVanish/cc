@@ -147,8 +147,14 @@ Type *imptypecast(Node_t *node)
 		tp_r = node -> right -> tp -> Type_label;
 		break;
 	}
-
 	
+	//array -> pointer
+	
+	if(tp_l == TP_ARRAY)	tp_l = TP_POINTER;
+	if(tp_r == TP_ARRAY) 	tp_r = TP_POINTER;
+
+	if(tp_l == tp_r)
+		return node -> left -> tp;
 
 	if(tp_l == TP_POINTER)
 	{
@@ -183,13 +189,8 @@ int is_lvardec(Token_t **token)
 
 Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table)
 {
-	Lvar *lvar = find_lvar(name,len,table);
-	lvar = new_lvar(tp,name,len,*table);
+	Lvar *lvar = new_lvar(tp,name,len,*table);
 	*table = lvar;
-	if(lvar -> tp -> Type_label == TP_ARRAY)
-	{
-		return declere_ident(new_tp(TP_POINTER,lvar -> tp -> pointer_to,8),lvar -> name, lvar -> length,table);
-	}
 	return lvar;
 }
 
@@ -225,17 +226,16 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev)
 	expect('[',token);
 	Node_t *node = assign(token);
 	expect(']',token);
-
+	
 	if(
-		(node -> tp -> Type_label == TP_POINTER && (*prev) -> tp -> Type_label == TP_INT) ||
-		(node -> tp -> Type_label == TP_INT && (*prev) -> tp -> Type_label == TP_POINTER)
+		(node -> tp -> Type_label == TP_ARRAY && (*prev) -> kind == ND_NUM) ||
+		(node -> kind == ND_NUM && (*prev) -> tp -> Type_label == TP_ARRAY)
 	){
 		Node_t *get_address = new_node(ND_ADD,*prev,node);
-		return get_address -> tp -> pointer_to -> Type_label == TP_ARRAY?
-			new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to -> pointer_to,NULL) :
-			new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
+		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
 	}
 
+	fprintf(stderr, "type : %d\n", (*prev) -> tp -> Type_label);
 	error_at((*token) -> str,"lval is expected");
 }
 
@@ -542,7 +542,7 @@ Node_t *unitary(Token_t **token){
 	if(find(INC,token))
 	{
 		if((*token) -> kind != TK_IDENT)
-		{// this is not enouth condition for detect Left value.
+		{// this is not enough condition for detect Left value.
 			error_at((*token) -> str, "lval is expected");
 		}
 		node = new_Node_t(ND_INC,unitary(token),NULL,0,0,NULL,NULL);
@@ -550,7 +550,7 @@ Node_t *unitary(Token_t **token){
 		return node;
 	}
 	else if(find(DEC,token))
-	{// this is not enouth condition for detect Left value.	
+	{// this is not enough condition for detect Left value.	
 		if((*token) -> kind != TK_IDENT)
 		{
 			error_at((*token) -> str, "lval is expected");

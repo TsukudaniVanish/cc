@@ -802,7 +802,7 @@ Node_t *primary(Token_t **);
  */
 
 //変数情報をコンパイルする
-void gen_lval(Node_t *node);
+long gen_lval(Node_t *node);
 
 
 //関数呼びたしをコンパイル
