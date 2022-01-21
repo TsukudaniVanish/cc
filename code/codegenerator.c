@@ -430,362 +430,338 @@ void gen_arithmetic_instruction(Node_t *node) {
 	push_stack(size_l, "rax");
 }
 
-void gen_formula(Node_t *node){
-
-	switch (node -> kind)
-	{
-	case ND_EQL:
-	case ND_NEQ:
-	case ND_LES:
-	case ND_LEQ:
-		gen_compair(node);
-		break;
-
-	case ND_ADD:
-	case ND_SUB:
-	case ND_MUL:
-	case ND_DIV:
-		gen_arithmetic_instruction(node);
-		break;
-
-	default:
-		return;
-	}
-
+void gen_number(int val) {
+	printf("	mov eax, %d\n", val);
+	push_stack(4, "rax");
 	return;
 }
 
-
-
-
-//抽象構文木からアセンブリコードを生成する
-void generate(Node_t *node){
-
-	if(!node)
-	{
-		return;
-	}
-	else if(node -> kind == ND_BLOCKEND)
-		return;
-
-	
-	//ノード末端付近==========================================================
-	switch(node -> kind) {
-	case ND_NUM:
-	
-		printf("	sub rsp , 4\n");
-		printf("	mov DWORD PTR [rsp], %d\n",node ->val);
-		rsp_counter+= 4;
-		return;
-
-	case ND_STRINGLITERAL:
-
-		//printf("	sub rsp, 8\n");
-		printf("	lea rax, .LC%ld[rip]\n",node -> offset);
-		printf("	push rax\n");
-		rsp_counter += 8;
-		return;
-
-	case ND_ASSIGN:
-	{
-	
-		long int size[2];
-		size[0] = gen_lval(node -> left);
-		size[1] = node -> right -> tp -> size;
-		char *rdi = get_registername("rdi",size[0]);
-		char* pref = get_pointerpref(size[0]);gen_lval(node -> left);
-		generate(node -> right);
-
-		pop_stack(size[1],"rdi");// right
-		pop_stack(8, "rax");// left
-	
-		printf("	mov %s [rax], %s\n", pref,rdi);//代入
-		push_stack(size[1], "rdi");
-	
+void gen_string_literal(long offset) {
+	printf("	lea rax, .LC%ld [rip]\n", offset);
+	push_stack(8, "rax");
 	return;
-	}
-	case ND_ADDR:
+}
 
-		gen_lval(node -> left);
-		return;
+void gen_assign(Node_t* node) {
+	long int size[2];
+	
+	size[0] = gen_lval(node -> left);// generate left node as left value
 
-	case ND_DEREF:
+	size[1] = node -> right -> tp -> size;
+	char *rdi = get_registername("rdi",size[0]);
+	char* pref = get_pointerpref(size[0]);
+	generate(node -> right);
+
+	pop_stack(size[1],"rdi");// right
+	pop_stack(8, "rax");// left
+
+	printf("	mov %s [rax], %s\n", pref,rdi);//代入
+	push_stack(size[1], "rdi");
+	return;
+}
+
+void gen_deref(Node_t *node) {
+		
+	generate(node -> left);
+	
+	char* rax = get_registername("rax",node -> tp -> size);
+	char* rcx = get_registername("rcx", node -> tp -> size); 
+	char * pointer_pref = get_pointerpref(node -> tp -> size);
+	
+	pop_stack(8,"rax");
+	printf("	mov %s, %s [rax]\n",rcx,pointer_pref);	
+	push_stack(node -> tp -> size,"rcx");
+	return;
+}
+
+void gen_right_lval(Node_t* node) {
+	
+	gen_lval(node);
+	char * register_name = get_registername("rax",node -> tp -> size);
+	char * pointer_pref = get_pointerpref(node -> tp -> size);
+	
+	
+	if(node -> tp -> Type_label == TP_ARRAY) return;
+	pop_stack(8, "rax");
+
+	printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
+	push_stack(node -> tp -> size,"rax");
+	return;
+}
+
+void gen_globvar(Node_t* node){
+	long size = node -> tp -> size;
+	char* rax = get_registername("rax", size);
+	char* pref = get_pointerpref(size);
+
+	gen_lval(node);
+	if(node -> tp -> Type_label == TP_ARRAY) return;
+
+	pop_stack(8, "rax");
+	printf("	mov %s, %s [rax]\n", rax, pref);
+	push_stack(size, "rax");
+	return;
+}
+
+void gen_return(Node_t* node) {
+	generate(node);
+
+	pop_stack(node -> tp -> size, "rax");
+	
+	printf("	mov rsp, rbp\n");
+	printf("	pop rbp\n");
+	rsp_counter -= 8;
+	printf("	ret\n");
+	return;
+}
+
+void gen_glob_decrear(Node_t* node) {
+	printf("%s:\n",node -> name);
+	if(node -> tp -> Type_label == TP_INT)
 	{
-		
-		generate(node -> left);
-		
-		char* rax = get_registername("rax",node -> tp -> size);
-		char* rcx = get_registername("rcx", node -> tp -> size); 
-		char * pointer_pref = get_pointerpref(node -> tp -> size);
-		
-		pop_stack(8,"rax");
-		printf("	mov %s, %s [rax]\n",rcx,pointer_pref);	
-		push_stack(node -> tp -> size,"rcx");
-		return;
-	}
-	case ND_INC: 
-		gen_inc_dec(node);
-		return;
-	case ND_DEC: 
-		gen_inc_dec(node); 
-		return;
-	case ND_LVAL:
-	{
-
-		gen_lval(node);
-		char * register_name = get_registername("rax",node -> tp -> size);
-		char * pointer_pref = get_pointerpref(node -> tp -> size);
-		
-		
-		if(node -> tp -> Type_label == TP_ARRAY) return;
-		pop_stack(8, "rax");
-
-		printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
-		push_stack(node -> tp -> size,"rax");
-		return;
-	}
-
-	case ND_GLOBVALCALL://調整=====================
-	{
-		long size = node -> tp -> size;
-		char* rax = get_registername("rax", size);
-		char* pref = get_pointerpref(size);
-
-		gen_lval(node);
-		if(node -> tp -> Type_label == TP_ARRAY) return;
-
-		pop_stack(8, "rax");
-		printf("	mov %s, %s [rax]\n", rax, pref);
-		push_stack(size, "rax");
-		return;
-	}//調整=====================
-
-	case ND_FUNCTIONCALL://function call abi -> System V AMD64 ABI (Lunix)
-
-		gen_function_call(node);
-		return;
-
-	case ND_RETURN:
-		
-		generate(node -> left);
-
-		if(node -> left -> tp && node -> left -> tp -> size < 5)
+		if(node -> val == 0)
 		{
-			printf("	mov eax, DWORD PTR [rsp]\n");
+			printf("	.zero %ld\n",node -> tp -> size);
+		
 		}
 		else
 		{
-			printf("	pop rax\n");
-			rsp_counter-= 8;
+			printf("	.long %d\n",node -> val);
 		}
-
-		
-		printf("	mov rsp, rbp\n");
-		printf("	pop rbp\n");
-		rsp_counter -= 8;
-		printf("	ret\n");
-		return;
-
-	}//ノード末端付近==========================================================
-
-	//ノード先端付近 ===================================================
-	switch(node -> kind){
-	case ND_GLOBVALDEF:
-	{//調整=====================
-
-		printf("%s:\n",node -> name);
-
-		
-		if(node -> tp -> Type_label == TP_INT)
-		{
-
-			if(node -> val == 0){
-		
-		
-				printf("	.zero %ld\n",node -> tp -> size);
-			
-			}else{
-				
-
-				printf("	.long %d\n",node -> val);
-			}
-		}
-		else{
-
-			printf("	.zero %ld\n",node -> tp -> size);
-		}
-		
-
-		
-		return;
-	}//調整=====================
-	
-	case ND_FUNCTIONDEF:
-
-		gen_function_def(node);
-		return;
-
-	case ND_BLOCK:
-
-		while (node ->kind != ND_BLOCKEND)
-		{
-					
-			generate(node -> left);
-			node = node ->right;
-
-		}
-		
-		return;
-
-
-	case ND_IF:
+	}
+	else
 	{
-		
-		int size = node -> left -> tp -> size;		
+		printf("	.zero %ld\n",node -> tp -> size);
+	}
+	return;
+}
 
+void gen_block(Node_t* node) {
+	while (node ->kind != ND_BLOCKEND)
+	{
+		generate(node -> left);
+		node = node ->right;
+	}
+	return;
+}
+
+void gen_if(Node_t* node) {
+
+	long size;		
+	int endNumberIf;
+	int endNumberElse;
+	int elseNumber;
+	switch(node -> kind) {
+	case ND_IF:
+		size = node -> left -> tp -> size;	
 		generate(node -> left);
 		pop_stack(size, "rax");
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lend%d\n",filenumber);
-		int endnumber_if = filenumber;
-
+		endNumberIf = filenumber;
 		generate(node -> right);
-
-		printf(".Lend%d:\n",endnumber_if);
+	
+		printf(".Lend%d:\n",endNumberIf);
 		
 		filenumber ++;
 		return;
-	}
-
 	case ND_ELSE:
-		
-		if( node -> left && node -> left -> kind == ND_IFE){
-			
-			
+		if( node -> left && node -> left -> kind == ND_IFE)
+		{
 			generate(node -> left);
-			int endnumber_else = filenumber;
+			endNumberElse = filenumber;
 			
 			generate(node -> right);
 			
-			printf(".Lend%d:\n",endnumber_else);
+			printf(".Lend%d:\n",endNumberElse);
 			filenumber++;
 			return;
-		
-		}else{
-			
-
+		}
+		else
+		{
 			fprintf(stderr,"elseはif(...)...の後に続きます");
 			exit(1);
 		}
-
 	case ND_IFE:
-	{
+		size = node -> left -> tp -> size;
 		generate(node -> left);
-		int size = node -> left -> tp -> size;
 		pop_stack(size,"rax");
 		
 		printf("	cmp rax, 0\n");
 		printf("	je  .Lelse%d\n",filenumber);
-		int elsenumber = filenumber;
+		elseNumber = filenumber;
 		filenumber++;
 
 		generate(node -> right);
 		
 		printf("	jmp .Lend%d\n",filenumber);
 
-		printf(".Lelse%d:\n",elsenumber);
+		printf(".Lelse%d:\n",elseNumber);
 		return;
 	}
+	return;
+}
 
-	case ND_WHILE:
+void gen_while(Node_t* node) {
+	printf(".Lbegin%d:\n",filenumber);
+	int beginnumber_while = filenumber;
+	
+	generate(node -> left);
+	
+	int size_l = node -> left -> tp -> size;
+	pop_stack(size_l, "rax");
+	
+	printf("	cmp rax, 0\n");
+	printf("	je	.Lend%d\n",filenumber);
+	int endnumber_while = filenumber;
+
+	generate(node -> right);
+
+	int size_r;
+	if( node -> right -> tp)
 	{
+		size_r = node -> right -> tp -> size;
+	}
+	else
+	{
+		size_r = 0;
+	}
+	pop_stack(size_r, "rax");
+	
+	printf("	jmp .Lbegin%d\n",beginnumber_while);
+	printf(".Lend%d:\n",endnumber_while);
+	filenumber++;
+	return;
+}
+
+void gen_for(Node_t* node) {
+
+	if(!node -> left )
+	{//loop will go on
+		fprintf(stderr,"for(;;)は無効です");
+		exit(1);
+	}
+	else
+	{
+		Node_t *conditions = node -> left;
+		Node_t *init_condition = conditions -> left;
+		Node_t *update = conditions -> right;
+
+		generate(init_condition -> left);
+
 		printf(".Lbegin%d:\n",filenumber);
-		int beginnumber_while = filenumber;
+		int beginnumber_for = filenumber++;
+		int endnumber_for = filenumber;
 		
-		generate(node -> left);
-		
-		int size_l = node -> left -> tp -> size;
-		pop_stack(size_l, "rax");
-		
-		printf("	cmp rax, 0\n");
-		printf("	je	.Lend%d\n",filenumber);
-		int endnumber_while = filenumber;
+		generate(init_condition -> right);
 
-		generate(node -> right);
-
-		int size_r;
-		if( node -> right -> tp)
+		int size;
+		if(init_condition -> right -> tp)
 		{
-			size_r = node -> right -> tp -> size;
+			size = init_condition -> right -> tp -> size;
 		}
 		else
 		{
-			size_r = 0;
+			size = 0;
 		}
-		pop_stack(size_r, "rax");
+		pop_stack(size, "rax");
 		
-		printf("	jmp .Lbegin%d\n",beginnumber_while);
-		printf(".Lend%d:\n",endnumber_while);
+		printf("	cmp rax, 0\n");
+		printf("	je .Lend%d\n",endnumber_for);
+
+		generate(node -> right);
+
+		generate(update);
+
+		printf("	jmp .Lbegin%d\n",beginnumber_for);
+		printf(".Lend%d:\n",endnumber_for);
+
 		filenumber++;
+
+	}
+	return;
+}
+
+//抽象構文木からアセンブリコードを生成する
+void generate(Node_t *node){
+
+	if(!node) return;
+
+	if(node -> kind == ND_BLOCKEND) return;
+
+	//around an end of the ast tree ==========================================================
+	switch(node -> kind) {
+	case ND_NUM: gen_number(node -> val);
+		return;
+
+	case ND_STRINGLITERAL: gen_string_literal(node -> offset);
+		return;
+
+	case ND_ASSIGN: gen_assign(node);
+		return;
+
+	case ND_ADDR: gen_lval(node -> left);
+		return;
+
+	case ND_DEREF: gen_deref(node);
+		return;
+
+	case ND_INC: gen_inc_dec(node);
+		return;
+
+	case ND_DEC: gen_inc_dec(node); 
+		return;
+
+	case ND_LVAL: gen_right_lval(node);
+		return;
+
+	case ND_GLOBVALCALL: gen_globvar(node);
+		return;
+	case ND_FUNCTIONCALL: gen_function_call(node);//function call abi -> System V AMD64 ABI (Linux) 
+		return;
+
+	case ND_RETURN: gen_return(node -> left);
+		return;
+
+	//around an end of the ast tree ==========================================================
+
+	//around the top of the ast tree ===================================================
+	case ND_GLOBVALDEF: gen_glob_decrear(node);
+		return;
+	
+	case ND_FUNCTIONDEF: gen_function_def(node);
+		return;
+
+	case ND_BLOCK: gen_block(node);
+		return;
+	case ND_IF: 
+	case ND_ELSE:
+	case ND_IFE: gen_if(node);
+		return;
+	case ND_WHILE: gen_while(node);
+		return;
+	case ND_FOR: gen_for(node);
+		return;
+	//around the top of the ast tree ===================================================
+	//以下は単項でないoperatorのコンパイル===================
+	case ND_EQL:
+	case ND_NEQ:
+	case ND_LES:
+	case ND_LEQ:
+		generate(node -> left);
+		generate(node -> right);
+		gen_compair(node);
+		return;
+	case ND_ADD:
+	case ND_SUB:
+	case ND_MUL:
+	case ND_DIV:
+		generate(node -> left);
+		generate(node -> right);		
+		gen_arithmetic_instruction(node);
+		return;
+	default:
 		return;
 	}
 
-	case ND_FOR:
-
-		if(!node -> left ){//loop will go on
-
-
-			fprintf(stderr,"for(;;)は無効です");
-			exit(1);
-		
-		}else{
-
-
-			Node_t *conditions = node -> left;
-			Node_t *init_condition = conditions -> left;
-			Node_t *update = conditions -> right;
-
-			generate(init_condition -> left);
-
-			printf(".Lbegin%d:\n",filenumber++);
-			int beginnumber_for = filenumber -1;
-			int endnumber_for = filenumber;
-			
-			generate(init_condition -> right);
-
-			int size;
-			if(init_condition -> right -> tp)
-			{
-				size = init_condition -> right -> tp -> size;
-			}
-			else
-			{
-				size = 0;
-			}
-			pop_stack(size, "rax");
-			
-			printf("	cmp rax, 0\n");
-			printf("	je .Lend%d\n",endnumber_for);
-
-			generate(node -> right);
-
-			generate(update);
-
-			printf("	jmp .Lbegin%d\n",beginnumber_for);
-			printf(".Lend%d:\n",endnumber_for);
-
-			filenumber++;
-
-		}
-		return;
-
-	}//ノード先端付近 ===================================================
-	
-
-	//以下は単項でないoperatorのコンパイル===================
-	generate(node -> left);
-	generate(node -> right);
-
-
-	gen_formula(node);
 }
