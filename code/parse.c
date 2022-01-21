@@ -228,8 +228,8 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev)
 	expect(']',token);
 	
 	if(
-		(node -> tp -> Type_label == TP_ARRAY && (*prev) -> kind == ND_NUM) ||
-		(node -> kind == ND_NUM && (*prev) -> tp -> Type_label == TP_ARRAY)
+		(node -> tp -> Type_label == TP_ARRAY && (*prev) -> tp -> Type_label == TP_INT) ||
+		(node -> tp -> Type_label == TP_INT && (*prev) -> tp -> Type_label == TP_ARRAY)
 	){
 		Node_t *get_address = new_node(ND_ADD,*prev,node);
 		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
