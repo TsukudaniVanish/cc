@@ -50,14 +50,14 @@ int main(int argc, char **argv){
 
 
 	// fuction ごとのコード
-	Node_t *code[100];
+	Vector *codes = make_vector();
 	
 	//入力をトークン列に変換
 	Token_t *token = tokenize(buffer);
 
 
 	//token を抽象構文木に変換
-	program(&token,code);
+	program(&token,codes);
 
 	//関数スコープ識別子テーブルを先頭にセット
 	scope = nameTable -> container;
@@ -69,33 +69,30 @@ int main(int argc, char **argv){
 		set_stringiter();
 	printf("	.data\n");
 	// generate glob var declaring code
-	for(int i = 0; code[i]; i++)
+	int len = Vector_get_length(codes);
+	for(int i = 0; i < len; i++)
 	{
-		if(code[i] -> kind == ND_GLOBVALDEF)
+		printf("#	Hi %d\n", i);
+		Node_t *code = Vector_at(codes, i);
+		if(code -> kind == ND_GLOBVALDEF)
 		{
-			gen_glob_declar(code[i]);
-			continue;
+			gen_glob_declar(code);
 		}
-		continue;
 	}
 
-	int funcflag = 1;
 	//先頭の式からコード生成
 	//抽象構文木を降りてコード生成
 	//スタックトップには式の結果が入っている
-	for(int i = 0;code[i];i++){
-		if( funcflag && code[i] -> kind == ND_FUNCTIONDEF )
+	for(int i = 0;i < len;i++){
+		Node_t* code = Vector_at(codes, i);
+		if(code -> kind == ND_FUNCTIONDEF )
 		{
 			printf("	.text\n");
 			printf("	.global main\n");
 
-			funcflag = 0;
-		}
-		generate(code[i]);
-		if(funcflag == 0)
+			generate(code);
 			scope++;
-
+		}
 	}
-
 	return 0;
 }

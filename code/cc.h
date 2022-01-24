@@ -1,8 +1,4 @@
-#define VOID_TYPE_VALUE 0
-#define POINTER_TYPE_VALUE 10
-#define VEC_MIN_SIZE 8
-#define INTEGER_TYPE_START 1
-#define INTEGER_TYPE_END 2
+
 #define Min(a,b) a < b ? a: b
 #include<stdbool.h>
 #include<stdlib.h>
@@ -135,6 +131,10 @@ void* Map_delete(Map*, char*);
  * @param size_t size : actall memory size.
  * 
  */
+#define VOID_TYPE_VALUE 0
+#define POINTER_TYPE_VALUE 10
+#define INTEGER_TYPE_START 1
+#define INTEGER_TYPE_END 2
 typedef struct type Type;
 
 struct type{
@@ -191,7 +191,7 @@ void** scope;
 
 
 // =========================Token =========================
-enum { 
+typedef enum { 
 	MULTOPERATOR_START=1000,
 	EQUAL, // ==
 	NEQ,// !=
@@ -199,15 +199,17 @@ enum {
 	GEQ,// >=
 	INC,// ++
 	DEC,// --
-};
+	LOG_AND,// &&
+	LOG_OR,// ||
+}MultiOperator;
 /**
  * @brief this is list of Type of tokens
  * 
  *
  * tokens:
  * 		operator: 
- * 		number 	1001 1002 1003 1004
- * 				"==","!=","<=",">=",
+ * 		number 	1001 1002 1003 1004 1005 1006
+ * 				"==","!=","<=",">=","&&","||"
  * 				"<",">","+","-","*","/","&","=",
  * 		key word:
  * 				return ...
@@ -223,6 +225,9 @@ enum {
  * 		constant
  * 		string-literal
  */
+#define TOKEN_FLOW_OPERATION_START 100
+#define TOKEN_SIZEOF 200
+#define TOKEN_TYPE 300
 typedef enum{
 	// token ====================================================
 	TK_IDENT=0, //identifier
@@ -230,15 +235,16 @@ typedef enum{
 	TK_OPERATOR=2, // operator
 	TK_PUNCTUATOR=3,// punctuator
 	TK_STRINGLITERAL,//string
-	//key words=====================================================
-	TK_IF=100,//flow operation
+	//flow operation=====================================================
+	TK_IF= TOKEN_FLOW_OPERATION_START,//flow operation
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
 	TK_RETURN,
-	TK_SIZEOF=200,// this keyword acts like operator.
+	// ====================================================================
+	TK_SIZEOF = TOKEN_SIZEOF,// this keyword acts like operator.
 	//type of variable =====================================================
-	TK_TypeVOID=300,//this list is sorted as in Type_label
+	TK_TypeVOID = TOKEN_TYPE,//this list is sorted as in Type_label
 	TK_TypeCHAR,
 	TK_TypeINT,
 	//=====================================================
@@ -281,14 +287,17 @@ typedef enum{
 	ND_DEREF,// <-> * dereference
 	ND_NUM, // <-> integer
 	ND_STRINGLITERAL,
-	//型=========================
+	//=========================
 	ND_GLOBVALDEF,//  a definition of global variable
 	ND_GLOBVALCALL,// a left value which represents global variable
 	ND_LVAL, // a local variable
 	ND_FUNCTIONCALL,//A function call
 	ND_FUNCTIONDEF,//Definition of a function call
 	ND_ARGMENT,// an argument of a function
-	// key word=========================
+	ND_BOOL,// generate boolean value
+	ND_LOGAND,// logic and
+	ND_LOGOR,// logic or
+	// flow operation=========================
 	ND_RETURN,
 	ND_IF,// if statement which has no else block.
 	ND_ELSE,
@@ -747,14 +756,9 @@ int is_lval(Node_t* node);
 /**
  * @brief パーサ本体
  * @param Token_t_** token
- * @param Node_t_** code
+ * @param Vector* codes
  */
-void program(Token_t **,Node_t **);
-/**
- * @brief 関数をパース
- * 
- * @return Node_t* 
- */
+void program(Token_t **,Vector*);
 Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
 Node_t *Lvardec(Token_t**);

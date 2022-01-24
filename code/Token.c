@@ -3,9 +3,7 @@
 extern unsigned int String_len(char*);
 extern int String_conpair(char* ,char* ,unsigned int);
 extern void Memory_copy(void*, void*, unsigned int);
-Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
-
-
+Token_t *new_token(Token_kind kind,Token_t *cur,char *str) {
 	Token_t *token = calloc(1,sizeof(Token_t));
 	token ->kind = kind;
 	token -> str = str;
@@ -15,8 +13,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str){
 
 
 
-Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
-
+Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p) {
 	cur = new_token( kind,cur,p);
 	// keywordのlength を計算 TK_Typeの時はポインタ型の読み取りに使用する
 	char *q = p;
@@ -53,8 +50,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p){
 	return cur;
 }
 
-char *get_operator(int kind)
-{
+char *get_operator(int kind) {
 	switch(kind)
 	{
 	case EQUAL: return "==";
@@ -63,6 +59,8 @@ char *get_operator(int kind)
 	case GEQ: return	">=";
 	case INC: return "++";
 	case DEC: return "--";
+	case LOG_AND: return "&&";
+	case LOG_OR: return "||";
 	default:
 		fprintf(stderr,"invalid kind of operator : %d",kind);
 		exit(1);
@@ -96,7 +94,7 @@ int find(int kind,Token_t **token){
 
 
 
-void expect(int kind ,Token_t **token){
+void expect(int kind ,Token_t **token) {
 
 
 	if( (*token) -> kind > 100 |  kind != (*token) -> str[0]){
