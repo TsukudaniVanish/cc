@@ -479,30 +479,8 @@ Node_t *new_node_num(int val);
 Node_t* new_node_stringiter(Token_t**);
 
 
-/**
- * @brief 関数の引数を読み込む
- * 
- * @param Tokent_t** token
- * @param Node_t** vector which holds arg types
- * @return int : a number of argment 
- */
-int Node_readarg(Token_t **, Node_t**);
 
-/**
- * @brief 関数定義をパース
- * 
- * @param Token_t **
- * @return Node_t*
- */
-Node_t *new_node_funcDef(Token_t **token);
 
-/**
- * @brief 変数を表すノードを作る
- * 
- * @param token 
- * @return Node_t* 
- */
-Node_t *new_node_var(Token_t **token);
 
 /**
  * @brief 識別子の末端ノードを作る
@@ -512,18 +490,17 @@ Node_t *new_node_var(Token_t **token);
  */
 Node_t *new_node_ident(Token_t **);
 /**
- * @brief keyword の末端ノードを作る
- * 
+ * @brief make a ast node for flow operation 
  * @param Token_kind kind 
  * @param Token_t** token 
  * @return Node_t* 
  */
-Node_t *new_node_keyword(Token_kind kind,Token_t **token);
+Node_t *new_node_flow_operation(Token_kind kind,Token_t **token);
 /**
  * @brief 関数定義, グローバル変数の構文木を作成
  * @param Token_t**
  */
-Node_t *new_node_globalident(Token_t **);
+Node_t *new_node_glob_ident(Token_t **);
 
 /**
  * @brief block の構文木を作成

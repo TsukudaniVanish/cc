@@ -324,7 +324,7 @@ Node_t *func(Token_t **token){
 
 		error_at((*token) -> str,"関数名が必要です");
 	}
-	return new_node_globalident(token);
+	return new_node_glob_ident(token);
 }
 
 Node_t *stmt(Token_t **token){
@@ -335,7 +335,7 @@ Node_t *stmt(Token_t **token){
 	if( (*token) -> kind > 99 && (*token) -> kind < 200 ){//if (else) while for return をパース
 
 
-		node = new_node_keyword(consume(token) -> kind,token);
+		node = new_node_flow_operation(consume(token) -> kind,token);
 
 	}else if( find('{',token) ){
 		
