@@ -23,7 +23,7 @@ Type *read_type(char **name,Token_t **token)
 
 	if((*token) -> kind != TK_IDENT)
 	{
-		error_at((*token) -> str,"識別子名がありません");
+		error_at((*token) -> str,"Identifier was expected");
 	}
 
 	if(*name)
@@ -94,14 +94,6 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 	return lvar;
 }
 
-
-
-
-
-
-
-
-
 int typecheck(Node_t *node){
 
 	Type *tp_l , *tp_r;
@@ -128,7 +120,9 @@ int typecheck(Node_t *node){
 	return 2;
 }
 
-
+#if defined(Min)
+	#define Is_type_integer(t) INTEGER_TYPE_START == Min(t,INTEGER_TYPE_START) ? t <= INTEGER_TYPE_END ? 1: 0: 0 
+#endif
 Type *imptypecast(Node_t *node)
 {
 	int tp_l , tp_r;
@@ -137,11 +131,8 @@ Type *imptypecast(Node_t *node)
 	{
 	case 0:
 		return NULL;
-		break;
-
 	case 1:
 		return node -> left -> tp;
-	
 	default:
 		tp_l = node -> left -> tp -> Type_label;
 		tp_r = node -> right -> tp -> Type_label;
@@ -158,7 +149,7 @@ Type *imptypecast(Node_t *node)
 
 	if(tp_l == TP_POINTER)
 	{
-		if(tp_r == TP_INT)
+		if(Is_type_integer(tp_r))
 		{
 			return node -> left -> tp;
 		}
@@ -166,18 +157,17 @@ Type *imptypecast(Node_t *node)
 	}
 	else if(tp_r == TP_POINTER)
 	{
-		if(tp_l == TP_INT)
+		if(Is_type_integer(tp_l))
 		{
 			return node -> right -> tp;
 		}
 		return NULL;
 	}
-	if(tp_l < 10 && tp_r < 10)
+	if(Is_type_integer(tp_l) && Is_type_integer(tp_r))
 	{
 		return tp_l < tp_r ? node -> left -> tp  : node -> right -> tp;
 	}
-
-	
+	return NULL;
 }
 
 int is_lvardec(Token_t **token)
@@ -231,7 +221,7 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev)
 		(node -> tp -> Type_label == TP_ARRAY && (*prev) -> tp -> Type_label == TP_INT) ||
 		(node -> tp -> Type_label == TP_INT && (*prev) -> tp -> Type_label == TP_ARRAY)
 	){
-		Node_t *get_address = new_node(ND_ADD,*prev,node);
+		Node_t *get_address = new_node(ND_ADD,*prev,node, (*token) -> str);
 		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
 	}
 
@@ -334,7 +324,7 @@ Node_t *func(Token_t **token){
 
 		error_at((*token) -> str,"関数名が必要です");
 	}
-	return new_node_globalident(token);
+	return new_node_glob_ident(token);
 }
 
 Node_t *stmt(Token_t **token){
@@ -345,7 +335,7 @@ Node_t *stmt(Token_t **token){
 	if( (*token) -> kind > 99 && (*token) -> kind < 200 ){//if (else) while for return をパース
 
 
-		node = new_node_keyword(consume(token) -> kind,token);
+		node = new_node_flow_operation(consume(token) -> kind,token);
 
 	}else if( find('{',token) ){
 		
@@ -381,7 +371,7 @@ Node_t *Lvardec(Token_t **token)
 	if(find('=',token))
 	{
 		parsing_here = (*token) -> str;
-		node = new_node(ND_ASSIGN,node,assign(token));
+		node = new_node(ND_ASSIGN,node,assign(token), (*token) -> str);
 		return node;
 	}
 	return node;
@@ -396,7 +386,7 @@ Node_t *assign(Token_t **token){
 	if( find('=',token) ){
 		
 		parsing_here = (*token) -> str;
-		node = new_node(ND_ASSIGN,node,assign(token));
+		node = new_node(ND_ASSIGN,node,assign(token), (*token) -> str);
 	}
 	return node;
 }
@@ -413,12 +403,12 @@ Node_t *equality(Token_t **token){
 		if( find(EQUAL,token) ){
 		
 
-			node = new_node(ND_EQL,node,relational(token));
+			node = new_node(ND_EQL,node,relational(token), (*token) -> str);
 		
 		}else if( find(NEQ,token) ){
 
 			
-			node = new_node(ND_NEQ,node,relational(token));
+			node = new_node(ND_NEQ,node,relational(token), (*token) -> str);
 		
 		}else{
 
@@ -439,22 +429,22 @@ Node_t *relational(Token_t **token){
 		if( find(LEQ,token) ){
 			
 			
-			node = new_node(ND_LEQ,node,add(token));
+			node = new_node(ND_LEQ,node,add(token), (*token) -> str);
 		
 		}else if( find('<',token) ){
 			
 	
-			node = new_node(ND_LES,node,add(token));
+			node = new_node(ND_LES,node,add(token), (*token) -> str);
 		
 		}else if( find(GEQ,token) ){
 	
 	
-			node = new_node(ND_LEQ,add(token),node);
+			node = new_node(ND_LEQ,add(token),node, (*token) -> str);
 	
 		}else if( find('>',token) ){
 		
 	
-			node = new_node(ND_LES,add(token),node);
+			node = new_node(ND_LES,add(token),node, (*token) -> str);
 	
 		}else{
 		
@@ -475,12 +465,12 @@ Node_t *add(Token_t **token){
 		if( find('+',token) ){
 
 
-			node = new_node(ND_ADD,node,mul(token));
+			node = new_node(ND_ADD,node,mul(token), (*token) -> str);
 
 		}else if( find('-',token) ){
 
 
-			node = new_node(ND_SUB,node,mul(token));
+			node = new_node(ND_SUB,node,mul(token), (*token) -> str);
 
 		}else{
 
@@ -502,12 +492,12 @@ Node_t *mul(Token_t **token){
 		if( find('*',token) ){
 
 
-			node = new_node(ND_MUL,node,unitary(token));
+			node = new_node(ND_MUL,node,unitary(token), (*token) -> str);
 
 		}else if( find('/',token) ){
 
 
-			node = new_node(ND_DIV,node,unitary(token));
+			node = new_node(ND_DIV,node,unitary(token), (*token) -> str);
 
 		}else{
 
@@ -567,7 +557,7 @@ Node_t *unitary(Token_t **token){
 		
 	}else if( find('-',token) ){
 
-		node = new_node(ND_SUB,new_node_num(0),unitary(token));
+		node = new_node(ND_SUB,new_node_num(0),unitary(token), (*token) -> str);
 		node -> tp = node -> right -> tp;
 		return node;
 		

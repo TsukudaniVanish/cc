@@ -17,17 +17,14 @@ Node_t *new_Node_t(Node_kind kind,Node_t *l,Node_t *r,int v,long int off,Type* t
 
 
 
-//Node_t を作る関数
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
-
-
+//Node_t making function with type check typically used in parsing formula
+Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here){
 	Node_t *node = new_Node_t(kind,l,r,0,0,NULL,NULL);
-	//型チェック
+	//type check
 	if(typecheck(node) == 0)
 	{
-		error_at(parsing_here,"型エラー");
+		error_at(parsing_here,"Type cast error");
 	}
-	
 	node -> tp = imptypecast(node);
 	if(node -> tp)
 	{
@@ -44,11 +41,11 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	}
 	else
 	{
-		error_at(parsing_here,"型エラー");
+		error_at(parsing_here,"Type cast error");
 	}
 }
 
-Node_t *new_node_funcCall(Token_t **token)
+Node_t *new_node_function_call(Token_t **token)
 {
 	if(find_lvar((*token) -> str, (*token) -> length, &global) == NULL)
 	{
@@ -78,7 +75,7 @@ Node_t *new_node_funcCall(Token_t **token)
 	return node;
 }
 
-int Node_read_funcarg(Token_t **token,Node_t **vector)
+int Node_read_function_parameters(Token_t **token,Node_t **vector)
 {
 	expect('(',token);
 
@@ -103,14 +100,14 @@ int Node_read_funcarg(Token_t **token,Node_t **vector)
 	
 }
 
-Node_t *new_node_funcDef(Token_t **token)
+Node_t *new_node_function_definition(Token_t **token)
 {
 	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
 	node -> tp = read_type(&node -> name,token);
 
 	declere_glIdent(node -> tp,node -> name,String_len(node -> name),&global);
 
-	node -> val = Node_read_funcarg(token,&node -> left);
+	node -> val = Node_read_function_parameters(token,&node -> left);
 	
 	node -> right = stmt(token);
 	return node;
@@ -146,7 +143,7 @@ Node_t *new_node_ident(Token_t**token)
 
 	if(is_functioncall(token))
 	{
-		return new_node_funcCall(token);
+		return new_node_function_call(token);
 	}
 
 	return new_node_var(token);
@@ -232,7 +229,7 @@ Node_t *new_node_return(Token_t **token)
 	return node;
 }
 
-Node_t *new_node_keyword(Token_kind kind,Token_t **token){
+Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 
 	Node_t *node = calloc(1,sizeof(Node_t));
 
@@ -241,11 +238,12 @@ Node_t *new_node_keyword(Token_kind kind,Token_t **token){
 	case TK_WHILE: return new_node_while(token);
 	case TK_FOR: return new_node_for(token);
 	case TK_RETURN: return new_node_return(token);
+	default:
+		return NULL;
 	}
 }
 
-Node_t *new_node_stringiter(Token_t ** token)
-{
+Node_t *new_node_stringiter(Token_t ** token) {
 	Node_t *node = new_Node_t(ND_STRINGLITERAL,NULL,NULL,0,0,new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8),NULL);
 	
 	Lvar *iter = declere_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
@@ -259,11 +257,11 @@ Node_t *new_node_stringiter(Token_t ** token)
 	return node;
 }
 
-Node_t *new_node_globalident(Token_t**token){
+Node_t *new_node_glob_ident(Token_t**token) {
 
 	if(is_functioncall(token))
 	{
-		return new_node_funcDef(token);
+		return new_node_function_definition(token);
 	}
 
 	//グローバル変数の定義

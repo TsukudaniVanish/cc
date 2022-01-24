@@ -105,10 +105,10 @@ Token_kind is_keyword(char *p){
 
 	
 	char *assign[] = { "return","sizeof","while","else","for","if",
-						"void","int","char",
+						"void","char","int",
 						NULL};
 	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,
-								TK_TypeVOID,TK_TypeINT,TK_TypeCHAR,
+								TK_TypeVOID,TK_TypeCHAR,TK_TypeINT,
 								TK_EOF};
 
 	Token_kind *v = assign_kind;

@@ -68,12 +68,22 @@ int main(int argc, char **argv){
 	if(string_iter)
 		set_stringiter();
 	printf("	.data\n");
+	// generate glob var declaring code
+	for(int i = 0; code[i]; i++)
+	{
+		if(code[i] -> kind == ND_GLOBVALDEF)
+		{
+			gen_glob_declar(code[i]);
+			continue;
+		}
+		continue;
+	}
 
 	int funcflag = 1;
 	//先頭の式からコード生成
 	//抽象構文木を降りてコード生成
 	//スタックトップには式の結果が入っている
-	for(int i =0;code[i];i++){
+	for(int i = 0;code[i];i++){
 		if( funcflag && code[i] -> kind == ND_FUNCTIONDEF )
 		{
 			printf("	.text\n");

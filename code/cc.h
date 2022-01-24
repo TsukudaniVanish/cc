@@ -1,7 +1,9 @@
 #define VOID_TYPE_VALUE 0
 #define POINTER_TYPE_VALUE 10
 #define VEC_MIN_SIZE 8
-
+#define INTEGER_TYPE_START 1
+#define INTEGER_TYPE_END 2
+#define Min(a,b) a < b ? a: b
 #include<stdbool.h>
 #include<stdlib.h>
 //#include<ctype.h>
@@ -36,7 +38,7 @@ Vector *new_Vector(size_t);
  */
 Vector* make_vector();
 
-/**
+/*
  * @brief return if received length can be accepted or not 
  * @param Vector* vector
  * @param size_t _rsvlen
@@ -138,8 +140,8 @@ typedef struct type Type;
 struct type{
 	enum{
 		TP_VOID = VOID_TYPE_VALUE,
-		TP_INT ,//int type 8byte
-		TP_CHAR,//char type
+		TP_CHAR = INTEGER_TYPE_START, //char
+		TP_INT = INTEGER_TYPE_END,//int
 		TP_POINTER = POINTER_TYPE_VALUE,// pointer type 8byte
 		TP_ARRAY,// array type
 
@@ -237,8 +239,8 @@ typedef enum{
 	TK_SIZEOF=200,// this keyword acts like operator.
 	//type of variable =====================================================
 	TK_TypeVOID=300,//this list is sorted as in Type_label
-	TK_TypeINT,
 	TK_TypeCHAR,
+	TK_TypeINT,
 	//=====================================================
 	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
@@ -456,9 +458,10 @@ Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,cha
  * @param Node_kind kind 
  * @param Node_t l : left
  * @param Node_t r : right
+ * @param char* parsing here
  * @return Node_t* 
  */
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r);
+Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char*);
 /**
  * @brief 
  * 定数の末端ノードを作る
@@ -475,38 +478,9 @@ Node_t *new_node_num(int val);
  */
 Node_t* new_node_stringiter(Token_t**);
 
-/**
- * @brief 関数呼び出しをパース
- * 
- * @param Token_t** 
- * @return Node_t* 
- */
-Node_t *new_node_funcCall(Token_t **token);
 
-/**
- * @brief 関数の引数を読み込む
- * 
- * @param Tokent_t** token
- * @param Node_t** vector which holds arg types
- * @return int : a number of argment 
- */
-int Node_readarg(Token_t **, Node_t**);
 
-/**
- * @brief 関数定義をパース
- * 
- * @param Token_t **
- * @return Node_t*
- */
-Node_t *new_node_funcDef(Token_t **token);
 
-/**
- * @brief 変数を表すノードを作る
- * 
- * @param token 
- * @return Node_t* 
- */
-Node_t *new_node_var(Token_t **token);
 
 /**
  * @brief 識別子の末端ノードを作る
@@ -516,18 +490,17 @@ Node_t *new_node_var(Token_t **token);
  */
 Node_t *new_node_ident(Token_t **);
 /**
- * @brief keyword の末端ノードを作る
- * 
+ * @brief make a ast node for flow operation 
  * @param Token_kind kind 
  * @param Token_t** token 
  * @return Node_t* 
  */
-Node_t *new_node_keyword(Token_kind kind,Token_t **token);
+Node_t *new_node_flow_operation(Token_kind kind,Token_t **token);
 /**
  * @brief 関数定義, グローバル変数の構文木を作成
  * @param Token_t**
  */
-Node_t *new_node_globalident(Token_t **);
+Node_t *new_node_glob_ident(Token_t **);
 
 /**
  * @brief block の構文木を作成
@@ -852,6 +825,8 @@ void pop_stack(long int size,char *);
  * 
  */
 void set_stringiter();
+// generate global var decrlaring code
+void gen_glob_declar(Node_t*);
 //式をコンパイル
 void gen_formula(Node_t*);
 
