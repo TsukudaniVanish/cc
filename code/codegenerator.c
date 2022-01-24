@@ -516,7 +516,7 @@ void gen_return(Node_t* node) {
 	return;
 }
 
-void gen_glob_decrear(Node_t* node) {
+void gen_glob_declar(Node_t* node) {
 	printf("%s:\n",node -> name);
 	if(node -> tp -> Type_label == TP_INT)
 	{
@@ -727,7 +727,7 @@ void generate(Node_t *node){
 	//around an end of the ast tree ==========================================================
 
 	//around the top of the ast tree ===================================================
-	case ND_GLOBVALDEF: gen_glob_decrear(node);
+	case ND_GLOBVALDEF: 
 		return;
 	
 	case ND_FUNCTIONDEF: gen_function_def(node);

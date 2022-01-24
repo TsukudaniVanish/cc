@@ -825,6 +825,8 @@ void pop_stack(long int size,char *);
  * 
  */
 void set_stringiter();
+// generate global var decrlaring code
+void gen_glob_declar(Node_t*);
 //式をコンパイル
 void gen_formula(Node_t*);
 
