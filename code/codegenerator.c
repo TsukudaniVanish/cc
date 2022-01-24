@@ -142,20 +142,21 @@ void set_stringiter()
 
 long gen_lval(Node_t *node){
 
-
-
 	if(!is_lval(node)){
-		
-
 		fprintf(stderr, "error at code generating\n");
 		fprintf(stderr,"	this is not variables\n");
 		fprintf(stderr, "generating node kind : %d\n", node -> kind);
 		exit(1);
-
 	}
 	if(node -> kind == ND_GLOBVALCALL)
 	{
 		char* pref = get_pointerpref(node -> tp -> size);
+		if(node -> tp -> Type_label == TP_ARRAY)
+		{
+			printf("	lea rax, %s %s[rip]\n", pref, node -> name);
+			push_stack(8,"rax");
+			return node -> tp -> size;
+		}
 		printf("	lea rax, %s %s[rip]\n", pref, node -> name);
 		printf("	push rax\n");
 		rsp_counter += 8;

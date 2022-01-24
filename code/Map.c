@@ -64,8 +64,8 @@ void* Map_at(Map* m, char* key) {
 	unsigned long index = hash(key) % m -> bodySize;
 	for(Container* p = m -> body[index]; p; p = p -> next)
 	{
-		if(String_conpair(p -> key, key, String_len(key))) return p -> data;
-
+		if(String_conpair(p -> key, key, String_len(key))) 
+			return p -> data;
 	}
 	return NULL;
 }

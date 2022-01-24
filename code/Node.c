@@ -17,17 +17,14 @@ Node_t *new_Node_t(Node_kind kind,Node_t *l,Node_t *r,int v,long int off,Type* t
 
 
 
-//Node_t を作る関数
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
-
-
+//Node_t making function with type check typically used in parsing formula
+Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here){
 	Node_t *node = new_Node_t(kind,l,r,0,0,NULL,NULL);
-	//型チェック
+	//type check
 	if(typecheck(node) == 0)
 	{
-		error_at(parsing_here,"型エラー");
+		error_at(parsing_here,"Type cast error");
 	}
-	
 	node -> tp = imptypecast(node);
 	if(node -> tp)
 	{
@@ -44,11 +41,11 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r){
 	}
 	else
 	{
-		error_at(parsing_here,"型エラー");
+		error_at(parsing_here,"Type cast error");
 	}
 }
 
-Node_t *new_node_funcCall(Token_t **token)
+Node_t *new_node_function_call(Token_t **token)
 {
 	if(find_lvar((*token) -> str, (*token) -> length, &global) == NULL)
 	{
@@ -146,7 +143,7 @@ Node_t *new_node_ident(Token_t**token)
 
 	if(is_functioncall(token))
 	{
-		return new_node_funcCall(token);
+		return new_node_function_call(token);
 	}
 
 	return new_node_var(token);
