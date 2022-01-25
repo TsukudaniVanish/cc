@@ -8,7 +8,7 @@ extern int String_conpair(char*,char*,unsigned int);
 extern void Memory_copy(void*,void*,unsigned int);
 
 
-Type* new_tp(int label,Type* pointer_to,long int size){
+Type* new_tp(int label,Type* pointer_to,long int size) {
 
 	Type* tp = calloc(1,sizeof(Type));
 	tp -> Type_label = label;
@@ -17,8 +17,7 @@ Type* new_tp(int label,Type* pointer_to,long int size){
 	return tp;
 }
 
-Type *read_type(char **name,Token_t **token)
-{
+Type *read_type(char **name,Token_t **token) {
 	Token_t *buf = consume(token);
 
 	if((*token) -> kind != TK_IDENT)
@@ -43,8 +42,7 @@ Type *read_type(char **name,Token_t **token)
 
 }
 
-Type *Type_function_return(char **name,Token_t** token)
-{
+Type *Type_function_return(char **name,Token_t** token) {
 	Token_t *buf = consume(token);
 	if(*name)
 		free(*name);
@@ -59,7 +57,7 @@ Type *Type_function_return(char **name,Token_t** token)
 
 
 
-Lvar *find_lvar(char *name,int length,Lvar **locals){//array は飛ばす
+Lvar *find_lvar(char *name,int length,Lvar **locals) {//array は飛ばす
 	
 
 	for(Lvar *var = *locals; var;var = var -> next)
@@ -72,7 +70,7 @@ Lvar *find_lvar(char *name,int length,Lvar **locals){//array は飛ばす
 	return NULL;
 }
 
-Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
+Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 
 	Lvar *lvar = calloc(1,sizeof(Lvar));
 	lvar -> next = next;
@@ -94,7 +92,7 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next){
 	return lvar;
 }
 
-int typecheck(Node_t *node){
+int typecheck(Node_t *node) {
 
 	Type *tp_l , *tp_r;
 	if(node -> left)
@@ -170,22 +168,19 @@ Type *imptypecast(Node_t *node)
 	return NULL;
 }
 
-int is_lvardec(Token_t **token)
-{
+int is_lvardec(Token_t **token) {
 	if((*token) -> kind > 299 )
 		return 1;
 	return 0;
 }
 
-Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table)
-{
+Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table) {
 	Lvar *lvar = new_lvar(tp,name,len,*table);
 	*table = lvar;
 	return lvar;
 }
 
-Lvar *declere_glIdent(Type *tp,char *name, int len, Lvar **table)
-{
+Lvar *declere_glIdent(Type *tp,char *name, int len, Lvar **table) {
 	Lvar *lvar = find_lvar(name,len,table);
 	if(lvar && lvar -> tp -> Type_label != TP_ARRAY)
 		return NULL;
@@ -194,8 +189,7 @@ Lvar *declere_glIdent(Type *tp,char *name, int len, Lvar **table)
 	return lvar;	
 }
 
-int is_arrmemaccess(Token_t **token)
-{
+int is_arrmemaccess(Token_t **token) {
 	Token_t *buf = *token;
 
 	if(find('[',&buf))
@@ -211,8 +205,7 @@ int is_arrmemaccess(Token_t **token)
 	return 0;
 }
 
-Node_t* arrmemaccess(Token_t **token , Node_t** prev)
-{
+Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	expect('[',token);
 	Node_t *node = assign(token);
 	expect(']',token);
@@ -229,8 +222,7 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev)
 	error_at((*token) -> str,"lval is expected");
 }
 
-int is_lval(Node_t* node)
-{
+int is_lval(Node_t* node) {
 	if(node -> tp)
 	switch(node -> kind)
 	{
@@ -265,7 +257,9 @@ int is_lval(Node_t* node)
  * 		| "for"  "(" assign?; assign? ; assign? ")"stmt
  * 		| "return" assign ";"
  * lvardec = Type ident ( "[" num? "]" )? ( "=" assign )? 
- * assign = equality ("=" assign )?
+ * assign = log_or ("=" assign )?
+ * log_or = log_and (|| log_or)?
+ * log_and = equality (&& log_and)?
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
  * add = mul( "+"mul | "-"mul)* 
@@ -274,22 +268,18 @@ int is_lval(Node_t* node)
  * 			|"sizeof" unitary
  * 			| ('+' | '-' | '*' | '&' ) unitary
  * 			| ('++' | '--') postfix
- * postfix = primary
- * 			| postfix [ assign ]
- * 			| postfix '++'
- * 			| postfix '--'
+ * postfix = primary 
+ * 			|( primary [assign] | primary '++' | primary '--')*
  * primary = num 
  * 			| indent 
  * 			| "(" assign ")"
- * 			| "\"" strring literal "\""
+ * 			| "\"" string literal "\""
  *
  * 終端記号:
  * 		num
  * 		indent
- *
- *
+ * 		string literal
  */
-
 /*
  * 関数実装
  */
@@ -297,17 +287,14 @@ int is_lval(Node_t* node)
 
 
 
-void program(Token_t **token,Node_t **code){
+void program(Token_t **token,Vector *codes){
 	
 
-	int i = 0;
 	while(!at_eof(token)){
 
 		Vector_push(nameTable,NULL);
-		code[i] = func(token);
-		i++;
+		Vector_push(codes, func(token));
 	}
-	code[i] = NULL;
 	Vector_push(nameTable,NULL);
 	//nametable -> next = NULL;
 }
@@ -381,12 +368,30 @@ Node_t *Lvardec(Token_t **token)
 Node_t *assign(Token_t **token){
 
 
-	Node_t *node = equality(token);
+	Node_t *node = log_or(token);
 	
 	if( find('=',token) ){
 		
 		parsing_here = (*token) -> str;
 		node = new_node(ND_ASSIGN,node,assign(token), (*token) -> str);
+	}
+	return node;
+}
+
+Node_t* log_or(Token_t **token) {
+	Node_t *node = log_and(token);
+	if(find(LOG_OR, token))
+	{
+		node = new_Node_t(ND_LOGOR, node, log_or(token), 0, 0, new_tp(TP_INT, NULL, 4), NULL);
+	}
+	return node;
+}
+
+Node_t* log_and(Token_t **token) {
+	Node_t *node = equality(token);
+	if(find(LOG_AND, token))
+	{
+		node = new_Node_t(ND_LOGAND, node, log_and(token), 0, 0, new_tp(TP_INT, NULL, 4), NULL);
 	}
 	return node;
 }
@@ -594,7 +599,7 @@ Node_t *postfix(Token_t **token) {
 			}
 			node = new_Node_t(ND_INC,NULL,node,0,0,NULL,NULL);
 			node -> tp = node -> right -> tp;
-			return node;
+			continue;
 		}
 		if(find(DEC,token))
 		{
@@ -604,7 +609,7 @@ Node_t *postfix(Token_t **token) {
 			}
 			node = new_Node_t(ND_DEC,NULL,node,0,0,NULL,NULL);
 			node -> tp = node -> right -> tp;
-			return node;
+			continue;
 		}
 		return node;
 	}

@@ -379,8 +379,8 @@ void gen_compair(Node_t* node) {
 
 	printf("	cmp %s, %s\n",rax,rdi);
 	printf("	%s al\n", set);
-	if(size > 1)
-		printf("	movzb %s, al\n",rax);
+	if(size_l > 1)
+		printf("	movzb %s, al\n",get_registername("rax", size_l));
 	else
 		printf("	movzb rax, al\n");
 	push_stack(size_l, "rax");
@@ -557,7 +557,7 @@ void gen_if(Node_t* node) {
 		size = node -> left -> tp -> size;	
 		generate(node -> left);
 		pop_stack(size, "rax");
-		printf("	cmp rax, 0\n");
+		printf("	cmp %s, 0\n", get_registername("rax", size));
 		printf("	je  .Lend%d\n",filenumber);
 		endNumberIf = filenumber;
 		generate(node -> right);
@@ -588,7 +588,7 @@ void gen_if(Node_t* node) {
 		generate(node -> left);
 		pop_stack(size,"rax");
 		
-		printf("	cmp rax, 0\n");
+		printf("	cmp %s, 0\n", get_registername("rax", size));
 		printf("	je  .Lelse%d\n",filenumber);
 		elseNumber = filenumber;
 		filenumber++;
@@ -612,7 +612,7 @@ void gen_while(Node_t* node) {
 	int size_l = node -> left -> tp -> size;
 	pop_stack(size_l, "rax");
 	
-	printf("	cmp rax, 0\n");
+	printf("	cmp %s, 0\n", get_registername("rax", size_l));
 	printf("	je	.Lend%d\n",filenumber);
 	int endnumber_while = filenumber;
 
@@ -667,7 +667,7 @@ void gen_for(Node_t* node) {
 		}
 		pop_stack(size, "rax");
 		
-		printf("	cmp rax, 0\n");
+		printf("	cmp %s, 0\n", get_registername("rax", size));
 		printf("	je .Lend%d\n",endnumber_for);
 
 		generate(node -> right);
@@ -681,6 +681,32 @@ void gen_for(Node_t* node) {
 
 	}
 	return;
+}
+
+void gen_log_and_or(Node_t* node) {
+	long size_l = node -> left -> tp -> size;
+	long size_r = node -> right -> tp -> size;
+	char* rax_l = get_registername("rax", size_l);
+	char* rax_r = get_registername("rax", size_r);
+
+	generate(node -> left);
+	pop_stack(size_l, "rax");
+
+	printf("	cmp %s, 0\n", rax_l);
+	if(node -> kind == ND_LOGAND)
+		printf("	je .Lend%d\n", filenumber);
+	else
+		printf("	jne .Lend%d\n", filenumber);
+	generate(node -> right);
+	pop_stack(size_r, "rax");
+
+	printf("	cmp %s, 0\n", rax_r);
+	printf(".Lend%d:", filenumber++);
+	printf("	setne al\n");
+	printf("	movzb %s, al\n", get_registername("rax", 4));
+	push_stack(4, "rax");
+	return;
+
 }
 
 //抽象構文木からアセンブリコードを生成する
@@ -710,7 +736,10 @@ void generate(Node_t *node){
 	case ND_INC: gen_inc_dec(node);
 		return;
 
-	case ND_DEC: gen_inc_dec(node); 
+	case ND_DEC: gen_inc_dec(node);
+		return;
+	case ND_LOGAND:
+	case ND_LOGOR: gen_log_and_or(node);
 		return;
 
 	case ND_LVAL: gen_right_lval(node);
