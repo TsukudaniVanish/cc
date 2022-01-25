@@ -786,6 +786,8 @@ Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
 Node_t *Lvardec(Token_t**);
 Node_t *assign(Token_t **);
+Node_t *log_or(Token_t **);
+Node_t *log_and(Token_t **);
 Node_t *equality(Token_t **);
 Node_t *relational(Token_t **);
 Node_t *add(Token_t **);

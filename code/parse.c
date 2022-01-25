@@ -257,7 +257,9 @@ int is_lval(Node_t* node) {
  * 		| "for"  "(" assign?; assign? ; assign? ")"stmt
  * 		| "return" assign ";"
  * lvardec = Type ident ( "[" num? "]" )? ( "=" assign )? 
- * assign = equality ("=" assign )?
+ * assign = log_or ("=" assign )?
+ * log_or = log_and (|| log_or)?
+ * log_and = equality (&& log_and)?
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
  * add = mul( "+"mul | "-"mul)* 
@@ -266,10 +268,8 @@ int is_lval(Node_t* node) {
  * 			|"sizeof" unitary
  * 			| ('+' | '-' | '*' | '&' ) unitary
  * 			| ('++' | '--') postfix
- * postfix = primary
- * 			| postfix [ assign ]
- * 			| postfix '++'
- * 			| postfix '--'
+ * postfix = primary 
+ * 			|( primary [assign] | primary '++' | primary '--')*
  * primary = num 
  * 			| indent 
  * 			| "(" assign ")"
@@ -368,12 +368,30 @@ Node_t *Lvardec(Token_t **token)
 Node_t *assign(Token_t **token){
 
 
-	Node_t *node = equality(token);
+	Node_t *node = log_or(token);
 	
 	if( find('=',token) ){
 		
 		parsing_here = (*token) -> str;
 		node = new_node(ND_ASSIGN,node,assign(token), (*token) -> str);
+	}
+	return node;
+}
+
+Node_t* log_or(Token_t **token) {
+	Node_t *node = log_and(token);
+	if(find(LOG_OR, token))
+	{
+		node = new_Node_t(ND_LOGOR, node, log_or(token), 0, 0, new_tp(TP_INT, NULL, 4), NULL);
+	}
+	return node;
+}
+
+Node_t* log_and(Token_t **token) {
+	Node_t *node = equality(token);
+	if(find(LOG_AND, token))
+	{
+		node = new_Node_t(ND_LOGAND, node, log_and(token), 0, 0, new_tp(TP_INT, NULL, 4), NULL);
 	}
 	return node;
 }
@@ -581,7 +599,7 @@ Node_t *postfix(Token_t **token) {
 			}
 			node = new_Node_t(ND_INC,NULL,node,0,0,NULL,NULL);
 			node -> tp = node -> right -> tp;
-			return node;
+			continue;
 		}
 		if(find(DEC,token))
 		{
@@ -591,7 +609,7 @@ Node_t *postfix(Token_t **token) {
 			}
 			node = new_Node_t(ND_DEC,NULL,node,0,0,NULL,NULL);
 			node -> tp = node -> right -> tp;
-			return node;
+			continue;
 		}
 		return node;
 	}
