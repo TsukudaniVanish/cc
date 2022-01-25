@@ -17,16 +17,16 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p) {
 	cur = new_token( kind,cur,p);
 	// keywordのlength を計算 TK_Typeの時はポインタ型の読み取りに使用する
 	char *q = p;
-	while (!(is_simbol(q) || is_space(*q))){
+	while (!(is_symbol(q) || is_space(*q))){
 		q++;
 	}
 	
 	(cur) -> length = q -p;
 	
-	if(kind > 299){//ポインタ型か判定
+	if(kind > TOKEN_TYPE -1){//ポインタ型か判定
 
 
-		(cur) -> tp = new_tp(kind -300,NULL,sizeof_token(kind));
+		(cur) -> tp = new_tp(kind - TOKEN_TYPE,NULL,sizeof_token(kind));
 
 		while (is_space(*q) || *q=='*'){
 			
@@ -42,7 +42,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p) {
 			q++;
 		}//qには識別子の名前があるはず
 	
-		if(kind > 299  && is_simbol(q)  ){//識別子があるか判定
+		if(kind > TOKEN_TYPE -1 && is_symbol(q)  ){//識別子があるか判定
 
 			error_at(p,"識別子が必要です");
 		}
@@ -50,7 +50,7 @@ Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p) {
 	return cur;
 }
 
-char *get_operator(int kind) {
+char *get_symbol(int kind) {
 	switch(kind)
 	{
 	case EQUAL: return "==";
@@ -61,6 +61,22 @@ char *get_operator(int kind) {
 	case DEC: return "--";
 	case LOG_AND: return "&&";
 	case LOG_OR: return "||";
+	case LE: return "<";
+	case GE: return ">";
+	case AND: return "&";
+	case ASSIGN: return "=";
+	case PLUS: return "+";
+	case MINUS: return "-";
+	case STER: return "*";
+	case BACK_SLASH: return "/";
+	case COMMA: return ",";
+	case SEMICORRON: return ";";
+	case PARENTHESIS: return "(";
+	case PARANTHESIS_CLOSE: return ")";
+	case BRACE: return "{";
+	case BRACE_CLOSE: return "}";
+	case BRACKET: return "[";
+	case BRACKET_CLOSE: return "]";
 	default:
 		fprintf(stderr,"invalid kind of operator : %d",kind);
 		exit(1);
@@ -70,7 +86,7 @@ char *get_operator(int kind) {
 int find(int kind,Token_t **token){
 
 	if(kind > MULTOPERATOR_START){ // len >= 2 identifier
-		char *multoper = get_operator(kind);
+		char *multoper = get_symbol(kind);
 		if((*token) -> length == String_len(multoper) && String_conpair(multoper,(*token) -> str,String_len(multoper)))
 		{	
 			consume(token);

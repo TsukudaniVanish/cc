@@ -201,7 +201,29 @@ typedef enum {
 	DEC,// --
 	LOG_AND,// &&
 	LOG_OR,// ||
-}MultiOperator;
+	END_OF_MULTI_OPERATOR,
+	UNIT_SYMBOL_START = 0,
+	LE, // = '<',
+	GE,// = '>',
+	PLUS,// = '+',
+	MINUS,// = '-',
+	STER ,//= '*',
+	BACK_SLASH ,//= '/',
+	AND ,//= '&',
+	ASSIGN,//= '=',
+	END_OF_UNIT_OPERATOR,
+	PUNCTUATOR_START,
+	COMMA,// = ','
+	SEMICORRON,// == ';'
+	BRACE ,//= '{',
+	BRACE_CLOSE ,//= '}',
+	PARENTHESIS ,//= '(',
+	PARANTHESIS_CLOSE ,//= ')',
+	BRACKET ,//= '[',
+	BRACKET_CLOSE ,//= ']'
+	END_OF_SYMBOLS,
+
+}Symbols;
 /**
  * @brief this is list of Type of tokens
  * 
@@ -393,6 +415,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
  */
 Token_t *new_keyword(Token_kind,Token_t *,char *);
 
+char* get_symbol(int);
 /**
  * @brief Compair if *token -> str and given string are equal.
  * @param int kind
@@ -585,11 +608,11 @@ int is_alnum(char c);
 
 /**
  * 
- * @brief judge if it is simbol or not 
+ * @brief judge if it is symbol or not 
  * @param char*
  * @return int : len of operator
  * */
-int is_simbol(char *);
+int is_symbol(char *);
 
 /**
  * @brief コメントかどうか判定する

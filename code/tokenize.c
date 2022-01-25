@@ -53,23 +53,38 @@ char *skip(char * p)
 	return p;	
 }
 
-int is_simbol(char *p){
-
-	
-	char *tokens[] ={"==","!=","<=",">=","<",">", "++", "--","+","-","*","/","=","&",";","(",")","{","}","[","]",",",NULL};
-
-	for(char **str = tokens ; *str ; str++ ){
-		
-		int len = String_len(*str);
-
-		if( String_conpair(p,*str,len) ){
-
-			if(str - tokens < 14)
-				return len;// this is operator
-			return len + 1000;// this is punctuator
+int is_symbol(char *p) {
+	char* operator;
+	int len = 0;
+	Symbols kind = MULTOPERATOR_START;
+	while(kind < END_OF_SYMBOLS || (kind >= MULTOPERATOR_START && kind <= END_OF_MULTI_OPERATOR))
+	{
+		switch(kind) {
+			case MULTOPERATOR_START:
+				kind++;
+				break;
+			case END_OF_MULTI_OPERATOR:
+				kind = UNIT_SYMBOL_START + 1;
+				break;
+			case END_OF_UNIT_OPERATOR:
+				kind = PUNCTUATOR_START;
+				break;
+			case PUNCTUATOR_START:
+				kind++;
+				break;
+			default:
+				operator = get_symbol(kind);
+				len = String_len(operator);
+				if(String_conpair(operator, p, len))
+				{
+					if(kind > PUNCTUATOR_START && kind < END_OF_SYMBOLS)
+						len += 1000;
+					return len;
+				}
+					kind ++;
 		}
 	}
-	return false;
+	return 0;
 }
 
 
@@ -175,11 +190,11 @@ Token_t *tokenize(char *p){//入力文字列
 			p += cur -> length;
 			continue;
 
-		}else if(is_simbol(p))
+		}else if(is_symbol(p))
 		{//演算子または区切り文字
 			
 			cur = new_token(TK_OPERATOR,cur,p);
-			cur -> length = is_simbol(p);
+			cur -> length = is_symbol(p);
 			if(cur -> length > 1000)
 			{// puctuator or not
 				cur -> kind = TK_PUNCTUATOR;
@@ -206,7 +221,7 @@ Token_t *tokenize(char *p){//入力文字列
 			
 			while(1){
 			
-				if( isspace(*q) || q[0] == ','  || is_simbol(q)){ 
+				if( isspace(*q) || q[0] == ','  || is_symbol(q)){ 
 				//q が演算子をさしたらやめる
 
 					cur -> length = q-p;

@@ -72,7 +72,6 @@ int main(int argc, char **argv){
 	int len = Vector_get_length(codes);
 	for(int i = 0; i < len; i++)
 	{
-		printf("#	Hi %d\n", i);
 		Node_t *code = Vector_at(codes, i);
 		if(code -> kind == ND_GLOBVALDEF)
 		{
