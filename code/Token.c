@@ -13,21 +13,15 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str) {
 
 
 
-Token_t *new_keyword(Token_kind kind,Token_t*cur,char *p) {
+Token_t *new_keyword(Token_kind kind, keyword kindOfKeyword, Token_t*cur, char *p) {
 	cur = new_token( kind,cur,p);
 	// keywordのlength を計算 TK_Typeの時はポインタ型の読み取りに使用する
-	char *q = p;
-	while (!(is_symbol(q) || is_space(*q))){
-		q++;
-	}
-	
-	(cur) -> length = q -p;
-	
+	char *q = get_keyword(kindOfKeyword);
+	unsigned int len = String_len(q);
+	cur -> length = len;
 	if(kind > TOKEN_TYPE -1){//ポインタ型か判定
-
-
 		(cur) -> tp = new_tp(kind - TOKEN_TYPE,NULL,sizeof_token(kind));
-
+		q = p + len;
 		while (is_space(*q) || *q=='*'){
 			
 			if(is_space(*q)){
@@ -191,8 +185,10 @@ int is_functioncall(Token_t **token)
 
     if(find('[',&buf))
     {
-        expect_num(&buf);
-        expect(']',&buf);
+        while(find(']', &buf))
+		{
+			consume(&buf);
+		}
     }
     if(find('(',&buf))
         return 1;

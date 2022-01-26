@@ -204,15 +204,15 @@ int is_arrmemaccess(Token_t **token) {
 	}
 	return 0;
 }
-
+#define Is_type_pointer(kind) (kind == TP_POINTER || kind == TP_ARRAY? 1: 0)
 Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	expect('[',token);
 	Node_t *node = assign(token);
 	expect(']',token);
 	
 	if(
-		(node -> tp -> Type_label == TP_ARRAY && (*prev) -> tp -> Type_label == TP_INT) ||
-		(node -> tp -> Type_label == TP_INT && (*prev) -> tp -> Type_label == TP_ARRAY)
+		(Is_type_pointer(node -> tp -> Type_label) && (*prev) -> tp -> Type_label == TP_INT) ||
+		(node -> tp -> Type_label == TP_INT && Is_type_pointer((*prev) -> tp -> Type_label))
 	){
 		Node_t *get_address = new_node(ND_ADD,*prev,node, (*token) -> str);
 		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
@@ -301,7 +301,7 @@ void program(Token_t **token,Vector *codes){
 
 Node_t *func(Token_t **token){
 
-	if ((*token) -> kind <= 299 ){
+	if ((*token) -> kind <= TOKEN_TYPE - 1){
 
 		error_at((*token) -> str , "型宣言がありません");
 
@@ -319,16 +319,15 @@ Node_t *stmt(Token_t **token){
 
 	Node_t *node;
 
-	if( (*token) -> kind > 99 && (*token) -> kind < 200 ){//if (else) while for return をパース
-
+	if( (*token) -> kind > TOKEN_FLOW_OPERATION_START - 1 && (*token) -> kind < TOKEN_SIZEOF)
+	{//if (else) while for return をパース
 
 		node = new_node_flow_operation(consume(token) -> kind,token);
 
-	}else if( find('{',token) ){
-		
-
+	}
+	else if(find('{',token))
+	{
 		node = new_node_block(token);
-	
 	}
 	else if(is_lvardec(token))
 	{
@@ -338,8 +337,8 @@ Node_t *stmt(Token_t **token){
 			return NULL;
 		return node;
 	}
-	else{
-
+	else
+	{
 		node = assign(token);
 		expect(';',token);
 	}
@@ -581,7 +580,7 @@ Node_t *postfix(Token_t **token) {
 	Node_t *node = primary(token);
 	if(node == NULL)
 	{
-		error_at((*token) -> str, "Failed to parse");
+		return node;
 	}
 	for(;;)
 	{
@@ -635,7 +634,7 @@ Node_t *primary(Token_t **token){
 	{
 		node = new_node_stringiter(token);
 	}
-	else
+	else if((*token) -> kind == TK_CONST)
 	{
 		node = new_node_num(expect_num(token));
 	}
