@@ -1,6 +1,5 @@
 
 #define Min(a,b) a < b ? a: b
-#include<stdbool.h>
 #include<stdlib.h>
 //#include<ctype.h>
 #include<stdarg.h>
@@ -14,7 +13,7 @@
 
 typedef struct vector Vector;
 
-struct vector{
+struct vector {
 	void **container;
 	unsigned long length;
 	unsigned int allocsize;
@@ -332,7 +331,6 @@ typedef enum{
 	ND_FUNCTIONCALL,//A function call
 	ND_FUNCTIONDEF,//Definition of a function call
 	ND_ARGMENT,// an argument of a function
-	ND_BOOL,// generate boolean value
 	ND_LOGAND,// logic and
 	ND_LOGOR,// logic or
 	// flow operation=========================
@@ -472,7 +470,7 @@ int expect_num(Token_t **token);
  * @param Token_t_** token 
  * @return bool 
  */
-bool at_eof(Token_t **token);
+int at_eof(Token_t **token);
 
 
 /**

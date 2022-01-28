@@ -57,9 +57,8 @@ Type *Type_function_return(char **name,Token_t** token) {
 
 
 
-Lvar *find_lvar(char *name,int length,Lvar **locals) {//array は飛ばす
+Lvar *find_lvar(char *name,int length,Lvar **locals) {
 	
-
 	for(Lvar *var = *locals; var;var = var -> next)
 	{
 		if( var -> length == length && String_conpair( name, var ->name,length))
@@ -81,9 +80,9 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 	lvar -> length = length;
 	lvar -> tp = tp;
 
-	if( next )
+	if(next)
 	{
-		lvar -> offset = next -> offset +(lvar -> tp -> size);
+		lvar -> offset = next -> offset + (lvar -> tp -> size);
 	}
 	else
 	{
@@ -169,7 +168,7 @@ Type *imptypecast(Node_t *node)
 }
 
 int is_lvardec(Token_t **token) {
-	if((*token) -> kind > 299 )
+	if((*token) -> kind > 299)
 		return 1;
 	return 0;
 }
@@ -287,19 +286,17 @@ int is_lval(Node_t* node) {
 
 
 
-void program(Token_t **token,Vector *codes){
-	
+void program(Token_t **token,Vector *codes) {
 
-	while(!at_eof(token)){
-
+	while(!at_eof(token))
+	{
 		Vector_push(nameTable,NULL);
 		Vector_push(codes, func(token));
 	}
 	Vector_push(nameTable,NULL);
-	//nametable -> next = NULL;
 }
 
-Node_t *func(Token_t **token){
+Node_t *func(Token_t **token) {
 
 	if ((*token) -> kind <= TOKEN_TYPE - 1){
 
@@ -314,10 +311,9 @@ Node_t *func(Token_t **token){
 	return new_node_glob_ident(token);
 }
 
-Node_t *stmt(Token_t **token){
+Node_t *stmt(Token_t **token) {
 
-
-	Node_t *node;
+	Node_t *node = NULL;
 
 	if( (*token) -> kind > TOKEN_FLOW_OPERATION_START - 1 && (*token) -> kind < TOKEN_SIZEOF)
 	{//if (else) while for return をパース
@@ -346,8 +342,7 @@ Node_t *stmt(Token_t **token){
 	return node;
 }
 
-Node_t *Lvardec(Token_t **token)
-{
+Node_t *Lvardec(Token_t **token) {
 	Lvar *table = Vector_get_tail(nameTable);
 	char *name = NULL;
 	Type *tp = read_type(&name,token);
@@ -364,13 +359,12 @@ Node_t *Lvardec(Token_t **token)
 
 }
 
-Node_t *assign(Token_t **token){
-
+Node_t *assign(Token_t **token) {
 
 	Node_t *node = log_or(token);
 	
-	if( find('=',token) ){
-		
+	if( find('=',token) )
+	{
 		parsing_here = (*token) -> str;
 		node = new_node(ND_ASSIGN,node,assign(token), (*token) -> str);
 	}
@@ -401,111 +395,92 @@ Node_t *equality(Token_t **token){
 
 	Node_t *node = relational(token);
 
-	for(;;){
-		
+	for(;;)
+	{	
 		parsing_here = (*token) -> str;
-		if( find(EQUAL,token) ){
-		
-
+		if(find(EQUAL,token))
+		{
 			node = new_node(ND_EQL,node,relational(token), (*token) -> str);
 		
-		}else if( find(NEQ,token) ){
-
-			
+		}else if( find(NEQ,token) )
+		{	
 			node = new_node(ND_NEQ,node,relational(token), (*token) -> str);
-		
-		}else{
-
-
+		}
+		else
+		{
 			return node;
 		}
 	}
 }
 
-Node_t *relational(Token_t **token){
-
+Node_t *relational(Token_t **token) {
 
 	Node_t *node = add(token);
 
-	for (;;){
-
+	for (;;)
+	{
 		parsing_here = (*token) -> str;
-		if( find(LEQ,token) ){
-			
-			
+		if( find(LEQ,token) )
+		{		
 			node = new_node(ND_LEQ,node,add(token), (*token) -> str);
-		
-		}else if( find('<',token) ){
-			
-	
+		}
+		else if( find('<',token))
+		{
 			node = new_node(ND_LES,node,add(token), (*token) -> str);
-		
-		}else if( find(GEQ,token) ){
-	
-	
+		}
+		else if(find(GEQ,token))
+		{
 			node = new_node(ND_LEQ,add(token),node, (*token) -> str);
-	
-		}else if( find('>',token) ){
-		
-	
-			node = new_node(ND_LES,add(token),node, (*token) -> str);
-	
-		}else{
-		
-			
+		}
+		else if(find('>',token))
+		{
+			node = new_node(ND_LES,add(token),node, (*token) -> str);	
+		}
+		else
+		{	
 			return node;
 		}
 	}
 }
 
-Node_t *add(Token_t **token){
-
-
+Node_t *add(Token_t **token) {
 	Node_t *node = mul(token);
 
-	for(;;){
-
+	for(;;)
+	{
 		parsing_here = (*token) -> str;
-		if( find('+',token) ){
-
-
+		if( find('+',token) )
+		{
 			node = new_node(ND_ADD,node,mul(token), (*token) -> str);
-
-		}else if( find('-',token) ){
-
-
+		}
+		else if( find('-',token) )
+		{
 			node = new_node(ND_SUB,node,mul(token), (*token) -> str);
-
-		}else{
-
-
+		}
+		else
+		{
 			return node;
 		}
 	}
 }
 
-Node_t *mul(Token_t **token){
-
-
+Node_t *mul(Token_t **token) {
 
 	Node_t *node = unitary(token);
 
-	for(;;){
-
+	for(;;)
+	{
 		parsing_here = (*token) -> str;
-		if( find('*',token) ){
-
-
+		if(find('*',token))
+		{
 			node = new_node(ND_MUL,node,unitary(token), (*token) -> str);
-
-		}else if( find('/',token) ){
-
-
+		}
+		else if(find('/',token))
+		{
 			node = new_node(ND_DIV,node,unitary(token), (*token) -> str);
-
-		}else{
-
-
+		}
+		else
+		{
 			return node;
 		}
 	}
@@ -513,22 +488,20 @@ Node_t *mul(Token_t **token){
 
 
 
-Node_t *unitary(Token_t **token){
-
-	Node_t *node;
-	if( (*token)-> kind == TK_SIZEOF ){
-
-
+Node_t *unitary(Token_t **token)
+{
+	Node_t *node = NULL;
+	if((*token)-> kind == TK_SIZEOF)
+	{
 		(*token) = (*token) -> next;
 		node = unitary(token);
-		if( node -> val != 0 ){
-			
-
-			node = new_node_num(  node -> val );
-		}else{
-
-			
-			node = new_node_num(  node ->tp -> size );
+		if( node -> val != 0 )
+		{
+			node = new_node_num(node -> val);
+		}
+		else
+		{	
+			node = new_node_num(node ->tp -> size);
 		}	
 		return node;		
 	}
@@ -554,22 +527,22 @@ Node_t *unitary(Token_t **token){
 		return node;
 	}
 
-	if( find('+',token) ){
-
+	if( find('+',token) )
+	{
 		node = unitary(token);
 		return node;
 		
-	}else if( find('-',token) ){
-
+	}
+	else if( find('-',token) )
+	{
 		node = new_node(ND_SUB,new_node_num(0),unitary(token), (*token) -> str);
 		node -> tp = node -> right -> tp;
 		return node;
-		
-	}else if((*token) -> kind == TK_OPERATOR && ( (*token) -> str[0] == '*' || (*token) -> str[0] == '&')){
-
+	}
+	else if((*token) -> kind == TK_OPERATOR && ( (*token) -> str[0] == '*' || (*token) -> str[0] == '&'))
+	{
 		node = new_node_ref_deref(token);
 		return node;
-	
 	}
 		
 	node = postfix(token);
@@ -614,18 +587,17 @@ Node_t *postfix(Token_t **token) {
 	}
 }
 
-Node_t *primary(Token_t **token){
+Node_t *primary(Token_t **token) {
 
 	parsing_here = (*token) -> str;
 	Node_t *node = NULL;
 
-	if( find('(',token) ){ // '(' の次は expr
-
-
+	if(find('(',token))
+	{
 		node = assign(token);
 		expect(')',token);// ')'かcheck
 
-	}else if( (*token)-> kind == TK_IDENT || ( (*token) -> kind >299) )
+	}else if((*token)-> kind == TK_IDENT || ( (*token) -> kind >299) )
 	{
 
 		node = new_node_ident(token);

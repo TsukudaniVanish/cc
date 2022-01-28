@@ -77,7 +77,7 @@ char *get_symbol(int kind) {
 	}
 }
 
-int find(int kind,Token_t **token){
+int find(int kind,Token_t **token) {
 
 	if(kind > MULTOPERATOR_START){ // len >= 2 identifier
 		char *multoper = get_symbol(kind);
@@ -118,17 +118,13 @@ void expect(int kind ,Token_t **token) {
 	}
 }
 
-char *expect_ident(Token_t **token){
-
-
-	if( (*token)->kind != TK_IDENT ){
-
-
+char *expect_ident(Token_t **token) {
+	if( (*token)->kind != TK_IDENT )
+	{
 		error_at( (*token)-> str,"無効な変数名" );
-	
-	}else{
-
-
+	}
+	else
+	{
 		char *name = calloc((*token) -> length, sizeof(char));
 		Memory_copy(name,(*token) -> str, (*token) -> length);
 		consume(token);
@@ -136,46 +132,38 @@ char *expect_ident(Token_t **token){
 	}
 }
 
-int expect_num(Token_t **token){
-
-	
-	if( (*token) -> kind != TK_CONST  ){
-
-
+int expect_num(Token_t **token) {
+	if( (*token) -> kind != TK_CONST  )
+	{
 		error_at( (*token) -> str ,"数ではありません");
-	
-	}else{
-		
+	}
+	else
+	{	
 		int v = (*token) -> val;	
 		(*token) = (*token) -> next;
 		return v;
 	}
 }
 
-bool at_eof(Token_t **token){
-
-
-	if( (*token)-> kind != TK_EOF ){
-
-
-		return false;
-	
-	}else{
-
-
-		return true;
+int at_eof(Token_t **token) {
+	if((*token)-> kind != TK_EOF)
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
 	}
 }
 
 
-Token_t *consume(Token_t **token){
+Token_t *consume(Token_t **token) {
 	Token_t *tok = *token;
 	*token = (*token)-> next;
 	return tok;
 }
 
-int is_functioncall(Token_t **token)
-{
+int is_functioncall(Token_t **token) {
     Token_t * buf = (*token);
 
     if(buf -> kind > 299)
