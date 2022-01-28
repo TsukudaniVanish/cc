@@ -1,6 +1,5 @@
 
 #define Min(a,b) a < b ? a: b
-#include<stdbool.h>
 #include<stdlib.h>
 //#include<ctype.h>
 #include<stdarg.h>
@@ -14,7 +13,7 @@
 
 typedef struct vector Vector;
 
-struct vector{
+struct vector {
 	void **container;
 	unsigned long length;
 	unsigned int allocsize;
@@ -191,6 +190,22 @@ void** scope;
 
 
 // =========================Token =========================
+typedef enum {
+	KEYWORD_START = 0,// start
+	RETURN,
+	SIZEOF,
+	WHILE,
+	ELSE,
+	FOR,
+	IF,
+	TYPE_START,// following entries are represent type 
+	VOID,
+	CHAR,
+	INT,
+	UNSIGNED_INT,
+	UNSIGNED,
+	KEYWORD_END,// end marker
+}keyword;
 typedef enum { 
 	MULTOPERATOR_START=1000,
 	EQUAL, // ==
@@ -316,7 +331,6 @@ typedef enum{
 	ND_FUNCTIONCALL,//A function call
 	ND_FUNCTIONDEF,//Definition of a function call
 	ND_ARGMENT,// an argument of a function
-	ND_BOOL,// generate boolean value
 	ND_LOGAND,// logic and
 	ND_LOGOR,// logic or
 	// flow operation=========================
@@ -410,10 +424,11 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 /**
  * @brief 
  * @param Token_kind
- * @param 
+ * @param keyword
+ * @param Token_t* cur previous token
  * @return Token_t* 
  */
-Token_t *new_keyword(Token_kind,Token_t *,char *);
+Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
 
 char* get_symbol(int);
 /**
@@ -455,7 +470,7 @@ int expect_num(Token_t **token);
  * @param Token_t_** token 
  * @return bool 
  */
-bool at_eof(Token_t **token);
+int at_eof(Token_t **token);
 
 
 /**
@@ -629,19 +644,8 @@ int is_comment(char *p);
  */
 void comment_skip(char **p);
 
-
-
-
-/**
- * @b
- * key word と一致するか見る 一致したらその種類　一致しないならTK_EOFを出す
- * @param char_*
- * @param Token_t**
- * @return bool
- * @sa  new_token
- * */
-Token_kind is_keyword(char *);
-
+char* get_keyword(keyword);
+int get_correspond_token_kind(keyword);
 
 /**
  * @fn 

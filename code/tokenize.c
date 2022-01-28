@@ -114,32 +114,81 @@ void comment_skip(char **p)
 	
 }
 
-
-
-Token_kind is_keyword(char *p){
-
+char* get_keyword(keyword kind) {
 	
-	char *assign[] = { "return","sizeof","while","else","for","if",
-						"void","char","int",
-						NULL};
-	Token_kind assign_kind[] = {TK_RETURN,TK_SIZEOF,TK_WHILE,TK_ELSE,TK_FOR,TK_IF,
-								TK_TypeVOID,TK_TypeCHAR,TK_TypeINT,
-								TK_EOF};
-
-	Token_kind *v = assign_kind;
-
-	for( char **q = assign; *q ; q++ ){
-
-
-		if( String_conpair(p,*q,String_len(*q)) && !is_alnum(p[String_len(*q)])){
-
-
-			return *v;
-		}
-		if(*v != TK_EOF)
-			v++;
+	switch(kind)
+	{
+		case RETURN:
+			return "return";
+		case SIZEOF:
+			return "sizeof";
+		case WHILE:
+			return "while";
+		case ELSE:
+			return "else";
+		case FOR:
+			return "for";
+		case IF:
+			return "if";
+		case VOID:
+			return "void";
+		case CHAR:
+			return "char";
+		case INT:
+			return "int";
+		case UNSIGNED:
+			return "unsigned";
+		case UNSIGNED_INT:
+			return "unsigned int";
+		default:
+			return NULL;
 	}
-	return *v;
+}
+
+Token_kind get_correspond_token_kind(keyword kind) {
+	switch(kind) 
+	{
+		case RETURN: return TK_RETURN;
+		case SIZEOF: return TK_SIZEOF;
+		case WHILE: return TK_WHILE;
+		case ELSE: return TK_ELSE;
+		case FOR: return TK_FOR;
+		case IF: return TK_IF;
+		case VOID: return TK_TypeVOID;
+		case UNSIGNED:
+		case UNSIGNED_INT:
+		case INT: return TK_TypeINT;
+		case CHAR: return TK_TypeCHAR;
+		default:
+			fprintf(stderr, "	failed to get token kind from keyword\n");
+			exit(1);
+	}
+}
+
+
+int is_keyword(char *p, keyword* kind_of){
+
+	keyword kind = KEYWORD_START + 1;
+	while(kind < KEYWORD_END)
+	{
+		char* keyword = get_keyword(kind);
+		if(keyword == NULL)
+		{
+			kind ++;
+			continue;
+		}
+		unsigned int len = String_len(keyword);
+		if(String_conpair(keyword, p, len))
+		{
+			if(kind_of != NULL)
+				*kind_of = kind;
+			return 1;
+		}
+		kind ++;
+	}
+	if(kind_of != NULL)
+		*kind_of = KEYWORD_END;
+	return 0;
 }
 
 
@@ -151,9 +200,8 @@ Token_t *tokenize(char *p){//入力文字列
 	Token_t head;
 	head.next = NULL;
 	Token_t *cur = &head;
-
 	while(*p != '\0'){
-
+		keyword keyword = KEYWORD_START;
 
 		p = skip(p);
 		if(*p == '\0') break;
@@ -183,10 +231,10 @@ Token_t *tokenize(char *p){//入力文字列
 			comment_skip(&p);
 			continue;
 		}
-		else if ( is_keyword(p) !=TK_EOF )
+		else if (is_keyword(p, &keyword))
 		{//キーワード
-			
-			cur = new_keyword(is_keyword(p),cur,p);
+			Token_kind kind = get_correspond_token_kind(keyword);
+			cur = new_keyword(kind, keyword,cur, p);
 			p += cur -> length;
 			continue;
 
@@ -196,7 +244,7 @@ Token_t *tokenize(char *p){//入力文字列
 			cur = new_token(TK_OPERATOR,cur,p);
 			cur -> length = is_symbol(p);
 			if(cur -> length > 1000)
-			{// puctuator or not
+			{// punctuator or not
 				cur -> kind = TK_PUNCTUATOR;
 				cur -> length -= 1000;
 			}
