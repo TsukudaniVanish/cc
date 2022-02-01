@@ -422,12 +422,11 @@ Node_t *expr(Token_t** token) {
 }
 
 Node_t *assign(Token_t **token) {
-
+	char* parsing_here = (*token) -> str;// for error detection
 	Node_t *node = log_or(token);
 	
 	if( find('=',token) )
 	{
-		parsing_here = (*token) -> str;
 		if(is_lval(node))
 		{
 			node = new_node(ND_ASSIGN,node,expr(token), (*token) -> str);
@@ -435,7 +434,7 @@ Node_t *assign(Token_t **token) {
 		}
 		else
 		{
-			error_at((*token) -> str, "laval is expected");
+			error_at(parsing_here ,"laval is expected");
 		}
 	}
 	return node;
