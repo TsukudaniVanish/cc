@@ -169,7 +169,7 @@ long gen_lval(Node_t *node){
 	}
 	
 	printf("	mov rax, rbp\n");
-	printf("	sub rax, %ld\n",  node -> offset  );
+	printf("	sub rax, %ld\n",  node -> offset);
 	printf("	push rax\n");
 	rsp_counter += 8;
 	return node -> tp -> size;

@@ -18,8 +18,10 @@ Type* new_tp(int label,Type* pointer_to,long int size) {
 }
 
 Type *read_type(char **name,Token_t **token) {
-	Token_t *buf = consume(token);
-
+	Node_t* dummy = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+	dummy = declere_specify(token, dummy);
+	if((*token) -> kind == TK_OPERATOR)
+		dummy = pointer(token, dummy);
 	if((*token) -> kind != TK_IDENT)
 	{
 		error_at((*token) -> str,"Identifier was expected");
@@ -34,11 +36,11 @@ Type *read_type(char **name,Token_t **token) {
 
 	if(find('[',token))
 	{//配列定義
-		int array_size = expect_num(token) * (buf -> tp -> size);
+		int array_size = expect_num(token) * (dummy -> tp -> size);
 		expect(']',token);
-		return new_tp(TP_ARRAY,buf -> tp,array_size);
+		return new_tp(TP_ARRAY,dummy -> tp,array_size);
 	}
-	return buf -> tp;
+	return dummy -> tp;
 
 }
 
@@ -206,7 +208,7 @@ int is_arrmemaccess(Token_t **token) {
 #define Is_type_pointer(kind) (kind == TP_POINTER || kind == TP_ARRAY? 1: 0)
 Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	expect('[',token);
-	Node_t *node = assign(token);
+	Node_t *node = expr(token);
 	expect(']',token);
 	
 	if(
@@ -244,19 +246,30 @@ int is_lval(Node_t* node) {
  * token から構文木を生成 
  */
 /*
+ * (someting)* <= something の0以上の繰り返し
  * 生成文法
  *
  * program = func*
  * func = ident "(" (type? ident)*  ")"  stmt 
- * stmt = assign";"
- * 		| lvardec ";"
+ * stmt = expr";"
+ * 		| declere ";"
  * 		| "{" stmt* "}"
- * 		| "if" "(" assign  ")" stmt ( "else" stmt  )?
- * 		| "while"  "(" assign ")" stmt
- * 		| "for"  "(" assign?; assign? ; assign? ")"stmt
- * 		| "return" assign ";"
- * lvardec = Type ident ( "[" num? "]" )? ( "=" assign )? 
- * assign = log_or ("=" assign )?
+ * 		| "if" "(" expr  ")" stmt ( "else" stmt  )?
+ * 		| "while"  "(" expr ")" stmt
+ * 		| "for"  "(" expr?; expr? ; expr? ")"stmt
+ * 		| "return" expr";"
+ * declere = declere_specify pointer? ident ( "[" expr "]" )? ( "=" expr )?
+ * declere_specify =  type_specify
+ * type_specify = "void"
+ * 		| "int"
+ * 		| "unsigned int"
+ * 		| "unsigned"
+ * 		| "char"
+ * 		| struct
+ * 	struct = 
+ * pointer = "*"*
+ * expr = assign
+ * assign = log_or ("=" expr )?
  * log_or = log_and (|| log_or)?
  * log_and = equality (&& log_and)?
  * equality = relational("==" relational | "!=" relational)*
@@ -268,12 +281,11 @@ int is_lval(Node_t* node) {
  * 			| ('+' | '-' | '*' | '&' ) unitary
  * 			| ('++' | '--') postfix
  * postfix = primary 
- * 			|( primary [assign] | primary '++' | primary '--')*
+ * 			|( primary [expr] | primary '++' | primary '--')*
  * primary = num 
  * 			| indent 
- * 			| "(" assign ")"
+ * 			| "(" expr ")"
  * 			| "\"" string literal "\""
- *
  * 終端記号:
  * 		num
  * 		indent
@@ -327,7 +339,7 @@ Node_t *stmt(Token_t **token) {
 	}
 	else if(is_lvardec(token))
 	{
-		node = Lvardec(token);
+		node = declere(token);
 		expect(';',token);
 		if(node -> kind == ND_LVAL)
 			return NULL;
@@ -335,28 +347,78 @@ Node_t *stmt(Token_t **token) {
 	}
 	else
 	{
-		node = assign(token);
+		node = expr(token);
 		expect(';',token);
 	}
 	
 	return node;
 }
 
-Node_t *Lvardec(Token_t **token) {
+Node_t *declere(Token_t **token) {
 	Lvar *table = Vector_get_tail(nameTable);
-	char *name = NULL;
-	Type *tp = read_type(&name,token);
-	Lvar *lvar = declere_ident(tp,name,String_len(name),&table);
+	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+
+	node = declere_specify(token, node);
+	if((*token) -> kind == TK_OPERATOR)
+		node = pointer(token, node);
+	node -> name = expect_ident(token);
+	if(find('[', token))
+	{
+		int array_size = expect_num(token) * (node -> tp -> size);
+		expect(']',token);
+		node -> tp = new_tp(TP_ARRAY,node -> tp,array_size);			
+	}
+
+	Lvar *lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
+	node -> offset = lvar -> offset;
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
-	Node_t *node = new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	if(find('=',token))
 	{
 		parsing_here = (*token) -> str;
-		node = new_node(ND_ASSIGN,node,assign(token), (*token) -> str);
+		node = new_node(ND_ASSIGN,node,expr(token), (*token) -> str);
 		return node;
 	}
 	return node;
 
+}
+
+Node_t* declere_specify(Token_t** token, Node_t* node) {
+	return type_specify(token, node);
+}
+
+/*
+ * @brief pointer parse pointer '*'. change assigned node -> tp.
+ * */
+Node_t *pointer(Token_t** token, Node_t* node) {
+	for(;;)
+	{
+		if(find('*', token))
+		{
+			if(node -> tp == NULL)
+				return node;
+			Type* tp = new_tp(TP_POINTER, node -> tp, 8);
+			node -> tp = tp;
+			continue;
+		}
+		break;
+	}
+	return node;
+}
+/*
+ * @brief type parse type and struct decleration. change assigned node -> tp when assigned token -> kind >=  TOKEN_TYPE and < TK_STRUCT. 
+ * */
+Node_t *type_specify(Token_t** token, Node_t* node) {
+	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind != TK_STRUCT)
+	{	
+		node -> tp = (*token) -> tp;
+		*token = (*token) -> next;
+		return node;
+	}
+	error_at((*token) -> str, "Type keyword is expected");
+}
+
+Node_t *expr(Token_t** token) {
+	return assign(token);
 }
 
 Node_t *assign(Token_t **token) {
@@ -366,7 +428,7 @@ Node_t *assign(Token_t **token) {
 	if( find('=',token) )
 	{
 		parsing_here = (*token) -> str;
-		node = new_node(ND_ASSIGN,node,assign(token), (*token) -> str);
+		node = new_node(ND_ASSIGN,node,expr(token), (*token) -> str);
 	}
 	return node;
 }
@@ -594,7 +656,7 @@ Node_t *primary(Token_t **token) {
 
 	if(find('(',token))
 	{
-		node = assign(token);
+		node = expr(token);
 		expect(')',token);// ')'かcheck
 
 	}else if((*token)-> kind == TK_IDENT || ( (*token) -> kind >299) )
