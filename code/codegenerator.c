@@ -141,7 +141,6 @@ void set_stringiter()
 }
 
 long gen_lval(Node_t *node){
-
 	if(!is_lval(node)){
 		fprintf(stderr, "error at code generating\n");
 		fprintf(stderr,"	this is not variables\n");
@@ -445,7 +444,6 @@ void gen_string_literal(long offset) {
 
 void gen_assign(Node_t* node) {
 	long int size[2];
-	
 	size[0] = gen_lval(node -> left);// generate left node as left value
 
 	size[1] = node -> right -> tp -> size;

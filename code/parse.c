@@ -428,7 +428,15 @@ Node_t *assign(Token_t **token) {
 	if( find('=',token) )
 	{
 		parsing_here = (*token) -> str;
-		node = new_node(ND_ASSIGN,node,expr(token), (*token) -> str);
+		if(is_lval(node))
+		{
+			node = new_node(ND_ASSIGN,node,expr(token), (*token) -> str);
+			return node;
+		}
+		else
+		{
+			error_at((*token) -> str, "laval is expected");
+		}
 	}
 	return node;
 }
