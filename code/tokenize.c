@@ -118,28 +118,18 @@ char* get_keyword(keyword kind) {
 	
 	switch(kind)
 	{
-		case RETURN:
-			return "return";
-		case SIZEOF:
-			return "sizeof";
-		case WHILE:
-			return "while";
-		case ELSE:
-			return "else";
-		case FOR:
-			return "for";
-		case IF:
-			return "if";
-		case VOID:
-			return "void";
-		case CHAR:
-			return "char";
-		case INT:
-			return "int";
-		case UNSIGNED:
-			return "unsigned";
-		case UNSIGNED_INT:
-			return "unsigned int";
+		case RETURN: return "return";
+		case SIZEOF: return "sizeof";
+		case WHILE: return "while";
+		case ELSE: return "else";
+		case FOR: return "for";
+		case IF: return "if";
+		case VOID: return "void";
+		case CHAR: return "char";
+		case INT: return "int";
+		case UNSIGNED: return "unsigned";
+		case UNSIGNED_INT: return "unsigned int";
+		case STRUCT: return "struct";
 		default:
 			return NULL;
 	}
@@ -159,6 +149,7 @@ Token_kind get_correspond_token_kind(keyword kind) {
 		case UNSIGNED_INT:
 		case INT: return TK_TypeINT;
 		case CHAR: return TK_TypeCHAR;
+		case STRUCT: return TK_STRUCT;
 		default:
 			fprintf(stderr, "	failed to get token kind from keyword\n");
 			exit(1);

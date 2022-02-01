@@ -19,7 +19,7 @@ Token_t *new_keyword(Token_kind kind, keyword kindOfKeyword, Token_t*cur, char *
 	char *q = get_keyword(kindOfKeyword);
 	unsigned int len = String_len(q);
 	cur -> length = len;
-	if(kind > TOKEN_TYPE -1){//ポインタ型か判定
+	if(kind > TOKEN_TYPE -1 && kind != STRUCT){//ポインタ型か判定
 		(cur) -> tp = new_tp(kind - TOKEN_TYPE,NULL,sizeof_token(kind));
 		q = p + len;
 		while (is_space(*q) || *q=='*'){

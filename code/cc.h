@@ -143,6 +143,7 @@ struct type{
 		TP_INT = INTEGER_TYPE_END,//int
 		TP_POINTER = POINTER_TYPE_VALUE,// pointer type 8byte
 		TP_ARRAY,// array type
+		TP_STRUCT,
 
 	}Type_label;
 
@@ -204,6 +205,7 @@ typedef enum {
 	INT,
 	UNSIGNED_INT,
 	UNSIGNED,
+	STRUCT,
 	KEYWORD_END,// end marker
 }keyword;
 typedef enum { 
@@ -255,7 +257,10 @@ typedef enum {
  * 				while(...)...
  * 				for(...)...
  * 				sizeof ...
+ * 				struct
  * 				int
+ * 				char
+ * 				unsigned
  * 		punctuator:
  * 					"{","}","[","]",";",","
  * 		identifier
@@ -284,6 +289,7 @@ typedef enum{
 	TK_TypeVOID = TOKEN_TYPE,//this list is sorted as in Type_label
 	TK_TypeCHAR,
 	TK_TypeINT,
+	TK_STRUCT,
 	//=====================================================
 	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
