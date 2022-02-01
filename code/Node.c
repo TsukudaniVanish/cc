@@ -84,7 +84,7 @@ int Node_read_function_parameters(Token_t **token,Node_t **vector)
 	*vector = v;
 	while (!find(')',token))
 	{
-		v -> left = Lvardec(token);
+		v -> left = declere(token);
 		find(',',token);
 
 		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
@@ -161,7 +161,7 @@ Node_t *new_node_num(int val){
 Node_t *new_node_if(Token_t** token)
 {
 	expect('(',token);
-	Node_t *condition = assign(token);
+	Node_t *condition = expr(token);
 	expect(')',token);
 	Node_t *statement = stmt(token);
 	if((*token) -> kind == TK_ELSE)
@@ -182,7 +182,7 @@ Node_t *new_node_if(Token_t** token)
 
 Node_t *new_node_while(Token_t **token)
 {
-	Node_t *condition = assign(token);
+	Node_t *condition = expr(token);
 	Node_t *statement = stmt(token);
 	return new_Node_t(ND_WHILE,condition,statement,0,0,NULL,NULL);
 }
@@ -194,13 +194,13 @@ Node_t *new_node_for(Token_t **token)
 	if(!find(';',token))
 	{// this is not infinite loop
 		if(is_lvardec(token))
-			init = Lvardec(token);
+			init = declere(token);
 		else
-			init = assign(token);
+			init = expr(token);
 		expect(';',token);
-		check =assign(token);
+		check = expr(token);
 		expect(';',token);
-		update = assign(token);
+		update = expr(token);
 	}
 	else
 	{
@@ -224,7 +224,7 @@ Node_t *new_node_for(Token_t **token)
 
 Node_t *new_node_return(Token_t **token)
 {
-	Node_t *node = new_Node_t(ND_RETURN,assign(token),NULL,0,0,NULL,NULL);
+	Node_t *node = new_Node_t(ND_RETURN, expr(token),NULL,0,0,NULL,NULL);
 	expect(';',token);
 	return node;
 }

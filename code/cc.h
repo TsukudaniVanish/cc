@@ -143,6 +143,7 @@ struct type{
 		TP_INT = INTEGER_TYPE_END,//int
 		TP_POINTER = POINTER_TYPE_VALUE,// pointer type 8byte
 		TP_ARRAY,// array type
+		TP_STRUCT,
 
 	}Type_label;
 
@@ -204,6 +205,7 @@ typedef enum {
 	INT,
 	UNSIGNED_INT,
 	UNSIGNED,
+	STRUCT,
 	KEYWORD_END,// end marker
 }keyword;
 typedef enum { 
@@ -255,7 +257,10 @@ typedef enum {
  * 				while(...)...
  * 				for(...)...
  * 				sizeof ...
+ * 				struct
  * 				int
+ * 				char
+ * 				unsigned
  * 		punctuator:
  * 					"{","}","[","]",";",","
  * 		identifier
@@ -284,6 +289,7 @@ typedef enum{
 	TK_TypeVOID = TOKEN_TYPE,//this list is sorted as in Type_label
 	TK_TypeCHAR,
 	TK_TypeINT,
+	TK_STRUCT,
 	//=====================================================
 	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
@@ -788,7 +794,11 @@ int is_lval(Node_t* node);
 void program(Token_t **,Vector*);
 Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
-Node_t *Lvardec(Token_t**);
+Node_t *declere(Token_t**);
+Node_t* declere_specify(Token_t** , Node_t* );
+Node_t* pointer(Token_t**, Node_t*);
+Node_t* type_specify(Token_t** token, Node_t*);
+Node_t* expr(Token_t**);
 Node_t *assign(Token_t **);
 Node_t *log_or(Token_t **);
 Node_t *log_and(Token_t **);

@@ -20,17 +20,30 @@ void error_at(char *loc,char *fmt,...){
     }
     
     //見つけた行の番号を計算
-    int linenum;
+    int linenum = 0;
     for(char *p = user_input ; p < line ; p++)
+	{
         if(*p == '\n')
+		{
             ++linenum;
+		}
+	}
 
-    int indent = fprintf(stderr , "%s :line %d : " , filepah, linenum);//ファイル名と行番号表示
-    fprintf(stderr,"%.*s\n" , (int)(end - line) ,line);
+    int indent = fprintf(stderr , "%s :line %d :" , filepah, linenum);//ファイル名と行番号表示
+    fprintf(stderr,"%.*s" , (int)(end - line) ,line + 1);
 
     //エラー個所を指摘
     int pos = loc - line + indent;
-    fprintf(stderr,"%*s", pos, " ");
+	for(char* i = line + 1; i < loc; i++)
+	{
+		if(*i == '\t')
+		{		
+			fprintf(stderr, "\t");
+			pos--;
+		}
+	}
+	pos = pos >= 0? pos: 0;
+	fprintf(stderr, "%*s", pos, " ");
     fprintf(stderr, "^");
     fprintf(stderr,fmt,arg);
     fprintf(stderr,"\n");

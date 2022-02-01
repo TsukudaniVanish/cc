@@ -11,7 +11,15 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str) {
 	return token;
 }
 
-
+long get_type_size(int kind) {
+	switch(kind) {
+		case TP_VOID: return 0;
+		case TP_INT: return 4;
+		case TP_CHAR: return 1;
+		default:
+			return 0;
+	}	
+}
 
 Token_t *new_keyword(Token_kind kind, keyword kindOfKeyword, Token_t*cur, char *p) {
 	cur = new_token( kind,cur,p);
@@ -19,27 +27,9 @@ Token_t *new_keyword(Token_kind kind, keyword kindOfKeyword, Token_t*cur, char *
 	char *q = get_keyword(kindOfKeyword);
 	unsigned int len = String_len(q);
 	cur -> length = len;
-	if(kind > TOKEN_TYPE -1){//ポインタ型か判定
-		(cur) -> tp = new_tp(kind - TOKEN_TYPE,NULL,sizeof_token(kind));
-		q = p + len;
-		while (is_space(*q) || *q=='*'){
-			
-			if(is_space(*q)){
-				
-				q++;
-				(cur) -> length++;
-				continue;
-			}
-			(cur) -> length++;
-			Type *pointer_to = new_tp(TP_POINTER,(cur) ->tp,8);
-			(cur) -> tp = pointer_to;
-			q++;
-		}//qには識別子の名前があるはず
-	
-		if(kind > TOKEN_TYPE -1 && is_symbol(q)  ){//識別子があるか判定
-
-			error_at(p,"識別子が必要です");
-		}
+	if(cur -> kind >= TOKEN_TYPE && cur -> kind != TK_STRUCT)
+	{	
+		cur -> tp = new_tp(cur -> kind - TOKEN_TYPE, NULL, get_type_size(cur -> kind - TOKEN_TYPE));
 	}
 	return cur;
 }
