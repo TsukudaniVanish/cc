@@ -258,7 +258,8 @@ int is_lval(Node_t* node) {
  * 		| "while"  "(" expr ")" stmt
  * 		| "for"  "(" expr?; expr? ; expr? ")"stmt
  * 		| "return" expr";"
- * declere = declere_specify pointer? ident ( "[" expr "]" )? ( "=" expr )?
+ * declere = declere_specify ident_specify ( "=" expr )?
+ * ident_specify = pointer? ident ("[" expr "]")*
  * declere_specify =  type_specify
  * type_specify = "void"
  * 		| "int"
@@ -359,15 +360,7 @@ Node_t *declere(Token_t **token) {
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
 	node = declere_specify(token, node);
-	if((*token) -> kind == TK_OPERATOR)
-		node = pointer(token, node);
-	node -> name = expect_ident(token);
-	if(find('[', token))
-	{
-		int array_size = expect_num(token) * (node -> tp -> size);
-		expect(']',token);
-		node -> tp = new_tp(TP_ARRAY,node -> tp,array_size);			
-	}
+	node = ident_specify(token, node);
 
 	Lvar *lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	node -> offset = lvar -> offset;
@@ -381,7 +374,22 @@ Node_t *declere(Token_t **token) {
 	return node;
 
 }
-
+/*@brief specify identifier : is it an pointer to someting ? identifier name?
+ * */
+Node_t* ident_specify(Token_t** token, Node_t* node) {
+	if((*token) -> kind == TK_OPERATOR)
+		node = pointer(token, node);
+	node -> name = expect_ident(token);
+	while(find('[', token))
+	{
+		int array_size = expect_num(token) * (node -> tp -> size);
+		expect(']', token);
+		node -> tp = new_tp(TP_ARRAY, node -> tp, array_size);
+	}
+	return node;
+}
+/*@brief specify decleration type struct constant or volatile?
+ * */
 Node_t* declere_specify(Token_t** token, Node_t* node) {
 	return type_specify(token, node);
 }
