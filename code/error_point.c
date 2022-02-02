@@ -30,7 +30,11 @@ void error_at(char *loc,char *fmt,...){
 	}
 
     int indent = fprintf(stderr , "%s :line %d :" , filepah, linenum);//ファイル名と行番号表示
-    fprintf(stderr,"%.*s" , (int)(end - line) ,line + 1);
+    fprintf(stderr,"%.*s" , (int)(end - line) , *line == '\n'? line + 1: line);
+	if(*end != '\n')
+	{
+		fprintf(stderr, "\n");
+	}
 
     //エラー個所を指摘
     int pos = loc - line + indent;
