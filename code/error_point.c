@@ -49,7 +49,7 @@ void error_at(char *loc,char *fmt,...){
 	pos = pos >= 0? pos: 0;
 	fprintf(stderr, "%*s", pos, " ");
     fprintf(stderr, "^");
-    fprintf(stderr,fmt,arg);
+    vfprintf(stderr,fmt,arg);
     fprintf(stderr,"\n");
 
     va_end(arg);
