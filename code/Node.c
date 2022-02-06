@@ -103,7 +103,8 @@ int Node_read_function_parameters(Token_t **token,Node_t **vector)
 Node_t *new_node_function_definition(Token_t **token)
 {
 	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
-	node -> tp = read_type(&node -> name,token);
+	node = declere_specify(token, node);
+	node = ident_specify(token, node); 
 
 	declere_glIdent(node -> tp,node -> name,String_len(node -> name),&global);
 
@@ -266,8 +267,16 @@ Node_t *new_node_glob_ident(Token_t**token) {
 
 	//グローバル変数の定義
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
+	node = declere_specify(token, node);
+	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT)
+		node = ident_specify(token, node);
 
-	node -> tp = read_type(&node -> name,token);
+	if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
+	{
+		expect(';', token);
+		return node;
+	}
+
 	Lvar *lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))//変数の代入
 	{

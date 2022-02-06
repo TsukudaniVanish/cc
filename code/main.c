@@ -3,25 +3,22 @@
 //#include<stdbool.h>
 //#include<string.h>
 
-extern void unit_test_Vector();
-extern void unit_test_Map();
-extern void unit_test_String();
+extern void unit_test();
 
 extern unsigned int String_len(char*);
 extern int String_conpair(char*, char*,unsigned int);
+
+
 int main(int argc, char **argv){
 
 	//unit test
 	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-T",2))
 	{
-		unit_test_Vector();
-		unit_test_String();
-		unit_test_Map();
+		unit_test();
 		return 0;
 	}
 
-	nameTable = make_vector();
-
+	
 	char *buffer;
 	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-f",2))
 	{
@@ -49,16 +46,13 @@ int main(int argc, char **argv){
 	
 
 
-	// fuction ごとのコード
-	Vector *codes = make_vector();
+	
 	
 	//入力をトークン列に変換
 	Token_t *token = tokenize(buffer);
-
-
-	//token を抽象構文木に変換
-	program(&token,codes);
-
+	
+	Vector* codes = init_parser();
+	program(&token, codes);
 	//関数スコープ識別子テーブルを先頭にセット
 	scope = nameTable -> container;
 	
