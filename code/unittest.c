@@ -111,6 +111,11 @@ void Token_show_all(Token_t* token) {
 	return;
 }
 void Type_show(Type* tp) {
+	if(tp == NULL)
+	{
+		fprintf(stderr, "NULL\n");
+		return;
+	}
 	fprintf(stderr, "kind: %d, size: %d, name: %s\n", tp -> Type_label, tp -> size, tp -> name != NULL? tp -> name: "NULL");
 }
 
@@ -298,12 +303,12 @@ void unit_test_tokenize_struct() {
 
 void unit_test_parse_struct() {
 	char* test = "struct parsing test";
-	char* arg = "struct Hi { int s; char a; unsigned len; };";
+	char* arg = "struct Hi { int s; char a; unsigned len; }; int main(){ struct Hi greeting;}";
 	user_input = arg;
 	Token_t* token = tokenize(arg);
 	Vector* v = init_parser();
 	program(&token, v);
-	Node_t* node = Vector_get_tail(v);
+	Node_t* node = Vector_at(v, 0);
 
 	if(node == NULL)
 	{
@@ -342,6 +347,26 @@ void unit_test_parse_struct() {
 	if(!Map_contains(data -> memberContainer, "len"))
 	{
 		StructData_show(data);
+		exit(1);
+	}
+
+	node = Vector_at(v, 1);
+	Lvar* table = Vector_at(nameTable, Vector_get_length(nameTable) - 2);
+	Lvar* lval = find_lvar("greeting", String_len("greeting"), &table);
+	if(lval == NULL)
+	{
+		fprintf(stderr, "failed to find greeting\n");
+		Node_show_all(node, 0);
+		exit(1);
+	}
+	if(lval -> tp -> Type_label != TP_STRUCT)
+	{
+		Node_show_all(node, 0);
+		exit(1);
+	}
+	if(!String_conpair(lval -> tp -> name, "Hi", 2))
+	{
+		Node_show_all(node, 0);
 		exit(1);
 	}
 	test_passed(test);

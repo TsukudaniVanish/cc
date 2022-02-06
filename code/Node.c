@@ -271,6 +271,12 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT)
 		node = ident_specify(token, node);
 
+	if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
+	{
+		expect(';', token);
+		return node;
+	}
+
 	Lvar *lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))//変数の代入
 	{

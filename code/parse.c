@@ -362,8 +362,14 @@ Node_t *declere(Token_t **token) {
 
 	node = declere_specify(token, node);
 	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT)
+	{
 		node = ident_specify(token, node);
+	}
 
+	if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
+	{//  struct definition only
+		return node;
+	}
 	Lvar *lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	node -> offset = lvar -> offset;
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
@@ -380,7 +386,9 @@ Node_t *declere(Token_t **token) {
  * */
 Node_t* ident_specify(Token_t** token, Node_t* node) {
 	if((*token) -> kind == TK_OPERATOR)
+	{
 		node = pointer(token, node);
+	}
 	node -> name = expect_ident(token);
 	while(find('[', token))
 	{
@@ -446,7 +454,7 @@ Node_t* struct_specify(Token_t** token, Node_t* node) {
 	{
 		name = "_";
 	}
-	node -> name = name;
+	node -> tp -> name = name;
 	consume(token);
 	StructData* structData = Map_at(tagNameSpace, name);
 	if(structData == NULL)
@@ -469,7 +477,6 @@ Node_t* struct_specify(Token_t** token, Node_t* node) {
 	}
 	Node_t* tail = Map_at(structData -> memberContainer, lastMember);
 	node -> tp -> size = tail -> offset;
-	node -> tp -> name = node -> name;
 	return node;
 }
 /*
@@ -488,7 +495,7 @@ Node_t* struct_declere(Token_t** token, Node_t* node) {
  * @brief Doesn't change node address
  * */
 Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
-	StructData* data = Map_at(tagNameSpace, node -> name);
+	StructData* data = Map_at(tagNameSpace, node -> tp -> name);
 	char* previousMember = Vector_get_tail(data -> memberNames);
 	Node_t* member = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 	
