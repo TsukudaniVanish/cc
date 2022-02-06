@@ -15,7 +15,7 @@ typedef struct vector Vector;
 
 struct vector {
 	void **container;
-	unsigned long length;
+	unsigned int length;
 	unsigned int allocsize;
 };
 
@@ -108,8 +108,8 @@ struct container {
 
 
 typedef struct {
-	unsigned long size;
-	unsigned long bodySize;
+	unsigned int size;
+	unsigned int bodySize;
 	Container** body;
 }Map;
 
@@ -120,6 +120,7 @@ Map* make_Map();
 void Map_add(Map*, char*, void*);
 void* Map_at(Map*, char*);
 void* Map_delete(Map*, char*);
+int Map_contains(Map*, char*);
 // ====================================================
 
 /**
@@ -146,13 +147,12 @@ struct type{
 		TP_STRUCT,
 
 	}Type_label;
-
-	Type *pointer_to;// this member has meaning when Type_label == TP_POINTER or TP_ARRAY.
-
 	/**
 	 * @brief size of type 
 	 */
-	unsigned long size;
+	unsigned int size;
+	Type *pointer_to;// this member has meaning when Type_label == TP_POINTER or TP_ARRAY.
+	char* name;// tag name
 
 };
 
@@ -179,16 +179,23 @@ struct lvar{
 	 * @brief local variable : offset from rbp , string : label number of string literal
 	 * 
 	 */
-	long int offset;
+	unsigned int offset;
 	Type *tp;
 };
 Lvar *string_iter;
 Lvar *global;
 
-//table of identifier which has block scope.
-Vector *nameTable;
+
+Map *tagNameSpace;// tag name space which contains a name of which struct , union and enum.
+Vector *nameTable;//table of identifier which has block scope.
 void** scope;
 
+
+typedef struct {
+	unsigned int size;
+	Vector* memberNames;
+	Map* memberContainer;
+}StructData;
 
 // =========================Token =========================
 typedef enum {
@@ -307,7 +314,10 @@ struct token {
 	Type *tp;
 
 
-};//====================================================
+};
+Token_t* new_Token_t(Token_kind, Token_t*, int val, int length, char* str, Type* tp);
+//====================================================
+
 
 
 //========================= Node =========================
@@ -382,11 +392,17 @@ struct node {
 	 * 
 	 */
 	int val;
-	long int offset;// offset from rbp
+	unsigned int offset;// offset from rbp
 	Type *tp;
 	char *name;
 
 };
+/**
+ * @brief 新しいノードを作る
+ * 
+ * @return Node_t* 
+ */
+Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name);
 
 //file.c====================================================
 /**
@@ -499,12 +515,6 @@ int is_functioncall(Token_t **);
 // ======================================================
 
 //Node.c ======================================================
-/**
- * @brief 新しいノードを作る
- * 
- * @return Node_t* 
- */
-Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name);
 /**
  * @brief 
  * 新しいノードを作る
@@ -671,7 +681,10 @@ Token_t *tokenize(char *p);
 /*
  * parse.c=====================================================
  */
-
+/**
+ * @brief initialize parser / make nameTable and ast vector
+ * */
+Vector* init_parser();
 /**
  * @brief 新しい型を作成
  * 
@@ -682,14 +695,6 @@ Token_t *tokenize(char *p);
  */
 Type *new_tp(int,Type*,long int size);
 
-/**
- * @brief token を読み込んで型を判定する
- * 
- * @param char** 識別子名を代入する
- * @param Token_t** token
- * @return Type*
- */
-Type *read_type(char ** name,Token_t **token);
 
 /**
  * @brief 関数名を代入して関数の型を検索して返す
@@ -799,6 +804,9 @@ Node_t* ident_specify(Token_t** , Node_t*);
 Node_t* declere_specify(Token_t** , Node_t* );
 Node_t* pointer(Token_t**, Node_t*);
 Node_t* type_specify(Token_t** token, Node_t*);
+Node_t* struct_specify(Token_t**, Node_t*);
+Node_t* struct_declere(Token_t**, Node_t*);
+Node_t* struct_declere_inside(Token_t**, Node_t*);
 Node_t* expr(Token_t**);
 Node_t *assign(Token_t **);
 Node_t *log_or(Token_t **);

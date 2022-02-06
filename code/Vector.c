@@ -48,8 +48,7 @@ int Vector_get_length(Vector* vec)
 {
     if(vec)
         return vec -> length;
-    fprintf(stderr,"未作成のベクタの長さは未定義です\n");
-    exit(1);
+    return -1;
 }
 
 void Vector_push(Vector* vec,void* x)
@@ -66,8 +65,7 @@ void* Vector_pop(Vector *vec)
         return vec -> container[vec -> length];
     else
     {
-        fprintf(stderr,"invailed pointer access");
-        exit(1);
+    	return NULL;
     }
 }
 
@@ -82,14 +80,20 @@ void* Vector_at(Vector* vec, size_t index)
 {
     if(index +1 > Vector_get_length(vec))
     {
-        fprintf(stderr,"vectorの長さ以上の要素にはアクセスできません\n");
-        exit(1);
+        return NULL;
     }
+	if(index < 0)
+	{
+		return NULL;
+	}
     return vec -> container[index];
 }
 
 void *Vector_get_tail(Vector* vec)
 {
-    
+    if(Vector_get_length(vec) <= 0)
+	{
+		return NULL;
+	}
     return Vector_at(vec,Vector_get_length(vec)-1);
 }

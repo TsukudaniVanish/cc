@@ -62,9 +62,10 @@ void Map_add(Map* m,char* key, void* data) {
 
 void* Map_at(Map* m, char* key) {
 	unsigned long index = hash(key) % m -> bodySize;
+	unsigned int len = String_len(key);
 	for(Container* p = m -> body[index]; p; p = p -> next)
 	{
-		if(String_conpair(p -> key, key, String_len(key))) 
+		if(String_len(p -> key) == len && String_conpair(p -> key, key, String_len(key))) 
 			return p -> data;
 	}
 	return NULL;
@@ -72,9 +73,10 @@ void* Map_at(Map* m, char* key) {
 
 void* Map_delete(Map* m, char* key) {
 	unsigned long index = hash(key) % m -> bodySize;
+	unsigned len = String_len(key);
 	for(Container* p = m -> body[index]; p; p = p -> next)
 	{
-		if(String_conpair(p -> key, key, String_len(key))) 
+		if(String_len(p -> key) == len && String_conpair(p -> key, key, String_len(key))) 
 		{
 			if(p -> prev != NULL)
 			{
@@ -91,4 +93,17 @@ void* Map_delete(Map* m, char* key) {
 		}
 	}
 	return NULL;
+}
+
+int Map_contains(Map* m, char* key) {
+	unsigned long index = hash(key) % m -> bodySize;
+	unsigned int len = String_len(key);
+	for(Container* p = m -> body[index]; p ; p = p -> next)
+	{
+		if(String_len(p -> key) == len && String_conpair(p -> key, key, len))
+		{
+			return 1;
+		}
+	}
+	return 0;
 }

@@ -3,10 +3,20 @@
 extern unsigned int String_len(char*);
 extern int String_conpair(char* ,char* ,unsigned int);
 extern void Memory_copy(void*, void*, unsigned int);
-Token_t *new_token(Token_kind kind,Token_t *cur,char *str) {
-	Token_t *token = calloc(1,sizeof(Token_t));
-	token ->kind = kind;
+
+Token_t *new_Token_t(Token_kind kind, Token_t* next, int val, int length, char* str, Type* tp) {
+	Token_t* token = calloc(1, sizeof(Token_t));
+	token -> kind = kind;
+	token -> next = next;
+	token -> val = val;
+	token -> length = length;
 	token -> str = str;
+	token -> tp = tp;
+	return token;
+}
+
+Token_t *new_token(Token_kind kind,Token_t *cur,char *str) {
+	Token_t *token = new_Token_t(kind, NULL, 0, 0, str, NULL);
 	cur ->next = token;
 	return token;
 }
@@ -99,7 +109,7 @@ void expect(int kind ,Token_t **token) {
 
 	if( (*token) -> kind > 100 |  kind != (*token) -> str[0]){
 		
-		error_at( (*token) -> str ,"不正な文字");
+		error_at( (*token) -> str ,"expect %c but got %c", kind, (*token) -> str[0]);
 	
 	}else{
 	

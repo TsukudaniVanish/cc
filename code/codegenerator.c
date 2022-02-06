@@ -133,7 +133,7 @@ void set_stringiter()
 	Lvar *iter = string_iter;
 	while (iter)
 	{
-		printf(".LC%ld:\n",iter -> offset);
+		printf(".LC%d:\n",iter -> offset);
 		printf("	.string \"%s\"\n",iter -> name);
 		iter = iter -> next;
 	}
@@ -168,7 +168,7 @@ long gen_lval(Node_t *node){
 	}
 	
 	printf("	mov rax, rbp\n");
-	printf("	sub rax, %ld\n",  node -> offset);
+	printf("	sub rax, %d\n",  node -> offset);
 	printf("	push rax\n");
 	rsp_counter += 8;
 	return node -> tp -> size;
@@ -245,7 +245,7 @@ void gen_function_def(Node_t *node){
 	if(nametable){
 
 
-		printf("	sub rsp, %ld\n",nametable -> offset);
+		printf("	sub rsp, %d\n",nametable -> offset);
 		rsp_counter += nametable ->offset;
 	}//=======================================
 
@@ -520,7 +520,7 @@ void gen_glob_declar(Node_t* node) {
 	{
 		if(node -> val == 0)
 		{
-			printf("	.zero %ld\n",node -> tp -> size);
+			printf("	.zero %d\n",node -> tp -> size);
 		
 		}
 		else
@@ -530,7 +530,7 @@ void gen_glob_declar(Node_t* node) {
 	}
 	else
 	{
-		printf("	.zero %ld\n",node -> tp -> size);
+		printf("	.zero %d\n",node -> tp -> size);
 	}
 	return;
 }

@@ -7,42 +7,29 @@ extern unsigned int String_len(char*);
 extern int String_conpair(char*,char*,unsigned int);
 extern void Memory_copy(void*,void*,unsigned int);
 
-
-Type* new_tp(int label,Type* pointer_to,long int size) {
-
+Vector* init_parser() {
+	tagNameSpace = make_Map();
+	nameTable = make_vector();
+	// fuction ごとのコード
+	Vector *codes = make_vector();	//token を抽象構文木に変換
+	return codes;
+}
+Type* new_Type(int label, Type* pointer_to, unsigned int size, char* name) {
+	
 	Type* tp = calloc(1,sizeof(Type));
 	tp -> Type_label = label;
 	tp -> pointer_to = pointer_to;
 	tp -> size = size;
+	tp -> name = NULL;
 	return tp;
 }
 
-Type *read_type(char **name,Token_t **token) {
-	Node_t* dummy = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
-	dummy = declere_specify(token, dummy);
-	if((*token) -> kind == TK_OPERATOR)
-		dummy = pointer(token, dummy);
-	if((*token) -> kind != TK_IDENT)
-	{
-		error_at((*token) -> str,"Identifier was expected");
-	}
+Type* new_tp(int label,Type* pointer_to,long int size) {
 
-	if(*name)
-		free(*name);
-	*name = calloc((*token) -> length, sizeof(char));
-	Memory_copy(*name,(*token) -> str, (*token) -> length);
-
-	consume(token);
-
-	if(find('[',token))
-	{//配列定義
-		int array_size = expect_num(token) * (dummy -> tp -> size);
-		expect(']',token);
-		return new_tp(TP_ARRAY,dummy -> tp,array_size);
-	}
-	return dummy -> tp;
-
+	
+	return new_Type(label, pointer_to, size, NULL);
 }
+
 
 Type *Type_function_return(char **name,Token_t** token) {
 	Token_t *buf = consume(token);
@@ -237,7 +224,19 @@ int is_lval(Node_t* node) {
 	}
 }
 
+StructData* make_StructData() {
+	StructData* data = calloc(1, sizeof(StructData));
+	data -> size = 0;
+	data -> memberNames = make_vector();
+	data -> memberContainer = make_Map();
+	return data;
+}
 
+void StructData_add(StructData* data, Node_t* member) {
+	data -> size += member -> tp -> size;
+	Vector_push(data -> memberNames, member -> name);
+	Map_add(data -> memberContainer, member -> name, member);
+}
 
 
 
@@ -266,8 +265,10 @@ int is_lval(Node_t* node) {
  * 		| "unsigned int"
  * 		| "unsigned"
  * 		| "char"
- * 		| struct
- * 	struct = 
+ * 		| struct_specify
+ * 	struct_specify = "struct" ( ident? "{" struct_declere* "}" | ident )
+ * 	struct_declere = struct_declere_inside ("," struct_declere_inside)* ";"  
+ * 	struct_declere_inside = type_specify ident_specify 
  * pointer = "*"*
  * expr = assign
  * assign = log_or ("=" expr )?
@@ -360,7 +361,8 @@ Node_t *declere(Token_t **token) {
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
 	node = declere_specify(token, node);
-	node = ident_specify(token, node);
+	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT)
+		node = ident_specify(token, node);
 
 	Lvar *lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	node -> offset = lvar -> offset;
@@ -422,7 +424,102 @@ Node_t *type_specify(Token_t** token, Node_t* node) {
 		*token = (*token) -> next;
 		return node;
 	}
+	if((*token) -> kind == TK_STRUCT)
+	{
+		consume(token);
+		node -> tp = new_tp(TP_STRUCT, NULL, 0);
+		return struct_specify(token, node);
+	}
 	error_at((*token) -> str, "Type keyword is expected");
+}
+/*
+ * @brief Doesn't change node address
+ * */
+Node_t* struct_specify(Token_t** token, Node_t* node) {
+	char* name = NULL; 
+	if((*token) -> kind == TK_IDENT)
+	{
+		name = calloc((*token) -> length, sizeof(char));
+		Memory_copy(name, (*token) -> str, (*token) -> length);
+	}
+	else
+	{
+		name = "_";
+	}
+	node -> name = name;
+	consume(token);
+	StructData* structData = Map_at(tagNameSpace, name);
+	if(structData == NULL)
+	{
+		structData = make_StructData();
+		Map_add(tagNameSpace, name, structData);
+	}
+
+	if(find('{', token))
+	{
+		while(!find('}', token))
+		{
+			struct_declere(token, node);
+		}
+	}
+	char* lastMember = Vector_get_tail(structData -> memberNames);
+	if(lastMember == NULL)
+	{
+		return node;
+	}
+	Node_t* tail = Map_at(structData -> memberContainer, lastMember);
+	node -> tp -> size = tail -> offset;
+	node -> tp -> name = node -> name;
+	return node;
+}
+/*
+ * @brief Doesn't change node address
+ * */
+Node_t* struct_declere(Token_t** token, Node_t* node) {
+	node = struct_declere_inside(token, node);
+	while(find(',', token))
+	{
+		node = struct_declere_inside(token, node);
+	}
+	expect(';', token);
+	return node;
+}
+/*
+ * @brief Doesn't change node address
+ * */
+Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
+	StructData* data = Map_at(tagNameSpace, node -> name);
+	char* previousMember = Vector_get_tail(data -> memberNames);
+	Node_t* member = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+	
+	member = type_specify(token, member);
+	if((*token) -> kind == TK_OPERATOR || (*token) -> kind == TK_IDENT)
+	{
+		member = ident_specify(token, member);
+	}
+	else
+	{
+		member -> name = "_";
+	}
+
+	if(previousMember != NULL)
+	{
+		Node_t* prev = Map_at(data -> memberContainer, previousMember);
+		unsigned threshold = prev -> offset + (8 - (prev -> offset % 8));
+		if(prev -> offset + member -> tp -> size <= threshold)
+		{
+			member -> offset = prev -> offset + member -> tp -> size;
+		}
+		else{
+			member -> offset = threshold + member -> tp -> size;
+		}
+	}
+	else
+	{
+		member -> offset = member -> tp -> size;
+	}
+	StructData_add(data, member);
+	return node;
 }
 
 Node_t *expr(Token_t** token) {
