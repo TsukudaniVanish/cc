@@ -402,7 +402,7 @@ struct node {
  * 
  * @return Node_t* 
  */
-Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,long int off,Type* tp,char *name);
+Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,unsigned int off,Type* tp,char *name);
 
 //file.c====================================================
 /**
@@ -423,6 +423,28 @@ char* filepah;
 
 //error assert
 char *parsing_here;
+/**
+ * @brief check whether (*token) is compatible with kind or not
+ * @sa error_at
+ * @param int kind 
+ * @param Token_t token
+ * @return void
+ * @sa error_at
+ */
+void expect(int kind,Token_t **token);
+/**
+ * @brief check identifier
+ * @sa error_at
+ * @param Token_t token
+ * @return char 
+ */
+char *expect_ident(Token_t **);
+/**
+ * @brief check number literal
+ * @param Token_t_** token 
+ * @return int 
+ */
+int expect_num(Token_t **token);
 
 /**
  * @brief this function points out the code that has some error in syntax.
@@ -452,7 +474,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
  */
 Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
 
-char* get_symbol(int);
+
 /**
  * @brief Compair if *token -> str and given string are equal.
  * @param int kind
@@ -461,50 +483,17 @@ char* get_symbol(int);
  */
 int find(int ,Token_t **);
 
-/**
- * @brief 
- * token -> strとstring が一致するか確認 一致しない場合はエラーをはく
- * @sa error_at
- * @param int kind 
- * @param Token_t token
- * @return void
- * @sa error_at
- */
-void expect(int kind,Token_t **token);
-/**
- * @brief 
- * 識別子か確認する　識別子ではない場合はエラーを吐く
- * @sa error_at
- * @param Token_t token
- * @return char 
- */
-char *expect_ident(Token_t **);
-/**
- * @brief 
- * 数字があるか確認する 数字でない場合はエラーをはく
- * @param Token_t_** token 
- * @return int 
- */
-int expect_num(Token_t **token);
-/**
- * @brief 
- * token が末端か判定する
- * @param Token_t_** token 
- * @return bool 
- */
-int at_eof(Token_t **token);
 
 
 /**
- * @brief 
- * token をさすポインタを返して token を次に送る
+ * @brief return given token and pass token to next
  * @param token 
  * @return Token_t* 
  */
 Token_t *consume(Token_t **token);
 
 /**
- * @brief token を先読みして関数宣言かどうか判定する
+ * @brief check function call
  * 
  * @param Token_t**
  * @return int
@@ -513,91 +502,18 @@ Token_t *consume(Token_t **token);
 int is_functioncall(Token_t **);
 
 // ======================================================
-
-//Node.c ======================================================
-/**
- * @brief 
- * 新しいノードを作る
- * @param Node_kind kind 
- * @param Node_t l : left
- * @param Node_t r : right
- * @param char* parsing here
- * @return Node_t* 
- */
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char*);
-/**
- * @brief 
- * 定数の末端ノードを作る
- * @param int val 
- * @return Node_t* 
- */
-Node_t *new_node_num(int val);
-
-/**
- * @brief 文字列リテラルをパースする
- * 
- * @param Token_t** token
- * 
- */
-Node_t* new_node_stringiter(Token_t**);
-
-
-
-
-
-/**
- * @brief 識別子の末端ノードを作る
- * 
- * @param Token_t** token
- * @return Node_t* 
- */
-Node_t *new_node_ident(Token_t **);
-/**
- * @brief make a ast node for flow operation 
- * @param Token_kind kind 
- * @param Token_t** token 
- * @return Node_t* 
- */
-Node_t *new_node_flow_operation(Token_kind kind,Token_t **token);
-/**
- * @brief 関数定義, グローバル変数の構文木を作成
- * @param Token_t**
- */
-Node_t *new_node_glob_ident(Token_t **);
-
-/**
- * @brief block の構文木を作成
- * @param Token_t** token
- * @return Node_t*
- * 
- */
-Node_t *new_node_block(Token_t **);
-
-/**
- * @brief '*' または '&'をパースする
- * @param Token_t** token
- * @return Node_t*
- */
-Node_t *new_node_ref_deref(Token_t **);
-
-//======================================================
 //file.c====================================================
 /**
- * @brief 指定されたファイルの内容を返す
+ * @brief return a pointer to string literal which is in given file 
  * @param char* path
  * @return char*
  */
 char *file_open(char *);
 //====================================================
 
-
 //main.c=====================================================
 
-
 //=====================================================
-
-
-
 
 /*
  * tokenize.c=====================================================
@@ -636,7 +552,7 @@ int sizeof_token(int);
  */
 int is_alnum(char c);
 
-
+char* get_symbol(int);
 /**
  * 
  * @brief judge if it is symbol or not 
@@ -792,7 +708,77 @@ Node_t* arrmemaccess(Token_t **token , Node_t**);
 int is_lval(Node_t* node);
 
 /**
- * @brief パーサ本体
+ * @brief  make new node typecheck left and right node. result node has type. expect l and r has type
+ * @param Node_kind kind 
+ * @param Node_t l : left
+ * @param Node_t r : right
+ * @param char* parsing here
+ * @return Node_t* 
+ */
+Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char*);
+Node_t* new_node_function_call(Token_t** token);
+int Node_read_function_parameters(Token_t**, Node_t**);
+/**
+ * @brief 
+ * 定数の末端ノードを作る
+ * @param int val 
+ * @return Node_t* 
+ */
+Node_t *new_node_num(int val);
+
+/**
+ * @brief 文字列リテラルをパースする
+ * 
+ * @param Token_t** token
+ * 
+ */
+Node_t* new_node_stringiter(Token_t**);
+
+/**
+ * @brief 識別子の末端ノードを作る
+ * 
+ * @param Token_t** token
+ * @return Node_t* 
+ */
+Node_t *new_node_ident(Token_t **);
+/**
+ * @brief make a ast node for flow operation 
+ * @param Token_kind kind 
+ * @param Token_t** token 
+ * @return Node_t* 
+ */
+Node_t *new_node_flow_operation(Token_kind kind,Token_t **token);
+/**
+ * @brief 関数定義, グローバル変数の構文木を作成
+ * @param Token_t**
+ */
+Node_t *new_node_glob_ident(Token_t **);
+
+/**
+ * @brief block の構文木を作成
+ * @param Token_t** token
+ * @return Node_t*
+ * 
+ */
+Node_t *new_node_block(Token_t **);
+
+/**
+ * @brief '*' または '&'をパースする
+ * @param Token_t** token
+ * @return Node_t*
+ */
+Node_t *new_node_ref_deref(Token_t **);
+
+/**
+ * @brief check the end of token
+ * @param Token_t_** token 
+ * @return bool 
+ */
+int at_eof(Token_t **token);
+
+
+/**
+ * @brief main functions of parser
  * @param Token_t_** token
  * @param Vector* codes
  */

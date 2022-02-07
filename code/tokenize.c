@@ -53,6 +53,39 @@ char *skip(char * p)
 	return p;	
 }
 
+char *get_symbol(int kind) {
+	switch(kind)
+	{
+	case EQUAL: return "==";
+	case NEQ: return "!=";
+	case LEQ: return "<=";
+	case GEQ: return	">=";
+	case INC: return "++";
+	case DEC: return "--";
+	case LOG_AND: return "&&";
+	case LOG_OR: return "||";
+	case LE: return "<";
+	case GE: return ">";
+	case AND: return "&";
+	case ASSIGN: return "=";
+	case PLUS: return "+";
+	case MINUS: return "-";
+	case STER: return "*";
+	case BACK_SLASH: return "/";
+	case COMMA: return ",";
+	case SEMICORRON: return ";";
+	case PARENTHESIS: return "(";
+	case PARANTHESIS_CLOSE: return ")";
+	case BRACE: return "{";
+	case BRACE_CLOSE: return "}";
+	case BRACKET: return "[";
+	case BRACKET_CLOSE: return "]";
+	default:
+		return NULL;
+	}
+}
+
+
 int is_symbol(char *p) {
 	char* operator;
 	int len = 0;
