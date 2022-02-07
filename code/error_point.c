@@ -1,13 +1,49 @@
 #include "cc.h"
 //#include<stdarg.h>
+extern void Memory_copy(void*, void*, unsigned int);
+void expect(int kind ,Token_t **token) {
+	if( (*token) -> kind > 100 |  kind != (*token) -> str[0])
+	{
+		error_at( (*token) -> str ,"expect %c but got %c", kind, (*token) -> str[0]);
+	}
+	else
+	{
+		(*token) = (*token) -> next;
+	}
+}
+
+char *expect_ident(Token_t **token) {
+	if((*token)->kind != TK_IDENT)
+	{
+		error_at( (*token)-> str,"無効な変数名" );
+	}
+	else
+	{
+		char *name = calloc((*token) -> length, sizeof(char));
+		Memory_copy(name,(*token) -> str, (*token) -> length);
+		consume(token);
+		return name;
+	}
+}
+
+int expect_num(Token_t **token) {
+	if((*token) -> kind != TK_CONST)
+	{
+		error_at( (*token) -> str ,"数ではありません");
+	}
+	else
+	{	
+		int v = (*token) -> val;	
+		(*token) = (*token) -> next;
+		return v;
+	}
+}
 
 void error_at(char *loc,char *fmt,...){
-
     va_list arg;
     va_start(arg,fmt);
 
-
-    //loc の含まれている場所を検索
+    //search location of loc in input
     char* line = loc;
     while (user_input < line && *line != '\n' )
     {
@@ -29,14 +65,14 @@ void error_at(char *loc,char *fmt,...){
 		}
 	}
 
-    int indent = fprintf(stderr , "%s :line %d :" , filepah, linenum);//ファイル名と行番号表示
+    int indent = fprintf(stderr , "%s :line %d :" , filepah, linenum);
     fprintf(stderr,"%.*s" , (int)(end - line) , *line == '\n'? line + 1: line);
 	if(*end != '\n')
 	{
 		fprintf(stderr, "\n");
 	}
 
-    //エラー個所を指摘
+    //point error place
     int pos = loc - line + indent;
 	for(char* i = line + 1; i < loc; i++)
 	{

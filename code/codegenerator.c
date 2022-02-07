@@ -402,8 +402,7 @@ char* get_sign_extension(long size) {
 		return "cdq";
 	if(5 <size && size < 9)
 		return "cqo";
-	fprintf(stderr, "invailed size at signExtension\n");
-	exit(1);
+	return NULL;
 }
 
 void gen_arithmetic_instruction(Node_t *node) {
