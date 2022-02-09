@@ -170,7 +170,7 @@ Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table) {
 
 Lvar *declere_glIdent(Type *tp,char *name, int len, Lvar **table) {
 	Lvar *lvar = find_lvar(name,len,table);
-	if(lvar && lvar -> tp -> Type_label != TP_ARRAY)
+	if(lvar != NULL)
 		return NULL;
 	lvar = new_lvar(tp,name,len,*table);
 	*table = lvar;
@@ -219,6 +219,7 @@ int is_lval(Node_t* node) {
 		case ND_LVAL: return 1;
 		case ND_DEREF: return 1;
 		case ND_STRINGLITERAL: return 1;
+		case ND_DOT: return 1;
 		default:
 			return 0;
 	}
@@ -344,20 +345,20 @@ Node_t *new_node_var(Token_t **token)
 	Lvar *lvar = NULL;
 	Lvar *table = Vector_get_tail(nameTable);
 	Token_t *ident = consume(token);
-	if(ident)
+	if(ident != NULL)
 		lvar = find_lvar(ident -> str,ident -> length,&table);
 	else
 	{
 		fprintf(stderr,"Fail to consume token\n");
 	}
-	if(lvar)
-	{//local 変数
+	if(lvar != NULL)
+	{//local variable
 	
 		return new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	}
 	lvar = find_lvar(ident -> str,ident -> length,&global);
-	if(lvar)
-	{//グローバル変数
+	if(lvar != NULL)
+	{//global variable
 		return new_Node_t(ND_GLOBVALCALL,NULL,NULL,0,0,lvar -> tp,lvar -> name);
 	}
 	error_at(ident -> str,"Anonymous identifier: %*s", ident -> length, ident -> str);
@@ -508,7 +509,7 @@ Node_t *new_node_glob_ident(Token_t**token) {
 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declere_specify(token, node);
-	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT)
+	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT || (*token) -> kind == TK_OPERATOR)
 		node = ident_specify(token, node);
 
 	if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
@@ -520,7 +521,10 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	Lvar *lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))//変数の代入
 	{
-		node -> val = expect_num(token);
+		if(node -> tp -> Type_label == TP_STRUCT)
+			node = init(token, node);
+		else
+			node -> val = expect_num(token);
 	}
 	expect(';',token);
 	return node;
@@ -579,7 +583,9 @@ Node_t *new_node_ref_deref(Token_t **token){
  * 		| "while"  "(" expr ")" stmt
  * 		| "for"  "(" expr?; expr? ; expr? ")"stmt
  * 		| "return" expr";"
- * declere = declere_specify ident_specify ( "=" expr )?
+ * declere = declere_specify ident_specify ( "=" init  )?
+ * init =  expr | "{" init_list ","? "}"
+ * init_list = init ( "," init)*
  * ident_specify = pointer? ident ("[" expr "]")*
  * declere_specify =  type_specify
  * type_specify = "void"
@@ -605,7 +611,7 @@ Node_t *new_node_ref_deref(Token_t **token){
  * 			| ('+' | '-' | '*' | '&' ) unitary
  * 			| ('++' | '--') postfix
  * postfix = primary 
- * 			|( primary [expr] | primary '++' | primary '--')*
+ * 			|( primary [expr] | primary '++' | primary '--' | primary "." ident | primary "->" ident)*
  * primary = num 
  * 			| indent 
  * 			| "(" expr ")"
@@ -689,7 +695,7 @@ Node_t *declere(Token_t **token) {
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
 	node = declere_specify(token, node);
-	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT)
+	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT || (*token) -> kind == TK_OPERATOR)
 	{
 		node = ident_specify(token, node);
 	}
@@ -704,11 +710,55 @@ Node_t *declere(Token_t **token) {
 	if(find('=',token))
 	{
 		parsing_here = (*token) -> str;
-		node = new_node(ND_ASSIGN,node,expr(token), (*token) -> str);
+		if(node -> tp -> Type_label == TP_STRUCT)
+			node = init(token, node);
+		else
+			node = new_node(ND_ASSIGN, node, init(token, node), (*token) -> str);
 		return node;
 	}
 	return node;
 
+}
+
+Node_t* init(Token_t** token, Node_t* node) {
+	if(find('{', token))
+	{
+		node = init_list(token, node);
+		find(',', token);
+		expect('}', token);
+		return node;
+	}
+	return assign(token);
+}
+
+Node_t* init_list(Token_t** token, Node_t* node) {
+	if(node -> tp -> Type_label == TP_STRUCT)
+	{
+		StructData *data = Map_at(tagNameSpace, node -> tp -> name);
+		int i = 0;
+		char* member_name = Vector_at(data -> memberNames, i);
+		Node_t* member = Map_at(data -> memberContainer, member_name);
+		Node_t *init_branch = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+		node = new_Node_t(ND_INITLIST, node, init_branch, 0, 0, node -> tp, NULL);
+		init_branch -> left = init(token, member);
+		while(find(',', token))
+		{
+			if(i < Vector_get_length(data -> memberNames))
+			{
+				i++;
+				member_name = Vector_at(data -> memberNames, i);
+				member = Map_at(data -> memberContainer, member_name);
+			}
+			else
+				error_at((*token) -> str, "too many initializer");
+
+			init_branch -> right = new_Node_t(ND_BLOCK, init(token, member), NULL, 0, 0, NULL, NULL);
+			init_branch = init_branch -> right;
+		}
+		init_branch = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
+		return node;
+	}
+	return NULL;
 }
 /*@brief specify identifier : is it an pointer to someting ? identifier name?
  * */
@@ -1057,6 +1107,7 @@ Node_t *postfix(Token_t **token) {
 	}
 	for(;;)
 	{
+		parsing_here = (*token) -> str;
 		if(is_arrmemaccess(token))
 		{
 			node = arrmemaccess(token, &node);
@@ -1082,6 +1133,36 @@ Node_t *postfix(Token_t **token) {
 			node = new_Node_t(ND_DEC,NULL,node,0,0,NULL,NULL);
 			node -> tp = node -> right -> tp;
 			continue;
+		}
+		if(find('.', token))
+		{
+			if(!is_lval(node))
+			{
+				error_at(parsing_here, "lval is expected");
+			}
+			if(node -> tp -> Type_label != TP_STRUCT)
+				error_at((*token) -> str, "member access is expected");
+			char *memberName = expect_ident(token);
+			StructData* data = Map_at(tagNameSpace, node -> tp -> name);
+			if(!Map_contains(data -> memberContainer, memberName))
+				error_at((*token) -> str, "unknown member name");
+			Node_t* member = Map_at(data -> memberContainer, memberName);
+			node = new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
+			continue;
+		}
+		if(find(ARROW, token))
+		{
+			if(node -> tp -> Type_label != TP_POINTER)
+				error_at(parsing_here, "Pointer type is expected");
+			node = new_Node_t(ND_DEREF, node, NULL, 0, 0, node -> tp -> pointer_to, NULL);
+			if(node -> tp -> Type_label != TP_STRUCT)
+				error_at((*token) -> str, "member access is expected");
+			char *memberName = expect_ident(token);
+			StructData* data = Map_at(tagNameSpace, node -> tp -> name);
+			if(!Map_contains(data -> memberContainer, memberName))
+				error_at((*token) -> str, "unknown member name");
+			Node_t* member = Map_at(data -> memberContainer, memberName);
+			node = new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
 		}
 		return node;
 	}
