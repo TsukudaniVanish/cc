@@ -371,6 +371,37 @@ void unit_test_parse_struct() {
 	}
 	test_passed(test);
 }
+#define NODE_ERR(a) {Node_show_all(a, 0); assert(test, "");exit(1);}while(0)
+void unit_test_parse_struct_init() {
+	char * test = "struct init test";
+	char* arg = "struct Hi {int a; int b; char* c; }; struct Hi a = {10, 10, \"Greeting\"};";
+	user_input = arg;
+	Token_t* token = tokenize(arg);
+	Vector* v = init_parser();
+	program(&token, v);
+	Node_t* node = Vector_at(v, 1);
+	if(node == NULL)
+	{
+		NODE_ERR(node);
+	}
+	if(node -> kind != ND_INITLIST)
+	{
+		NODE_ERR(node);
+	}
+	if(global == NULL)
+	{
+		NODE_ERR(node);
+	}
+	if(String_len(global -> name) != 1 || !String_conpair(global -> name, "a", 1))
+	{
+		NODE_ERR(node);
+	}
+	if(node -> right -> kind == ND_BLOCK)
+	{
+		NODE_ERR(node);
+	}
+	test_passed(test);
+}
 
 void unit_test() {
 	unit_test_Vector();
@@ -378,4 +409,5 @@ void unit_test() {
 	unit_test_Map();
 	unit_test_tokenize_struct();
 	unit_test_parse_struct();
+	unit_test_parse_struct_init();
 }

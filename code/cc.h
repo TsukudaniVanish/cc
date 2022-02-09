@@ -344,6 +344,7 @@ typedef enum{
 	ND_GLOBVALDEF,//  a definition of global variable
 	ND_GLOBVALCALL,// a left value which represents global variable
 	ND_LVAL, // a local variable
+	ND_INITLIST, // <-> variable declere = { ... }; 
 	ND_FUNCTIONCALL,//A function call
 	ND_FUNCTIONDEF,//Definition of a function call
 	ND_ARGMENT,// an argument of a function
@@ -786,6 +787,8 @@ void program(Token_t **,Vector*);
 Node_t *func(Token_t**);
 Node_t *stmt(Token_t**);
 Node_t *declere(Token_t**);
+Node_t *init(Token_t**, Node_t*);
+Node_t *init_list(Token_t**, Node_t*);
 Node_t* ident_specify(Token_t** , Node_t*);
 Node_t* declere_specify(Token_t** , Node_t* );
 Node_t* pointer(Token_t**, Node_t*);
