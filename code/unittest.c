@@ -162,7 +162,7 @@ void assert(char *test_name,char *format,...)
 {
 	va_list arg;
 	va_start(arg,format);
-	fprintf(stderr,"	\x1b[31mUnit test error at %s\xb1[m\n",test_name);
+	fprintf(stderr,"	\x1b[31mUnit test error at %s\x1b[m\n",test_name);
 	vfprintf(stderr,format,arg);
 	va_end(arg);
 	return;
@@ -371,35 +371,58 @@ void unit_test_parse_struct() {
 	}
 	test_passed(test);
 }
-#define NODE_ERR(a) {Node_show_all(a, 0); assert(test, "");exit(1);}while(0)
+#define NODE_ERR(a) {Node_show_all(a, 0); assert(test, "%d:", i);exit(1);}while(0)
 void unit_test_parse_struct_init() {
 	char * test = "struct init test";
-	char* arg = "struct Hi {int a; int b; char* c; }; struct Hi a = {10, 10, \"Greeting\"};";
+	char* arg = "struct Hi {int a; int b; char* c; }; struct Hi a = {10, 10, \"Greeting\"}; int main() { a.a = 100; struct Hi* b = &a; b -> b = 222; return 0;}";
 	user_input = arg;
 	Token_t* token = tokenize(arg);
 	Vector* v = init_parser();
 	program(&token, v);
 	Node_t* node = Vector_at(v, 1);
+	int i = 0;
 	if(node == NULL)
 	{
 		NODE_ERR(node);
 	}
+	i = 1;
 	if(node -> kind != ND_INITLIST)
 	{
 		NODE_ERR(node);
 	}
+	i = 2;
 	if(global == NULL)
 	{
 		NODE_ERR(node);
 	}
+	i = 3;
 	if(String_len(global -> name) != 1 || !String_conpair(global -> name, "a", 1))
 	{
 		NODE_ERR(node);
 	}
-	if(node -> right -> kind == ND_BLOCK)
+	i = 4;
+	if(node -> right -> kind != ND_BLOCK)
 	{
 		NODE_ERR(node);
 	}
+	node = Vector_at(v, 2);
+	i = 5;
+	if(node == NULL || node -> right ==  NULL || node -> right -> left == NULL)
+	{
+		NODE_ERR(node);
+	}
+	Node_t* top = node;
+	node = node -> right -> left;
+	i = 6;
+	if(node -> kind != ND_ASSIGN)
+	{
+		NODE_ERR(node);
+	}
+	i = 7;
+	if(node -> left == NULL || node -> left -> kind != ND_DOT)
+		NODE_ERR(node);
+	node = top -> right;
+	
 	test_passed(test);
 }
 

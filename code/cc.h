@@ -225,6 +225,7 @@ typedef enum {
 	DEC,// --
 	LOG_AND,// &&
 	LOG_OR,// ||
+	ARROW,// ->
 	END_OF_MULTI_OPERATOR,
 	UNIT_SYMBOL_START = 0,
 	LE, // = '<',
@@ -232,6 +233,7 @@ typedef enum {
 	PLUS,// = '+',
 	MINUS,// = '-',
 	STER ,//= '*',
+	DOT, //= '.'
 	BACK_SLASH ,//= '/',
 	AND ,//= '&',
 	ASSIGN,//= '=',
@@ -338,6 +340,7 @@ typedef enum{
 	ND_ASSIGN, // <-> = 
 	ND_ADDR, //<-> & reference
 	ND_DEREF,// <-> * dereference
+	ND_DOT, // <-> . dot operator :: -> is considered as  *(). 
 	ND_NUM, // <-> integer
 	ND_STRINGLITERAL,
 	//=========================

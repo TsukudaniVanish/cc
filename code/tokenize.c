@@ -64,6 +64,7 @@ char *get_symbol(int kind) {
 	case DEC: return "--";
 	case LOG_AND: return "&&";
 	case LOG_OR: return "||";
+	case ARROW: return "->";
 	case LE: return "<";
 	case GE: return ">";
 	case AND: return "&";
@@ -71,6 +72,7 @@ char *get_symbol(int kind) {
 	case PLUS: return "+";
 	case MINUS: return "-";
 	case STER: return "*";
+	case DOT: return ".";
 	case BACK_SLASH: return "/";
 	case COMMA: return ",";
 	case SEMICORRON: return ";";
