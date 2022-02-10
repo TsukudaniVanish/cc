@@ -1045,6 +1045,11 @@ Node_t *unitary(Token_t **token) {
 	{
 		(*token) = (*token) -> next;
 		node = unitary(token);
+		if(node -> tp -> Type_label == TP_STRUCT)
+		{
+			StructData *data = Map_at(tagNameSpace, node -> tp -> name);
+			return new_node_num(data -> size);
+		}
 		if( node -> val != 0 )
 		{
 			node = new_node_num(node -> val);
