@@ -755,7 +755,7 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 			init_branch -> right = new_Node_t(ND_BLOCK, init(token, member), NULL, 0, 0, NULL, NULL);
 			init_branch = init_branch -> right;
 		}
-		init_branch = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
+		init_branch -> right = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
 		return node;
 	}
 	return NULL;
@@ -854,7 +854,7 @@ Node_t* struct_specify(Token_t** token, Node_t* node) {
 		return node;
 	}
 	Node_t* tail = Map_at(structData -> memberContainer, lastMember);
-	node -> tp -> size = tail -> offset;
+	node -> tp -> size = tail -> offset + tail -> tp -> size;
 	return node;
 }
 /*
@@ -893,15 +893,15 @@ Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
 		unsigned threshold = prev -> offset + (8 - (prev -> offset % 8));
 		if(prev -> offset + member -> tp -> size <= threshold)
 		{
-			member -> offset = prev -> offset + member -> tp -> size;
+			member -> offset = prev -> offset + prev -> tp -> size;
 		}
 		else{
-			member -> offset = threshold + member -> tp -> size;
+			member -> offset = threshold + prev -> tp -> size;
 		}
 	}
 	else
 	{
-		member -> offset = member -> tp -> size;
+		member -> offset = 0;
 	}
 	StructData_add(data, member);
 	return node;
@@ -1045,6 +1045,11 @@ Node_t *unitary(Token_t **token) {
 	{
 		(*token) = (*token) -> next;
 		node = unitary(token);
+		if(node -> tp -> Type_label == TP_STRUCT)
+		{
+			StructData *data = Map_at(tagNameSpace, node -> tp -> name);
+			return new_node_num(data -> size);
+		}
 		if( node -> val != 0 )
 		{
 			node = new_node_num(node -> val);
@@ -1147,7 +1152,8 @@ Node_t *postfix(Token_t **token) {
 			if(!Map_contains(data -> memberContainer, memberName))
 				error_at((*token) -> str, "unknown member name");
 			Node_t* member = Map_at(data -> memberContainer, memberName);
-			node = new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
+			Node_t* node_top= new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
+			node = node_top;
 			continue;
 		}
 		if(find(ARROW, token))

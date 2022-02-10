@@ -194,33 +194,7 @@ void test_inc_dec_prefix() {
 	test_passed(test);
 }
 
-
-int g = 100;
-char a[11];
-void test_global() {
-	char * test ="global variable test";
-	if(g != 100) {
-		error_template_int(test, 100, g);
-	}
-	int g = 11;
-	if(g != 11)
-	{
-		error_template_int(test, 11, g);
-	}
-	a[9] = 11;
-	if(a[9] != 11)
-	{
-		error_template_int(test, 11, a[9]);
-	}
-	test_passed("global variable test");
-}
-int main(){
-    test_print("\x1b[32mHello\x1b[m\n"); /* display test */
-	test_arithmetic();
-	test_pointer_array_access();
-	test_increment_postfix();
-	test_decrement_postfix();	
-	test_inc_dec_prefix();
+void test_logic() {
 	char* test = "&& || test";
 	int x = 1;
 	int y = 11;
@@ -289,6 +263,71 @@ int main(){
 		test_error();
 	}
 	test_passed(test);
+	
+}
+
+void test_struct() {
+	char* test = "struct test";
+	struct Hi {
+		int a;
+		int b;
+		char* c;
+	};
+	struct Hi a = {10, 11, "Hi"};
+	if(a.a != 10)
+	{
+		error_template_int(test, 10, a.a);
+	}
+	if(a.b != 11)
+	{
+		error_template_int(test, 11, a.b);
+	}
+	char* d = "Hi";
+	if(Character_conpair(*a.c, *d) == 0)
+	{
+		test_print("error at struct test");
+		test_error();
+	}
+	test_passed(test);
+	/*
+	{
+		test_print("error at");
+		test_print(test);
+		test_print("\n");
+		test_print(a.c);
+		test_error();
+	}*/
+}
+
+
+int g = 100;
+char a[11];
+void test_global() {
+	char * test ="global variable test";
+	if(g != 100) {
+		error_template_int(test, 100, g);
+	}
+	int g = 11;
+	if(g != 11)
+	{
+		error_template_int(test, 11, g);
+	}
+	a[9] = 11;
+	if(a[9] != 11)
+	{
+		error_template_int(test, 11, a[9]);
+	}
+	test_passed("global variable test");
+}
+int main(){
+    test_print("\x1b[32mHello\x1b[m\n"); /* display test */
+	test_arithmetic();
+	test_pointer_array_access();
+	test_increment_postfix();
+	test_decrement_postfix();	
+	test_inc_dec_prefix();
+	test_logic();
+	test_struct();
 	
 	test_global();
 	test_print_int(Character_conpair(2,2));
