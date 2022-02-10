@@ -710,7 +710,7 @@ Node_t *declere(Token_t **token) {
 	if(find('=',token))
 	{
 		parsing_here = (*token) -> str;
-		if(node -> tp -> Type_label == TP_STRUCT)
+		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
 			node = init(token, node);
 		else
 			node = new_node(ND_ASSIGN, node, init(token, node), (*token) -> str);
@@ -738,9 +738,9 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 		int i = 0;
 		char* member_name = Vector_at(data -> memberNames, i);
 		Node_t* member = Map_at(data -> memberContainer, member_name);
-		Node_t *init_branch = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
-		node = new_Node_t(ND_INITLIST, node, init_branch, 0, 0, node -> tp, NULL);
-		init_branch -> left = init(token, member);
+		Node_t *initBranch = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+		node = new_Node_t(ND_INITLIST, node, initBranch, 0, 0, node -> tp, NULL);
+		initBranch -> left = init(token, member);
 		while(find(',', token))
 		{
 			if(i < Vector_get_length(data -> memberNames))
@@ -752,10 +752,22 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 			else
 				error_at((*token) -> str, "too many initializer");
 
-			init_branch -> right = new_Node_t(ND_BLOCK, init(token, member), NULL, 0, 0, NULL, NULL);
-			init_branch = init_branch -> right;
+			initBranch -> right = new_Node_t(ND_BLOCK, init(token, member), NULL, 0, 0, NULL, NULL);
+			initBranch = initBranch -> right;
 		}
-		init_branch -> right = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
+		initBranch -> right = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
+		return node;
+	}
+	if(node -> tp -> Type_label == TP_ARRAY)
+	{
+		Node_t* initBranch = new_Node_t(ND_BLOCK, init(token, node), NULL, 0, 0, NULL, NULL);
+		node = new_Node_t(ND_INITLIST, node, initBranch, 0, 0, NULL, NULL);
+		while(find(',', token))
+		{
+			initBranch -> right = new_Node_t(ND_BLOCK, init(token, node), NULL, 0, 0, NULL, NULL);
+			initBranch = initBranch -> right;
+		}
+		initBranch -> right = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
 		return node;
 	}
 	return NULL;
@@ -890,13 +902,13 @@ Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
 	if(previousMember != NULL)
 	{
 		Node_t* prev = Map_at(data -> memberContainer, previousMember);
-		unsigned threshold = prev -> offset + (8 - (prev -> offset % 8));
-		if(prev -> offset + member -> tp -> size <= threshold)
+		unsigned threshold = prev -> offset + prev -> tp -> size + (8 - ((prev -> offset + prev -> tp -> size) % 8));
+		if(prev -> offset + prev -> tp -> size + member -> tp -> size <= threshold)
 		{
 			member -> offset = prev -> offset + prev -> tp -> size;
 		}
 		else{
-			member -> offset = threshold + prev -> tp -> size;
+			member -> offset = threshold;
 		}
 	}
 	else
@@ -1152,8 +1164,7 @@ Node_t *postfix(Token_t **token) {
 			if(!Map_contains(data -> memberContainer, memberName))
 				error_at((*token) -> str, "unknown member name");
 			Node_t* member = Map_at(data -> memberContainer, memberName);
-			Node_t* node_top= new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
-			node = node_top;
+			node= new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
 			continue;
 		}
 		if(find(ARROW, token))
@@ -1169,6 +1180,7 @@ Node_t *postfix(Token_t **token) {
 				error_at((*token) -> str, "unknown member name");
 			Node_t* member = Map_at(data -> memberContainer, memberName);
 			node = new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
+			continue;
 		}
 		return node;
 	}

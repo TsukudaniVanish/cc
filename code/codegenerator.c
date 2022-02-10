@@ -757,6 +757,24 @@ void gen_list_init(Node_t* node) {
 	push_stack(8, "rax");
 
 	Node_t* initBranch = node -> right;
+	if(node -> left -> tp -> Type_label == TP_ARRAY)
+	{
+		unsigned size = node -> left -> tp -> pointer_to -> size;
+		char* prefix = get_pointerpref(size);
+		while(initBranch -> kind == ND_BLOCK)
+		{
+			generate(initBranch -> left);
+			pop_stack(initBranch -> left -> tp -> size, "rdi");
+
+			pop_stack(8, "rax");
+			printf("	mov %s[rax], %s\n", prefix, get_registername("rdi", initBranch -> left -> tp -> size));
+			printf("	add rax, %d\n", size);
+			push_stack(8, "rax");
+			
+			initBranch = initBranch -> right;
+		}
+		return;
+	}
 	StructData *data = Map_at(tagNameSpace, node -> tp -> name);
 	Vector* memberNames = data -> memberNames;
 	Map* container = data -> memberContainer;
@@ -785,6 +803,7 @@ void gen_list_init(Node_t* node) {
 			printf("	sub rax, %d\n", offsetTop);
 			printf("	add rax, %d\n", member -> offset);
 			push_stack(8, "rax");
+
 			initBranch = initBranch -> right;
 	}
 }
