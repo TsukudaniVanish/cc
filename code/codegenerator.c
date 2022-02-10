@@ -166,7 +166,17 @@ long gen_lval(Node_t *node){
 		generate(node -> left);
 		return node -> tp -> size;
 	}
+	if(node -> kind == ND_DOT)
+	{
+		gen_lval(node -> left);
+		pop_stack(8, "rax");// get top address of struct
+
+		printf("	add rax, %d\n", node -> right -> offset);
+
+		push_stack(8, "rax");
+		return node -> tp -> size;
 	
+	}
 	printf("	mov rax, rbp\n");
 	printf("	sub rax, %d\n",  node -> offset);
 	printf("	push rax\n");
@@ -473,6 +483,10 @@ void gen_deref(Node_t *node) {
 }
 
 void gen_right_lval(Node_t* node) {
+	if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
+	{
+		return;
+	}
 	
 	gen_lval(node);
 	char * register_name = get_registername("rax",node -> tp -> size);
@@ -513,8 +527,7 @@ void gen_return(Node_t* node) {
 	return;
 }
 
-void gen_glob_declar(Node_t* node) {
-	printf("%s:\n",node -> name);
+void gen_initialize_glob_variable(Node_t* node) {
 	if(node -> tp -> Type_label == TP_INT)
 	{
 		if(node -> val == 0)
@@ -526,6 +539,40 @@ void gen_glob_declar(Node_t* node) {
 		{
 			printf("	.long %d\n",node -> val);
 		}
+	}
+	else if(node -> kind == ND_STRINGLITERAL)
+	{
+		printf("	.quad .LC%d\n", node -> offset);
+	}
+	
+}
+void gen_glob_declar(Node_t* node) {
+	printf("%s:\n",node -> name);
+	if(node -> kind == ND_INITLIST)
+	{
+		Node_t* init_branch = node -> right;
+		while(init_branch -> kind == ND_BLOCK)
+		{
+			gen_initialize_glob_variable(init_branch -> left);
+			init_branch = init_branch -> right;
+		}
+		return;
+	}
+	if(node -> tp -> Type_label == TP_INT)
+	{
+		if(node -> val == 0)
+		{
+			printf("	.zero %d\n",node -> tp -> size);
+		
+		}
+		else
+		{
+			printf("	.long %d\n",node -> val);
+		}
+	}
+	else if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
+	{
+		return;
 	}
 	else
 	{
@@ -703,6 +750,53 @@ void gen_log_and_or(Node_t* node) {
 
 }
 
+void gen_list_init(Node_t* node) {
+	unsigned offsetTop = node -> left -> offset;
+	printf("	mov rax, rbp\n");
+	printf("	sub rax, %d\n", offsetTop);
+	push_stack(8, "rax");
+
+	Node_t* initBranch = node -> right;
+	StructData *data = Map_at(tagNameSpace, node -> tp -> name);
+	Vector* memberNames = data -> memberNames;
+	Map* container = data -> memberContainer;
+	int i = 0;
+	char* memberName = Vector_at(memberNames, i);
+	Node_t* member = Map_at(container, memberName);
+
+	char* prefix = get_pointerpref(member -> tp -> size);
+	while(initBranch -> kind == ND_BLOCK)
+	{
+			generate(initBranch -> left);
+			pop_stack(initBranch -> left -> tp -> size, "rdi");
+
+			pop_stack(8, "rax");
+			printf("	mov %s [rax], %s\n", prefix, get_registername("rdi", initBranch -> left -> tp -> size));
+		
+			i++;
+			char* memberName = Vector_at(memberNames, i);
+			if(memberName != NULL)
+			{
+				member = Map_at(container, memberName);
+				prefix = get_pointerpref(member -> tp -> size);
+			}
+			// calculate next address
+			printf("	mov rax, rbp\n");
+			printf("	sub rax, %d\n", offsetTop);
+			printf("	add rax, %d\n", member -> offset);
+			push_stack(8, "rax");
+			initBranch = initBranch -> right;
+	}
+}
+
+void gen_dot(Node_t* node) {
+	gen_lval(node);
+	pop_stack(8, "rax");
+	printf("	mov %s, %s [rax]\n", get_registername("rax", node -> tp -> size),get_pointerpref(node -> tp -> size));
+	push_stack(node -> tp -> size, "rax");
+	return;
+}
+
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node){
 
@@ -731,6 +825,10 @@ void generate(Node_t *node){
 		return;
 
 	case ND_DEC: gen_inc_dec(node);
+		return;
+	case ND_DOT: gen_dot(node);
+		return;
+	case ND_INITLIST: gen_list_init(node);
 		return;
 	case ND_LOGAND:
 	case ND_LOGOR: gen_log_and_or(node);
@@ -767,7 +865,7 @@ void generate(Node_t *node){
 	case ND_FOR: gen_for(node);
 		return;
 	//around the top of the ast tree ===================================================
-	//以下は単項でないoperatorのコンパイル===================
+	// operators ===================
 	case ND_EQL:
 	case ND_NEQ:
 	case ND_LES:

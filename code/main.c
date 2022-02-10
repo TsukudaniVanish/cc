@@ -67,7 +67,7 @@ int main(int argc, char **argv){
 	for(int i = 0; i < len; i++)
 	{
 		Node_t *code = Vector_at(codes, i);
-		if(code -> kind == ND_GLOBVALDEF)
+		if(code -> kind == ND_GLOBVALDEF || code -> kind == ND_INITLIST)
 		{
 			gen_glob_declar(code);
 		}

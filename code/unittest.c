@@ -303,7 +303,7 @@ void unit_test_tokenize_struct() {
 
 void unit_test_parse_struct() {
 	char* test = "struct parsing test";
-	char* arg = "struct Hi { int s; char a; unsigned len; }; int main(){ struct Hi greeting;}";
+	char* arg = "struct Hi { int s; int a; char* len; }; int main(){ struct Hi greeting;}";
 	user_input = arg;
 	Token_t* token = tokenize(arg);
 	Vector* v = init_parser();
@@ -331,8 +331,9 @@ void unit_test_parse_struct() {
 		Node_show_all(node, 0);
 		exit(1);
 	}
-	if(node -> tp -> size != 12)
+	if(node -> tp -> size != 16)
 	{
+		assert(test, "sizeof error: %d\n", node -> tp -> size);
 		Node_show_all(node, 0);
 		exit(1);
 	}
