@@ -521,7 +521,7 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	Lvar *lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))//変数の代入
 	{
-		if(node -> tp -> Type_label == TP_STRUCT)
+		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
 			node = init(token, node);
 		else
 			node -> val = expect_num(token);

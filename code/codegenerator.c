@@ -547,7 +547,7 @@ void gen_initialize_glob_variable(Node_t* node) {
 	
 }
 void gen_glob_declar(Node_t* node) {
-	printf("%s:\n",node -> name);
+	printf("%s:\n",node -> kind != ND_INITLIST? node -> name: node -> left -> name);
 	if(node -> kind == ND_INITLIST)
 	{
 		Node_t* init_branch = node -> right;

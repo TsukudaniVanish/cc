@@ -77,6 +77,19 @@ assert_function (){
 	fi
 }
 
+assert_should_fail() {
+	input="$1"
+	echo -e "input: $input \n"
+	./cc "$input" 1> tmp.s
+	out="$?"
+	if [ "$out" == 1 ];then
+		echo -e "compiler failed \e[32mok\e[m"
+	else
+		echo -e "compiler stop at exit code $out\n"
+		exit 1
+	fi
+}
+
 
 echo -n "Disply integer"
 assert 0 0
@@ -168,6 +181,7 @@ assert_function 100 'int g = 100; int main(){return g;}'
 assert_function 100 'int g; int main(){g = 100;return g;}'
 
 assert_function 100 'int a[2]; int main(){a[1] = 100;return a[1];}'
+assert_function 101 'int a[2] = {10, 100}; int main() {if(a[0] == 10) a[1] ++; return a[1];}'
 
 echo "char test"
 
@@ -177,7 +191,9 @@ assert 3 'char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y'
 
 assert 10 'char *b = "hi hello"; int a = 10; return a'
 
-echo  "Error test"
-./cc 'int main(){20+++3;}'
+echo  "Error test following must be fail to parse"
+assert_should_fail 'int main(){20+++3;}'
 
-./cc 'int main(){a = 0;return a;}'
+assert_should_fail 'int main(){a = 0;return a;}'
+
+assert_should_fail 'int main(){ {int a = 0;} a = 1; return 0; }'
