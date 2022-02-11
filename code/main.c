@@ -10,6 +10,7 @@ extern int String_conpair(char*, char*,unsigned int);
 
 
 int main(int argc, char **argv){
+	controller = NULL;
 
 	//unit test
 	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-T",2))
@@ -32,7 +33,7 @@ int main(int argc, char **argv){
 		user_input = argv[1];
 		buffer = argv[1];
 	}
-
+	controller = ScopeController_init();
 	//helperfunction input
 	char *test_print = "test_print";
 	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print,String_len(test_print),&global);
@@ -53,9 +54,7 @@ int main(int argc, char **argv){
 	
 	Vector* codes = init_parser();
 	program(&token, codes);
-	//関数スコープ識別子テーブルを先頭にセット
-	scope = nameTable -> container;
-	
+	rootBlock = nameTable -> container;
 
 //アセンブリ前半を出力
 	printf(".intel_syntax noprefix\n");
@@ -84,8 +83,8 @@ int main(int argc, char **argv){
 			printf("	.global main\n");
 
 			generate(code);
-			scope++;
 		}
+		rootBlock++; 
 	}
 	return 0;
 }

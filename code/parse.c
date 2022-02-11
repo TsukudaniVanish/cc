@@ -7,11 +7,83 @@ extern unsigned int String_len(char*);
 extern int String_conpair(char*,char*,unsigned int);
 extern void Memory_copy(void*,void*,unsigned int);
 
+ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number) {
+	ScopeInfo* info = calloc(1, sizeof(ScopeInfo));
+	info ->nested = nested;
+	info ->number = number;
+	return info;
+}
+ScopeInfo* ScopeInfo_copy(ScopeInfo* info) {
+	return new_ScopeInfo(info ->nested, info ->number);
+}
+int ScopeInfo_equal(ScopeInfo* self, ScopeInfo* other) {
+	if(self ->nested != other ->nested || self ->number != other ->number)
+	{
+		return 0;
+	}
+	return 1;
+}
+// compare Scope with current Scope
+int ScopeInfo_inscope(ScopeInfo* info) {
+	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
+	if(currentNest ->nested > info -> nested)
+		return 1;
+	if(ScopeInfo_equal(currentNest, info))
+	{
+		return 1;
+	}
+	return 0;
+}
+ScopeController* ScopeController_init() {
+	ScopeController* controller = calloc(1, sizeof(ScopeController));
+	controller ->nestedScopeData = make_vector();
+	controller -> currentNest = 0;
+	Vector_push(controller ->nestedScopeData, new_ScopeInfo(0, 0));
+	return controller;
+}
+void ScopeController_nest_appeared(ScopeController* con) {
+	con ->currentNest ++;
+	if(Vector_get_length(con ->nestedScopeData) >= con -> currentNest + 1)
+	{
+		ScopeInfo *current = Vector_at(con ->nestedScopeData, con ->currentNest);
+		current ->number++;
+		return;
+	}
+	else
+	{
+		ScopeInfo* newNest = new_ScopeInfo(con ->currentNest, 0);
+		Vector_push(con ->nestedScopeData, newNest);
+	}
+}
+void ScopeController_nest_disappeared(ScopeController* con) {
+	con ->currentNest--;
+	return;
+}
+ScopeInfo* ScopeController_get_current_scope(ScopeController* con) {
+	return Vector_at(con ->nestedScopeData, con ->currentNest);
+}
+StructData* make_StructData() {
+	StructData* data = calloc(1, sizeof(StructData));
+	data -> size = 0;
+	data -> memberNames = make_vector();
+	data -> memberContainer = make_Map();
+	return data;
+}
+
+void StructData_add(StructData* data, Node_t* member) {
+	data -> size += member -> tp -> size;
+	Vector_push(data -> memberNames, member -> name);
+	Map_add(data -> memberContainer, member -> name, member);
+}
+
+
 Vector* init_parser() {
 	tagNameSpace = make_Map();
 	nameTable = make_vector();
+	if(controller == NULL)
+		controller = ScopeController_init();
 	// fuction ごとのコード
-	Vector *codes = make_vector();	//token を抽象構文木に変換
+	Vector *codes = make_vector();	
 	return codes;
 }
 Type* new_Type(int label, Type* pointer_to, unsigned int size, char* name) {
@@ -47,7 +119,6 @@ Type *Type_function_return(char **name,Token_t** token) {
 
 
 Lvar *find_lvar(char *name,int length,Lvar **locals) {
-	
 	for(Lvar *var = *locals; var;var = var -> next)
 	{
 		if( var -> length == length && String_conpair( name, var ->name,length))
@@ -77,6 +148,7 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 	{
 		lvar -> offset = (lvar -> tp->size);
 	}
+	lvar -> scope = ScopeController_get_current_scope(controller);
 	return lvar;
 }
 
@@ -210,34 +282,7 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	error_at((*token) -> str,"lval is expected");
 }
 
-int is_lval(Node_t* node) {
-	if(node -> tp)
-	switch(node -> kind)
-	{
-		case ND_FUNCTIONCALL: return 1;
-		case ND_GLOBVALCALL: return 1;
-		case ND_LVAL: return 1;
-		case ND_DEREF: return 1;
-		case ND_STRINGLITERAL: return 1;
-		case ND_DOT: return 1;
-		default:
-			return 0;
-	}
-}
 
-StructData* make_StructData() {
-	StructData* data = calloc(1, sizeof(StructData));
-	data -> size = 0;
-	data -> memberNames = make_vector();
-	data -> memberContainer = make_Map();
-	return data;
-}
-
-void StructData_add(StructData* data, Node_t* member) {
-	data -> size += member -> tp -> size;
-	Vector_push(data -> memberNames, member -> name);
-	Map_add(data -> memberContainer, member -> name, member);
-}
 
 //Node_t making function with type check typically used in parsing formula
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here){
@@ -351,7 +396,7 @@ Node_t *new_node_var(Token_t **token)
 	{
 		fprintf(stderr,"Fail to consume token\n");
 	}
-	if(lvar != NULL)
+	if(lvar != NULL && ScopeInfo_inscope(lvar -> scope))
 	{//local variable
 	
 		return new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
@@ -517,8 +562,10 @@ Node_t *new_node_glob_ident(Token_t**token) {
 		expect(';', token);
 		return node;
 	}
-
-	Lvar *lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
+	
+	Lvar *lvar = find_lvar(node -> name, String_len(node -> name), &global);
+	if(lvar == NULL)
+		lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))//変数の代入
 	{
 		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
@@ -671,7 +718,9 @@ Node_t *stmt(Token_t **token) {
 	}
 	else if(find('{',token))
 	{
+		ScopeController_nest_appeared(controller);
 		node = new_node_block(token);
+		ScopeController_nest_disappeared(controller);
 	}
 	else if(is_lvardec(token))
 	{
@@ -691,6 +740,7 @@ Node_t *stmt(Token_t **token) {
 }
 
 Node_t *declere(Token_t **token) {
+	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
@@ -704,7 +754,11 @@ Node_t *declere(Token_t **token) {
 	{//  struct definition only
 		return node;
 	}
-	Lvar *lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
+	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
+	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
+		lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
+	else
+		error_at((*token) -> str, "Can't use same identifier: %s", node -> name);
 	node -> offset = lvar -> offset;
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
 	if(find('=',token))

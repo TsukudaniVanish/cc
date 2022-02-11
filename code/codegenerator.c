@@ -242,7 +242,7 @@ void argment_set(int arg_index , long int offset , long int size){
 
 void gen_function_def(Node_t *node){
 
-	Lvar* nametable = *scope;
+	Lvar* nametable = *rootBlock;
 
 	printf("%s:",node -> name);
 	int return_rsp_number = rsp_counter;
