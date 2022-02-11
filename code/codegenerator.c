@@ -242,7 +242,7 @@ void argment_set(int arg_index , long int offset , long int size){
 
 void gen_function_def(Node_t *node){
 
-	Lvar* nametable = *scope;
+	Lvar* nametable = *rootBlock;
 
 	printf("%s:",node -> name);
 	int return_rsp_number = rsp_counter;
@@ -547,7 +547,7 @@ void gen_initialize_glob_variable(Node_t* node) {
 	
 }
 void gen_glob_declar(Node_t* node) {
-	printf("%s:\n",node -> name);
+	printf("%s:\n",node -> kind != ND_INITLIST? node -> name: node -> left -> name);
 	if(node -> kind == ND_INITLIST)
 	{
 		Node_t* init_branch = node -> right;
@@ -757,6 +757,24 @@ void gen_list_init(Node_t* node) {
 	push_stack(8, "rax");
 
 	Node_t* initBranch = node -> right;
+	if(node -> left -> tp -> Type_label == TP_ARRAY)
+	{
+		unsigned size = node -> left -> tp -> pointer_to -> size;
+		char* prefix = get_pointerpref(size);
+		while(initBranch -> kind == ND_BLOCK)
+		{
+			generate(initBranch -> left);
+			pop_stack(initBranch -> left -> tp -> size, "rdi");
+
+			pop_stack(8, "rax");
+			printf("	mov %s[rax], %s\n", prefix, get_registername("rdi", initBranch -> left -> tp -> size));
+			printf("	add rax, %d\n", size);
+			push_stack(8, "rax");
+			
+			initBranch = initBranch -> right;
+		}
+		return;
+	}
 	StructData *data = Map_at(tagNameSpace, node -> tp -> name);
 	Vector* memberNames = data -> memberNames;
 	Map* container = data -> memberContainer;
@@ -785,6 +803,7 @@ void gen_list_init(Node_t* node) {
 			printf("	sub rax, %d\n", offsetTop);
 			printf("	add rax, %d\n", member -> offset);
 			push_stack(8, "rax");
+
 			initBranch = initBranch -> right;
 	}
 }

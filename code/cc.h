@@ -157,7 +157,11 @@ struct type{
 };
 
 
-
+/* scope infomation*/
+typedef struct {
+	unsigned nested;// 0 <= nested: nested = 0 is root block
+	unsigned number;// if nested > 0, this member recodes block number
+}ScopeInfo;
 
 /**
  * @brief Container which store data needed for dealing with identifier.
@@ -175,12 +179,14 @@ struct lvar{
 	Lvar *next;
 	char *name;
 	int length;
+	Type *tp;
+	// follwing members are not inputted by utility function
 	/**
 	 * @brief local variable : offset from rbp , string : label number of string literal
 	 * 
 	 */
 	unsigned int offset;
-	Type *tp;
+	ScopeInfo* scope;
 };
 Lvar *string_iter;
 Lvar *global;
@@ -188,14 +194,10 @@ Lvar *global;
 
 Map *tagNameSpace;// tag name space which contains a name of which struct , union and enum.
 Vector *nameTable;//table of identifier which has block scope.
-void** scope;
+void** rootBlock;// this variable points an current root block.
 
 
-typedef struct {
-	unsigned int size;
-	Vector* memberNames;
-	Map* memberContainer;
-}StructData;
+
 
 // =========================Token =========================
 typedef enum {
@@ -318,6 +320,50 @@ struct token {
 
 };
 Token_t* new_Token_t(Token_kind, Token_t*, int val, int length, char* str, Type* tp);
+/**
+ * @brief make new token
+ * @param Token_kind kind
+ * @param Token_t_* cur
+ * @param char_* str
+ * @return Token_t_*
+ * */
+Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
+
+/**
+ * @brief 
+ * @param Token_kind
+ * @param keyword
+ * @param Token_t* cur previous token
+ * @return Token_t* 
+ */
+Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
+
+
+/**
+ * @brief Compair if *token -> str and given string are equal.
+ * @param int kind
+ * @param Token_t_** token 
+ * @return bool
+ */
+int find(int ,Token_t **);
+
+
+
+/**
+ * @brief return given token and pass token to next
+ * @param token 
+ * @return Token_t* 
+ */
+Token_t *consume(Token_t **token);
+
+/**
+ * @brief check function call
+ * 
+ * @param Token_t**
+ * @return int
+ * 
+ */
+int is_functioncall(Token_t **);
 //====================================================
 
 
@@ -402,11 +448,13 @@ struct node {
 
 };
 /**
- * @brief 新しいノードを作る
+ * @brief make new node
  * 
  * @return Node_t* 
  */
 Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,unsigned int off,Type* tp,char *name);
+// Identify node is lvar or not
+int is_lval(Node_t* node);
 
 //file.c====================================================
 /**
@@ -459,53 +507,6 @@ int expect_num(Token_t **token);
 void error_at(char *,char *,...);
 //====================================================
 
-//Token.c ======================================================
-/**
- * @brief make new token
- * @param Token_kind kind
- * @param Token_t_* cur
- * @param char_* str
- * @return Token_t_*
- * */
-Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
-
-/**
- * @brief 
- * @param Token_kind
- * @param keyword
- * @param Token_t* cur previous token
- * @return Token_t* 
- */
-Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
-
-
-/**
- * @brief Compair if *token -> str and given string are equal.
- * @param int kind
- * @param Token_t_** token 
- * @return bool
- */
-int find(int ,Token_t **);
-
-
-
-/**
- * @brief return given token and pass token to next
- * @param token 
- * @return Token_t* 
- */
-Token_t *consume(Token_t **token);
-
-/**
- * @brief check function call
- * 
- * @param Token_t**
- * @return int
- * 
- */
-int is_functioncall(Token_t **);
-
-// ======================================================
 //file.c====================================================
 /**
  * @brief return a pointer to string literal which is in given file 
@@ -601,6 +602,27 @@ Token_t *tokenize(char *p);
 /*
  * parse.c=====================================================
  */
+ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number);
+ScopeInfo* ScopeInfo_copy(ScopeInfo* info);
+int ScopeInfo_equal(ScopeInfo*, ScopeInfo*);
+typedef struct {
+	Vector* nestedScopeData;
+	unsigned currentNest;
+}ScopeController;
+ScopeController* ScopeController_init();
+void ScopeController_nest_appeared(ScopeController*);
+void ScopeController_nest_disappeared(ScopeController*);
+ScopeInfo* ScopeController_get_current_scope(ScopeController*);
+
+ScopeController* controller;
+
+typedef struct {
+	unsigned int size;
+	Vector* memberNames;
+	Map* memberContainer;
+}StructData;
+StructData* make_StructData();
+void StructData_add(StructData* data, Node_t* member);
 /**
  * @brief initialize parser / make nameTable and ast vector
  * */
@@ -708,8 +730,6 @@ int is_arrmemaccess(Token_t **token);
  */
 Node_t* arrmemaccess(Token_t **token , Node_t**);
 
-// Identify node is lvar or not
-int is_lval(Node_t* node);
 
 /**
  * @brief  make new node typecheck left and right node. result node has type. expect l and r has type

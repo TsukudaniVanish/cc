@@ -2,7 +2,20 @@ int Character_conpair(char c, char d) {
 	if(c == d) return 1;
 	return 0;
 }
+unsigned int String_len(char* s) {
+	unsigned int res = 0;
+	while(s[res]) res++;
+	return res;
+}
 
+int String_conpair(char* s1, char* s2, unsigned int size) {
+	if(String_len(s1) == 0 || String_len(s2) == 0 || String_len(s1) < size || String_len(s2) < size) return 0;
+	int res = 1;
+	for(int i = 0; i < size; i++) {
+		res = res && Character_conpair(s1[i], s2[i]);
+	}
+	return res;
+}
 void error_template_int(char *test_name,int expect , int a)
 {
     test_print("\x1b[31merror\x1b[m at ");
@@ -288,6 +301,17 @@ void test_struct() {
 		test_print("error at struct test");
 		test_error();
 	}
+	struct Hi* b = &a;
+	if(b -> a != 10)
+	{
+		error_template_int(test, 10, b -> a);
+	}
+	if(String_len(b -> c) != 2 || String_conpair(a.c, b -> c, 2) == 0)
+	{
+		test_print("error at struct test\n");
+		test_error();
+	}
+
 	test_passed(test);
 	/*
 	{
@@ -298,7 +322,23 @@ void test_struct() {
 		test_error();
 	}*/
 }
-
+void test_array_init() {
+	char* test = "array init test";
+	int a[3] = {100, 101, 102};
+	if(a[1] != 101)
+	{
+		error_template_int(test, 101, a[1]);
+	}
+	if(a[0] != 100)
+	{
+		error_template_int(test, 100, a[0]);
+	}
+	if(a[2] != 102)
+	{
+		error_template_int(test, 102, a[2]);
+	}
+	test_passed(test);
+}
 
 int g = 100;
 char a[11];
@@ -328,6 +368,7 @@ int main(){
 	test_inc_dec_prefix();
 	test_logic();
 	test_struct();
+	test_array_init();
 	
 	test_global();
 	test_print_int(Character_conpair(2,2));
