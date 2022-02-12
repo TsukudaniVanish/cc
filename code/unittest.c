@@ -110,6 +110,8 @@ void Token_show_all(Token_t* token) {
 	}
 	return;
 }
+#define ERROR_TOKEN(a) do{Token_show_all(a); exit(1);}while(0)
+
 void Type_show(Type* tp) {
 	if(tp == NULL)
 	{
@@ -158,6 +160,8 @@ void Node_show_all(Node_t* node, unsigned depth) {
 	fprintf(stderr, "%*sright:\n", depth, "    ");
 	Node_show_all(node -> right, depth + 1);
 }
+#define NODE_ERR(a) {Node_show_all(a, 0); exit(1);}while(0)
+
 void assert(char *test_name,char *format,...)
 {
 	va_list arg;
@@ -372,7 +376,9 @@ void unit_test_parse_struct() {
 	}
 	test_passed(test);
 }
-#define NODE_ERR(a) {Node_show_all(a, 0); assert(test, "%d:", i);exit(1);}while(0)
+#ifdef NODE_ERR
+	#define NODE_ERR_STRUCT(a) do{ assert(test, "%d:", i); NODE_ERR(a);}while(0);
+#endif
 void unit_test_parse_struct_init() {
 	char * test = "struct init test";
 	char* arg = "struct Hi {int a; int b; char* c; }; struct Hi a = {10, 10, \"Greeting\"}; int main() { a.a = 100; struct Hi* b = &a; b -> b = 222; return 0;}";
@@ -384,46 +390,73 @@ void unit_test_parse_struct_init() {
 	int i = 0;
 	if(node == NULL)
 	{
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	}
 	i = 1;
 	if(node -> kind != ND_INITLIST)
 	{
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	}
 	i = 2;
 	if(global == NULL)
 	{
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	}
 	i = 3;
 	if(String_len(global -> name) != 1 || !String_conpair(global -> name, "a", 1))
 	{
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	}
 	i = 4;
 	if(node -> right -> kind != ND_BLOCK)
 	{
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	}
 	node = Vector_at(v, 2);
 	i = 5;
 	if(node == NULL || node -> right ==  NULL || node -> right -> left == NULL)
 	{
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	}
 	Node_t* top = node;
 	node = node -> right -> left;
 	i = 6;
 	if(node -> kind != ND_ASSIGN)
 	{
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	}
 	i = 7;
 	if(node -> left == NULL || node -> left -> kind != ND_DOT)
-		NODE_ERR(node);
+		NODE_ERR_STRUCT(node);
 	node = top -> right;
 	
+	test_passed(test);
+}
+void unit_test_tokenize_union() {
+	char* test = "union tokenize test";
+	char* arg = "union Hi{ char* greeting, char greeting[]};";
+	Token_t* token = tokenize(arg);
+	
+	if(token == NULL)
+		ERROR_TOKEN(token);
+	if(token -> kind != TK_UNION)
+		ERROR_TOKEN(token);
+	test_passed(test);
+}
+
+void unit_test_tokenize_enum() {
+	char* test = "enum tokenize test";
+	char* arg = "enum Hi { GOOD_MORNING = 1, HELLO, GOOD_NIGHT};";
+	Token_t* token = tokenize(arg);
+
+	if(token == NULL)
+	{
+		ERROR_TOKEN(token);
+	}
+	if(token -> kind != TK_ENUM)
+	{
+		ERROR_TOKEN(token);
+	}
 	test_passed(test);
 }
 
@@ -434,4 +467,6 @@ void unit_test() {
 	unit_test_tokenize_struct();
 	unit_test_parse_struct();
 	unit_test_parse_struct_init();
+	unit_test_tokenize_union();
+	unit_test_tokenize_enum();
 }

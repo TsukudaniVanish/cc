@@ -145,7 +145,8 @@ struct type{
 		TP_POINTER = POINTER_TYPE_VALUE,// pointer type 8byte
 		TP_ARRAY,// array type
 		TP_STRUCT,
-
+		TP_UNION,
+		TP_ENUM,
 	}Type_label;
 	/**
 	 * @brief size of type 
@@ -215,6 +216,8 @@ typedef enum {
 	UNSIGNED_INT,
 	UNSIGNED,
 	STRUCT,
+	UNION,
+	ENUM,
 	KEYWORD_END,// end marker
 }keyword;
 typedef enum { 
@@ -301,6 +304,8 @@ typedef enum{
 	TK_TypeCHAR,
 	TK_TypeINT,
 	TK_STRUCT,
+	TK_UNION,
+	TK_ENUM,
 	//=====================================================
 	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
@@ -436,10 +441,7 @@ struct node {
 	 * 
 	 * @brief of member variable : val 
 	 * ND_FUNCTION... -> number of arguments
-	 * ND_IDENT -> value
-	 * ND_Lval && node -> tp -> Type_label == TP_POINTER and pointer_to == TP_ARRAY -> size of array
-	 *
-	 * 
+	 * ND_NUM -> value
 	 */
 	int val;
 	unsigned int offset;// offset from rbp
@@ -524,23 +526,16 @@ char *file_open(char *);
  * tokenize.c=====================================================
  */
 
-/**
- * @brief 空白文字を判定する
- * @param char p
- * @return int 
- */
 int is_space(char );
-
 /**
- * @brief 空白をスキップする
- * 
+ * @brief skip withe space characters
  * @param char* p 
  * @return char* 
  */
 char *skip(char * p);
 
 /**
- * @brief TK_Type... のメモリサイズを返す
+ * @brief return size of TK_Type... 
  * 
  * @param int kind
  * @return int
@@ -548,13 +543,6 @@ char *skip(char * p);
  */
 int sizeof_token(int);
 
-
-/**
- * @brief 
- * 英数字かどうか判定する
- * @param char  
- * @return bool 
- */
 int is_alnum(char c);
 
 char* get_symbol(int);
@@ -566,16 +554,10 @@ char* get_symbol(int);
  * */
 int is_symbol(char *);
 
-/**
- * @brief コメントかどうか判定する
- * 
- * @param char* p 
- * @return int 
- */
 int is_comment(char *p);
 
 /**
- * @brief コメント部分を送って次のトークンにポインタを合わせる
+ * @brief skip comment section and set p to next character
  * 
  * @param char** p 
  */
@@ -595,16 +577,14 @@ int get_correspond_token_kind(keyword);
 Token_t *tokenize(char *p);
 //=====================================================
 
-
-
-
-
 /*
  * parse.c=====================================================
  */
 ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number);
 ScopeInfo* ScopeInfo_copy(ScopeInfo* info);
 int ScopeInfo_equal(ScopeInfo*, ScopeInfo*);
+int ScopeInfo_inscope(ScopeInfo*);
+
 typedef struct {
 	Vector* nestedScopeData;
 	unsigned currentNest;
@@ -831,9 +811,6 @@ Node_t *postfix(Token_t **);
 Node_t *unitary(Token_t **);
 Node_t *primary(Token_t **);
 //=====================================================
-
-
-
 /*
  * codegenerator.c=====================================================
  */

@@ -115,9 +115,6 @@ Type *Type_function_return(char **name,Token_t** token) {
 	return NULL;
 }
 
-
-
-
 Lvar *find_lvar(char *name,int length,Lvar **locals) {
 	for(Lvar *var = *locals; var;var = var -> next)
 	{
@@ -181,8 +178,7 @@ int typecheck(Node_t *node) {
 #if defined(Min)
 	#define Is_type_integer(t) INTEGER_TYPE_START == Min(t,INTEGER_TYPE_START) ? t <= INTEGER_TYPE_END ? 1: 0: 0 
 #endif
-Type *imptypecast(Node_t *node)
-{
+Type *imptypecast(Node_t *node) {
 	int tp_l , tp_r;
 
 	switch (typecheck(node))
@@ -282,10 +278,8 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	error_at((*token) -> str,"lval is expected");
 }
 
-
-
 //Node_t making function with type check typically used in parsing formula
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here){
+Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
 	Node_t *node = new_Node_t(kind,l,r,0,0,NULL,NULL);
 	//type check
 	if(typecheck(node) == 0)
@@ -315,8 +309,7 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here){
 /*
  * @brief read fuction number of function arguments. *v has argument info after call this function
  * */
-int Node_read_function_parameters(Token_t **token,Node_t **vector)
-{
+int Node_read_function_parameters(Token_t **token,Node_t **vector) {
 
 	int to_return = 0;
 	Node_t* v = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
@@ -339,8 +332,7 @@ int Node_read_function_parameters(Token_t **token,Node_t **vector)
 	
 }
 
-Node_t *new_node_function_call(Token_t **token)
-{
+Node_t *new_node_function_call(Token_t **token) {
 	if(find_lvar((*token) -> str, (*token) -> length, &global) == NULL)
 	{
 		error_at((*token) -> str, "this is not exist in the ordinary name space");
@@ -369,8 +361,7 @@ Node_t *new_node_function_call(Token_t **token)
 	return node;
 }
 
-Node_t *new_node_function_definition(Token_t **token)
-{
+Node_t *new_node_function_definition(Token_t **token) {
 	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declere_specify(token, node);
 	node = ident_specify(token, node); 
@@ -385,8 +376,7 @@ Node_t *new_node_function_definition(Token_t **token)
 
 }
 
-Node_t *new_node_var(Token_t **token)
-{
+Node_t *new_node_var(Token_t **token) {
 	Lvar *lvar = NULL;
 	Lvar *table = Vector_get_tail(nameTable);
 	Token_t *ident = consume(token);
@@ -503,18 +493,14 @@ Node_t *new_node_for(Token_t **token)
 			0,0,NULL,NULL);
 }
 
-Node_t *new_node_return(Token_t **token)
-{
+Node_t *new_node_return(Token_t **token) {
 	Node_t *node = new_Node_t(ND_RETURN, expr(token),NULL,0,0,NULL,NULL);
 	expect(';',token);
 	return node;
 }
 
 Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
-
-	Node_t *node = calloc(1,sizeof(Node_t));
-
-	switch(kind){
+	switch(kind) {
 	case TK_IF: return new_node_if(token);			
 	case TK_WHILE: return new_node_while(token);
 	case TK_FOR: return new_node_for(token);
@@ -524,7 +510,7 @@ Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 	}
 }
 
-Node_t *new_node_num(int val){
+Node_t *new_node_num(int val) {
 	Node_t *node = new_Node_t(ND_NUM,NULL,NULL,val,0,new_tp(TP_INT,NULL,4),NULL);
 	return node;
 }
@@ -578,7 +564,7 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	
 }
 
-Node_t *new_node_ref_deref(Token_t **token){
+Node_t *new_node_ref_deref(Token_t **token) {
 
 	Node_t *node = NULL;
 	switch ((*token)->str[0])
