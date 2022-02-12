@@ -5,8 +5,7 @@
 
 extern unsigned int String_len(char*);
 extern int String_conpair(char* ,char*, unsigned int);
-int sizeof_token(int kind){
-
+int sizeof_token(int kind) {
 	switch (kind)
 	{
 	case TK_TypeVOID:
@@ -25,17 +24,14 @@ int sizeof_token(int kind){
 
 
 
-int is_alnum(char c){
-
-	
+int is_alnum(char c) {
 	return ('a' <= c && c <= 'z' ) ||
 		   ('A' <= c && c <= 'Z' ) ||
 		   ('0' <= c && c <= '9' ) ||
 		   (c == '_');
 }
 
-int is_space(char p)
-{
+int is_space(char p) {
 	if(' ' == p || '\t' == p || '\n' == p || '\r' == p || '\f' == p)
 	{
 		return 1;
@@ -44,8 +40,7 @@ int is_space(char p)
 }
 
 
-char *skip(char * p)
-{
+char *skip(char * p) {
 	while (' ' == *p || '\t' == *p || '\n' == *p || '\r' == *p || '\f' == *p || '\v' == *p)
 	{
 		p++;
@@ -123,8 +118,7 @@ int is_symbol(char *p) {
 }
 
 
-int is_comment(char *p)
-{
+int is_comment(char *p) {
 	if(*p == '/')
 	{
 		return String_conpair(p,"/*",2);
@@ -135,8 +129,7 @@ int is_comment(char *p)
 
 
 
-void comment_skip(char **p)
-{
+void comment_skip(char **p) {
 	while (1)
 	{
 		if( **p == '*' && String_conpair(*p,"*/",2))
@@ -150,7 +143,6 @@ void comment_skip(char **p)
 }
 
 char* get_keyword(keyword kind) {
-	
 	switch(kind)
 	{
 		case RETURN: return "return";
@@ -165,6 +157,8 @@ char* get_keyword(keyword kind) {
 		case UNSIGNED: return "unsigned";
 		case UNSIGNED_INT: return "unsigned int";
 		case STRUCT: return "struct";
+		case UNION: return "union";
+		case ENUM: return "enum";
 		default:
 			return NULL;
 	}
@@ -185,6 +179,8 @@ Token_kind get_correspond_token_kind(keyword kind) {
 		case INT: return TK_TypeINT;
 		case CHAR: return TK_TypeCHAR;
 		case STRUCT: return TK_STRUCT;
+		case UNION: return TK_UNION;
+		case ENUM: return TK_ENUM;
 		default:
 			fprintf(stderr, "	failed to get token kind from keyword\n");
 			exit(1);
@@ -192,8 +188,7 @@ Token_kind get_correspond_token_kind(keyword kind) {
 }
 
 
-int is_keyword(char *p, keyword* kind_of){
-
+int is_keyword(char *p, keyword* kind_of) {
 	keyword kind = KEYWORD_START + 1;
 	while(kind < KEYWORD_END)
 	{
@@ -204,7 +199,7 @@ int is_keyword(char *p, keyword* kind_of){
 			continue;
 		}
 		unsigned int len = String_len(keyword);
-		if(String_conpair(keyword, p, len))
+		if(String_conpair(keyword, p, len) && (is_space(*(p + len)) || is_symbol(p+len)))
 		{
 			if(kind_of != NULL)
 				*kind_of = kind;
@@ -220,12 +215,11 @@ int is_keyword(char *p, keyword* kind_of){
 
 
 
-Token_t *tokenize(char *p){//入力文字列
-
-
+Token_t *tokenize(char *p) {
 	Token_t head;
 	head.next = NULL;
 	Token_t *cur = &head;
+
 	while(*p != '\0'){
 		keyword keyword = KEYWORD_START;
 
@@ -253,19 +247,19 @@ Token_t *tokenize(char *p){//入力文字列
 			continue;	
 		}
 		else if(is_comment(p))
-		{//コメント
+		{//comment 
 			comment_skip(&p);
 			continue;
 		}
 		else if (is_keyword(p, &keyword))
-		{//キーワード
+		{//keywords
 			Token_kind kind = get_correspond_token_kind(keyword);
 			cur = new_keyword(kind, keyword,cur, p);
 			p += cur -> length;
 			continue;
 
 		}else if(is_symbol(p))
-		{//演算子または区切り文字
+		{//operator or punctuator
 			
 			cur = new_token(TK_OPERATOR,cur,p);
 			cur -> length = is_symbol(p);
@@ -278,7 +272,7 @@ Token_t *tokenize(char *p){//入力文字列
 			continue;
 
 		}else if(isdigit(*p))
-		{//数字
+		{//number literal
 
 
 			cur = new_token(TK_CONST,cur,p);
@@ -286,18 +280,16 @@ Token_t *tokenize(char *p){//入力文字列
 			continue;
 		
 		}else if(*p != ';')
-		{//識別子
+		{//identifier
 
 			cur = new_token(TK_IDENT,cur,p);
-			//length 取得
-			//空白か次の演算子まで名前だと思う
+			//calculate length of identifier
 			char *q = p;
 			
 			while(1){
 			
-				if( isspace(*q) || q[0] == ','  || is_symbol(q)){ 
-				//q が演算子をさしたらやめる
-
+				if( isspace(*q) || q[0] == ','  || is_symbol(q))
+				{ //stop
 					cur -> length = q-p;
 					p =q;
 					break;
@@ -305,15 +297,14 @@ Token_t *tokenize(char *p){//入力文字列
 				q++;
 			}
 			continue;
-		
-		}else if(*p == ';')
+		}
+		else if(*p == ';')
 		{
-		
 			cur = new_token(TK_PUNCTUATOR,cur,p++);
 			cur -> length =1;
 			continue;
 		}
-		error_at(cur -> str,"tokenizeできません。");
+		error_at(cur -> str,"Can't tokenize");
 	}
 	new_token(TK_EOF,cur,p);
 	return head.next;
