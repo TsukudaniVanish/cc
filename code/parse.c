@@ -1225,7 +1225,7 @@ Node_t *postfix(Token_t **token) {
 			{
 				error_at(parsing_here, "lval is expected");
 			}
-			if(node -> tp -> Type_label != TP_STRUCT)
+			if(node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION)
 				error_at((*token) -> str, "member access is expected");
 			char *memberName = expect_ident(token);
 			StructData* data = Map_at(tagNameSpace, node -> tp -> name);
@@ -1240,7 +1240,7 @@ Node_t *postfix(Token_t **token) {
 			if(node -> tp -> Type_label != TP_POINTER)
 				error_at(parsing_here, "Pointer type is expected");
 			node = new_Node_t(ND_DEREF, node, NULL, 0, 0, node -> tp -> pointer_to, NULL);
-			if(node -> tp -> Type_label != TP_STRUCT)
+			if(node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION)
 				error_at((*token) -> str, "member access is expected");
 			char *memberName = expect_ident(token);
 			StructData* data = Map_at(tagNameSpace, node -> tp -> name);

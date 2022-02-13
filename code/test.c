@@ -16,6 +16,16 @@ int String_conpair(char* s1, char* s2, unsigned int size) {
 	}
 	return res;
 }
+
+void error_template(char* test, char *tmp) {
+	test_print("error at");
+	test_print(test);
+	test_print("\n");
+	test_print(tmp);
+	test_print("\n");
+	test_error();
+}
+
 void error_template_int(char *test_name,int expect , int a)
 {
     test_print("\x1b[31merror\x1b[m at ");
@@ -340,6 +350,26 @@ void test_array_init() {
 	test_passed(test);
 }
 
+void test_union() {
+	char* test = "union test";
+	union Hi {
+		char* greeting;
+		int a;
+	};
+	union Hi a;
+	a.greeting = "Hello";
+	if(String_len(a.greeting) != 5 || String_conpair(a.greeting, "Hello", 5) == 0)
+	{
+		error_template(test, a.greeting);
+	}
+	a.a = 4;
+	if(a.a != 4)
+	{
+		error_template_int(test, 4, a.a);
+	}
+	test_passed(test);
+}
+
 int g = 100;
 char a[11];
 void test_global() {
@@ -369,6 +399,7 @@ int main(){
 	test_logic();
 	test_struct();
 	test_array_init();
+	test_union();
 	
 	test_global();
 	test_print_int(Character_conpair(2,2));
