@@ -1,5 +1,5 @@
 # cc
-cc is a my c compiler making project.
+cc is a my subset of c compiler making project.
 
 
 ## Files
