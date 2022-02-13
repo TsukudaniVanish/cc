@@ -597,6 +597,10 @@ ScopeInfo* ScopeController_get_current_scope(ScopeController*);
 ScopeController* controller;
 
 typedef struct {
+	enum {
+		TAG_STRUCT,
+		TAG_UNION,
+	}tag;
 	unsigned int size;
 	Vector* memberNames;
 	Map* memberContainer;
@@ -796,7 +800,7 @@ Node_t* ident_specify(Token_t** , Node_t*);
 Node_t* declere_specify(Token_t** , Node_t* );
 Node_t* pointer(Token_t**, Node_t*);
 Node_t* type_specify(Token_t** token, Node_t*);
-Node_t* struct_specify(Token_t**, Node_t*);
+Node_t* struct_union_specify(Token_t**, Node_t*);
 Node_t* struct_declere(Token_t**, Node_t*);
 Node_t* struct_declere_inside(Token_t**, Node_t*);
 Node_t* expr(Token_t**);

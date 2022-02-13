@@ -71,7 +71,10 @@ StructData* make_StructData() {
 }
 
 void StructData_add(StructData* data, Node_t* member) {
-	data -> size += member -> tp -> size;
+	if(data -> tag == TAG_STRUCT)
+		data -> size += member -> tp -> size;
+	else
+		data -> size = data -> size < member -> tp -> size? member -> tp -> size: data -> size;
 	Vector_push(data -> memberNames, member -> name);
 	Map_add(data -> memberContainer, member -> name, member);
 }
@@ -540,10 +543,13 @@ Node_t *new_node_glob_ident(Token_t**token) {
 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declere_specify(token, node);
-	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT || (*token) -> kind == TK_OPERATOR)
+	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION)
+			|| (*token) -> kind == TK_IDENT 
+			|| (*token) -> kind == TK_OPERATOR)
 		node = ident_specify(token, node);
 
-	if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
+	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION)
+			&& node -> name == NULL)
 	{
 		expect(';', token);
 		return node;
@@ -626,8 +632,8 @@ Node_t *new_node_ref_deref(Token_t **token) {
  * 		| "unsigned int"
  * 		| "unsigned"
  * 		| "char"
- * 		| struct_specify
- * 	struct_specify = "struct" ( ident? "{" struct_declere* "}" | ident )
+ * 		| struct_union_specify
+ * 	struct_union_specify = ("struct" | "union") ( ident? "{" struct_declere* "}" | ident )
  * 	struct_declere = struct_declere_inside ("," struct_declere_inside)* ";"  
  * 	struct_declere_inside = type_specify ident_specify 
  * pointer = "*"*
@@ -731,15 +737,19 @@ Node_t *declere(Token_t **token) {
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
 	node = declere_specify(token, node);
-	if(node -> tp -> Type_label != TP_STRUCT || (*token) -> kind == TK_IDENT || (*token) -> kind == TK_OPERATOR)
+	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION) 
+			|| (*token) -> kind == TK_IDENT 
+			|| (*token) -> kind == TK_OPERATOR)
 	{
 		node = ident_specify(token, node);
 	}
 
-	if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
+	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION) 
+				&& node -> name == NULL)
 	{//  struct definition only
 		return node;
 	}
+
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
 	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
 		lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
@@ -747,6 +757,7 @@ Node_t *declere(Token_t **token) {
 		error_at((*token) -> str, "Can't use same identifier: %s", node -> name);
 	node -> offset = lvar -> offset;
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
+
 	if(find('=',token))
 	{
 		parsing_here = (*token) -> str;
@@ -856,40 +867,41 @@ Node_t *pointer(Token_t** token, Node_t* node) {
  * @brief type parse type and struct decleration. change assigned node -> tp when assigned token -> kind >=  TOKEN_TYPE and < TK_STRUCT. 
  * */
 Node_t *type_specify(Token_t** token, Node_t* node) {
-	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind != TK_STRUCT)
+	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_STRUCT)
 	{	
 		node -> tp = (*token) -> tp;
 		*token = (*token) -> next;
 		return node;
 	}
-	if((*token) -> kind == TK_STRUCT)
+	if((*token) -> kind == TK_STRUCT || (*token) -> kind == TK_UNION)
 	{
-		consume(token);
-		node -> tp = new_tp(TP_STRUCT, NULL, 0);
-		return struct_specify(token, node);
+		node -> tp = consume(token) -> kind == TK_STRUCT? new_tp(TP_STRUCT, NULL, 0): new_tp(TP_UNION, NULL, 0);
+		return struct_union_specify(token, node);
 	}
 	error_at((*token) -> str, "Type keyword is expected");
 }
 /*
  * @brief Doesn't change node address
  * */
-Node_t* struct_specify(Token_t** token, Node_t* node) {
+Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	char* name = NULL; 
 	if((*token) -> kind == TK_IDENT)
 	{
 		name = calloc((*token) -> length, sizeof(char));
 		Memory_copy(name, (*token) -> str, (*token) -> length);
+		consume(token);
 	}
 	else
 	{
 		name = "_";
 	}
 	node -> tp -> name = name;
-	consume(token);
+	
 	StructData* structData = Map_at(tagNameSpace, name);
 	if(structData == NULL)
 	{
 		structData = make_StructData();
+		structData -> tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
 		Map_add(tagNameSpace, name, structData);
 	}
 
@@ -900,6 +912,14 @@ Node_t* struct_specify(Token_t** token, Node_t* node) {
 			struct_declere(token, node);
 		}
 	}
+	if(node -> tp -> Type_label == TP_UNION)
+	{
+		StructData* data = Map_at(tagNameSpace, node -> tp -> name);
+		node -> tp -> size = data -> size;
+		return node;
+	}
+
+	//calculate alignment size when struct
 	char* lastMember = Vector_get_tail(structData -> memberNames);
 	if(lastMember == NULL)
 	{
@@ -939,15 +959,23 @@ Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
 		member -> name = "_";
 	}
 
-	if(previousMember != NULL)
+	if(node -> tp -> Type_label == TP_UNION)
 	{
+		
+		StructData_add(data, member);
+		return node;
+	}
+	
+	if(previousMember != NULL)
+	{// offset calculation when struct
 		Node_t* prev = Map_at(data -> memberContainer, previousMember);
 		unsigned threshold = prev -> offset + prev -> tp -> size + (8 - ((prev -> offset + prev -> tp -> size) % 8));
 		if(prev -> offset + prev -> tp -> size + member -> tp -> size <= threshold)
 		{
 			member -> offset = prev -> offset + prev -> tp -> size;
 		}
-		else{
+		else
+		{
 			member -> offset = threshold;
 		}
 	}

@@ -460,6 +460,31 @@ void unit_test_tokenize_enum() {
 	test_passed(test);
 }
 
+#ifdef NODE_ERR
+	#define NODE_ERR_UNION(a) do{assert(test, ""); NODE_ERR(a);}while(0)
+#endif
+void unit_test_parse_union() {
+	char* test = "union parsing test";
+	char* arg = "union Hi { char* greeting; int a;}; union Hi u;";
+
+	Token_t* token = tokenize(arg);
+	
+	parsing_here = arg;
+	user_input = arg;
+	controller = NULL;
+	Vector* v = init_parser();
+	program(&token, v);
+	Node_t* node = Vector_at(v, 1);
+
+	if(node == NULL)
+		NODE_ERR_UNION(node);
+	if(node -> tp == NULL || node -> tp -> Type_label != TP_UNION)
+		NODE_ERR_UNION(node);
+	if(node -> tp -> size != 8)
+		NODE_ERR_UNION(node);
+	test_passed(test);
+}
+
 void unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -469,4 +494,5 @@ void unit_test() {
 	unit_test_parse_struct_init();
 	unit_test_tokenize_union();
 	unit_test_tokenize_enum();
+	unit_test_parse_union();
 }
