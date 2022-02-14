@@ -461,7 +461,7 @@ void unit_test_tokenize_enum() {
 }
 
 #ifdef NODE_ERR
-	#define NODE_ERR_UNION(a) do{assert(test, ""); NODE_ERR(a);}while(0)
+	#define NODE_ERR_PRASE_FAILED(a) do{assert(test, ""); NODE_ERR(a);}while(0)
 #endif
 void unit_test_parse_union() {
 	char* test = "union parsing test";
@@ -477,11 +477,51 @@ void unit_test_parse_union() {
 	Node_t* node = Vector_at(v, 1);
 
 	if(node == NULL)
-		NODE_ERR_UNION(node);
+		NODE_ERR_PRASE_FAILED(node);
 	if(node -> tp == NULL || node -> tp -> Type_label != TP_UNION)
-		NODE_ERR_UNION(node);
+		NODE_ERR_PRASE_FAILED(node);
 	if(node -> tp -> size != 8)
-		NODE_ERR_UNION(node);
+		NODE_ERR_PRASE_FAILED(node);
+	test_passed(test);
+}
+
+void unit_test_parse_enum() {
+	char* test = "enum parse test";
+	char* arg = "enum Greeting { HI, HELLO, GOOD_MORNING = 10}; int main(){ enum Greeting formal = GOOD_MORNING; enum Greeting casual = HELLO; return 0;}";
+
+	user_input = arg;
+	parsing_here = arg;
+	controller = NULL;
+
+	Token_t *token = tokenize(arg);
+	Vector* v = init_parser();
+	program(&token, v);
+
+	Node_t* node = Vector_at(v, 0);
+	if(node == NULL)
+		NODE_ERR_PRASE_FAILED(node);
+	if(node -> tp == NULL || node -> tp -> Type_label != TP_ENUM)
+		NODE_ERR_PRASE_FAILED(node);
+	if(node -> tp -> size != 4)
+		NODE_ERR_PRASE_FAILED(node);
+	
+	node = Vector_at(v, 1);
+	if(node == NULL || node -> kind != ND_FUNCTIONDEF)
+		NODE_ERR_PRASE_FAILED(node);
+	if(node -> right == NULL || node -> right -> left == NULL || node -> right -> right == NULL)
+		NODE_ERR_PRASE_FAILED(node);
+	
+	Node_t* node_stmt = node -> right;
+	node = node -> right -> left;
+	if(node -> kind != ND_ASSIGN)
+		NODE_ERR_PRASE_FAILED(node);
+	if(node -> left -> tp -> Type_label != TP_ENUM || node -> right -> val != 10)
+		NODE_ERR_PRASE_FAILED(node);
+	node = node_stmt -> right -> left;
+	if(node == NULL || node -> kind != ND_ASSIGN)
+		NODE_ERR_PRASE_FAILED(node);
+	if(node -> left -> tp -> Type_label != TP_ENUM || node -> right -> val != 1)
+		NODE_ERR_PRASE_FAILED(node);
 	test_passed(test);
 }
 
@@ -495,4 +535,5 @@ void unit_test() {
 	unit_test_tokenize_union();
 	unit_test_tokenize_enum();
 	unit_test_parse_union();
+	unit_test_parse_enum();
 }
