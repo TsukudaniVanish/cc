@@ -594,6 +594,7 @@ typedef struct {
 ScopeController* ScopeController_init();
 void ScopeController_nest_appeared(ScopeController*);
 void ScopeController_nest_disappeared(ScopeController*);
+/* if you want to copy scopeInfo, wrap this with ScopeInfo_copy*/
 ScopeInfo* ScopeController_get_current_scope(ScopeController*);
 
 ScopeController* controller;
@@ -602,6 +603,7 @@ typedef struct {
 	enum {
 		TAG_STRUCT,
 		TAG_UNION,
+		TAG_ENUM,
 	}tag;
 	unsigned int size;
 	ScopeInfo* scope;

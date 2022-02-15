@@ -636,10 +636,14 @@ Node_t *new_node_ref_deref(Token_t **token) {
  * 		| "unsigned int"
  * 		| "unsigned"
  * 		| "char"
+ * 		| enum_specify
  * 		| struct_union_specify
  * 	struct_union_specify = ("struct" | "union") ( ident? "{" struct_declere* "}" | ident )
  * 	struct_declere = struct_declere_inside ("," struct_declere_inside)* ";"  
- * 	struct_declere_inside = type_specify ident_specify 
+ * 	struct_declere_inside = type_specify ident_specify
+ * 	enum_specify = "enum" ( ident | ident? "{" enum_list "}" )
+ * 	enum_list = enum ( "," enum )*
+ * 	enum = indent ( "-" expr)
  * pointer = "*"*
  * expr = assign
  * assign = log_or ("=" expr )?
