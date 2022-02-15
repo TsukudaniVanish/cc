@@ -119,6 +119,7 @@ typedef struct {
 Map* make_Map();
 void Map_add(Map*, char*, void*);
 void* Map_at(Map*, char*);
+Vector* Map_get_all(Map*, char*);
 void* Map_delete(Map*, char*);
 int Map_contains(Map*, char*);
 // ====================================================
@@ -602,6 +603,7 @@ typedef struct {
 		TAG_UNION,
 	}tag;
 	unsigned int size;
+	ScopeInfo* scope;
 	Vector* memberNames;
 	Map* memberContainer;
 }StructData;

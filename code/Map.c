@@ -59,7 +59,7 @@ void Map_add(Map* m,char* key, void* data) {
 	m -> body[index] = c;
 	m -> size++;
 }
-
+/* search key in m. find data which is stored at last*/
 void* Map_at(Map* m, char* key) {
 	unsigned long index = hash(key) % m -> bodySize;
 	unsigned int len = String_len(key);
@@ -69,6 +69,19 @@ void* Map_at(Map* m, char* key) {
 			return p -> data;
 	}
 	return NULL;
+}
+/* find all data which has key*/
+Vector* Map_get_all(Map* m, char* key) {
+	Vector* toReturn = make_vector();
+	unsigned long  index = hash(key) %m -> bodySize;
+	unsigned int len = String_len(key);
+
+	for(Container* p = m -> body[index]; p; p = p -> next)
+	{
+		if(String_len(p -> key) == len && String_conpair(p -> key, key, len))
+			Vector_push(toReturn, p -> data);
+	}
+	return toReturn;
 }
 
 void* Map_delete(Map* m, char* key) {

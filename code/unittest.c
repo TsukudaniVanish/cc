@@ -238,6 +238,7 @@ void unit_test_Map() {
 	Map *m = make_Map();
 	Map_add(m,"a", recode_Person("James", 34));
 	Map_add(m, "b", recode_Person("Bob",46));
+	Map_add(m, "b", recode_Person("BobI", 88));
 	Map_add(m,"c", recode_Person("Alice", 54));
 	Map_add(m, "d", recode_Person("Yu",14));
 	Map_add(m,"aa", recode_Person("Kelie", 24));
@@ -268,6 +269,12 @@ void unit_test_Map() {
 		exit(1);
 	}
 	if(!Map_contains(m, "aa"))
+	{
+		__Map_show(m);
+		exit(1);
+	}
+	Vector* v = Map_get_all(m, "b");
+	if(Vector_get_length(v) != 2)
 	{
 		__Map_show(m);
 		exit(1);
