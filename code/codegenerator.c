@@ -750,6 +750,19 @@ void gen_log_and_or(Node_t* node) {
 
 }
 
+StructData* get_struct_union_data(int tag, ScopeInfo* scope, char* name) {
+	Vector* data = Map_get_all(tagNameSpace, name);
+	for(int i = 0; i < Vector_get_length(data); i++)
+	{
+		StructData* maybeThis = Vector_at(data, i);
+		if(ScopeInfo_in_right(maybeThis -> scope, scope) && maybeThis -> tag == tag)
+		{
+			return maybeThis;
+		}
+	}
+	return NULL;
+}
+
 void gen_list_init(Node_t* node) {
 	unsigned offsetTop = node -> left -> offset;
 	printf("	mov rax, rbp\n");
@@ -775,7 +788,13 @@ void gen_list_init(Node_t* node) {
 		}
 		return;
 	}
-	StructData *data = Map_at(tagNameSpace, node -> tp -> name);
+	int tag = node -> left -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
+	ScopeInfo* scope = node -> scope;
+	StructData *data = get_struct_union_data(tag, scope, node -> left -> tp -> name);
+	if(data == NULL)
+	{
+		error_at(user_input, "fail to find struct or union data");
+	}
 	Vector* memberNames = data -> memberNames;
 	Map* container = data -> memberContainer;
 	int i = 0;

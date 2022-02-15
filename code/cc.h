@@ -448,7 +448,7 @@ struct node {
 	unsigned int offset;// offset from rbp
 	Type *tp;
 	char *name;
-
+	ScopeInfo* scope;// this member can't initiate when new_Node_t, and other new functions
 };
 /**
  * @brief make new node
@@ -584,6 +584,7 @@ Token_t *tokenize(char *p);
 ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number);
 ScopeInfo* ScopeInfo_copy(ScopeInfo* info);
 int ScopeInfo_equal(ScopeInfo*, ScopeInfo*);
+int ScopeInfo_in_right(ScopeInfo*, ScopeInfo*);
 int ScopeInfo_inscope(ScopeInfo*);
 
 typedef struct {

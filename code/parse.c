@@ -23,16 +23,19 @@ int ScopeInfo_equal(ScopeInfo* self, ScopeInfo* other) {
 	}
 	return 1;
 }
-// compare Scope with current Scope
-int ScopeInfo_inscope(ScopeInfo* info) {
-	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
-	if(currentNest ->nested > info -> nested)
+int ScopeInfo_in_right(ScopeInfo* info, ScopeInfo* current) {
+	if(current ->nested > info -> nested)
 		return 1;
-	if(ScopeInfo_equal(currentNest, info))
+	if(ScopeInfo_equal(current, info))
 	{
 		return 1;
 	}
-	return 0;
+	return 0;	
+}
+// compare Scope with current Scope
+int ScopeInfo_inscope(ScopeInfo* info) {
+	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
+	return ScopeInfo_in_right(info , currentNest);
 }
 ScopeController* ScopeController_init() {
 	ScopeController* controller = calloc(1, sizeof(ScopeController));
@@ -65,6 +68,7 @@ ScopeInfo* ScopeController_get_current_scope(ScopeController* con) {
 StructData* make_StructData() {
 	StructData* data = calloc(1, sizeof(StructData));
 	data -> size = 0;
+	data -> scope = NULL;
 	data -> memberNames = make_vector();
 	data -> memberContainer = make_Map();
 	return data;
@@ -661,6 +665,18 @@ Node_t *new_node_ref_deref(Token_t **token) {
  * 		indent
  * 		string literal
  */
+StructData* searchCurentStructOrUnion(char* name) {
+	Vector* data = Map_get_all(tagNameSpace, name);
+	for(int i = 0; i < Vector_get_length(data); i++)
+	{
+		StructData* maybeThisData = Vector_at(data, i);
+		if(ScopeInfo_inscope(maybeThisData ->scope))
+		{
+			return maybeThisData;
+		}
+	}
+	return NULL;
+}
 
 int at_eof(Token_t **token) {
 	if((*token)-> kind != TK_EOF)
@@ -777,6 +793,7 @@ Node_t* init(Token_t** token, Node_t* node) {
 		node = init_list(token, node);
 		find(',', token);
 		expect('}', token);
+		node -> scope = ScopeInfo_copy(ScopeController_get_current_scope(controller));
 		return node;
 	}
 	return assign(token);
@@ -785,7 +802,7 @@ Node_t* init(Token_t** token, Node_t* node) {
 Node_t* init_list(Token_t** token, Node_t* node) {
 	if(node -> tp -> Type_label == TP_STRUCT)
 	{
-		StructData *data = Map_at(tagNameSpace, node -> tp -> name);
+		StructData* data = searchCurentStructOrUnion(node -> tp ->name);
 		int i = 0;
 		char* member_name = Vector_at(data -> memberNames, i);
 		Node_t* member = Map_at(data -> memberContainer, member_name);
@@ -880,6 +897,7 @@ Node_t *type_specify(Token_t** token, Node_t* node) {
 	}
 	error_at((*token) -> str, "Type keyword is expected");
 }
+
 /*
  * @brief Doesn't change node address
  * */
@@ -896,14 +914,24 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 		name = "_";
 	}
 	node -> tp -> name = name;
-	
-	StructData* structData = Map_at(tagNameSpace, name);
+	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
+	StructData* structData = searchCurentStructOrUnion(name);
 	if(structData == NULL)
-	{
+	{// declere struct or union
+		if((*token) -> kind != TK_PUNCTUATOR || (*token) -> str[0] != '{')
+		{
+			error_at((*token) -> str, "unknown type name");
+		}
 		structData = make_StructData();
 		structData -> tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
+		structData -> scope = ScopeInfo_copy(ScopeController_get_current_scope(controller));
 		Map_add(tagNameSpace, name, structData);
 	}
+	if(structData -> tag != tag)
+	{
+		error_at((*token) -> str, "%s is defined as wong kind of tag", name);
+	}
+	
 
 	if(find('{', token))
 	{
@@ -945,7 +973,8 @@ Node_t* struct_declere(Token_t** token, Node_t* node) {
  * @brief Doesn't change node address
  * */
 Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
-	StructData* data = Map_at(tagNameSpace, node -> tp -> name);
+	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
+	StructData* data = searchCurentStructOrUnion(node -> tp -> name);
 	char* previousMember = Vector_get_tail(data -> memberNames);
 	Node_t* member = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 	

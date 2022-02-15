@@ -197,3 +197,5 @@ assert_should_fail 'int main(){20+++3;}'
 assert_should_fail 'int main(){a = 0;return a;}'
 
 assert_should_fail 'int main(){ {int a = 0;} a = 1; return 0; }'
+
+assert_should_fail 'int foo(){struct a {int a;}; union a{char* hi;}; return 0;}'
