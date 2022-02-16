@@ -166,7 +166,7 @@ typedef struct {
 }ScopeInfo;
 
 /**
- * @brief Container which store data needed for dealing with identifier.
+ * @brief Container which store data which needs calculate an offset to map stack or data section.
  * 
  * @param Lvar_* next
  * @param char_* name
@@ -193,7 +193,20 @@ struct lvar{
 Lvar *string_iter;
 Lvar *global;
 
+/* @brief  this use for ordinary name space
+*/
+typedef struct {
+	ScopeInfo* scope;
+	Type* tp;// this member is used when tag is Function
+	enum {
+		TAG_FUNCTION,
+		TAG_OBJECT,
+		TAG_TYPEDEF,
+		TAG_ENUMCONSTANT,
+	}tag;
+}NameData;
 
+Map *ordinaryNameSpace;
 Map *tagNameSpace;// tag name space which contains a name of which struct , union and enum.
 Vector *nameTable;//table of identifier which has block scope.
 void** rootBlock;// this variable points an current root block.
@@ -581,6 +594,8 @@ Token_t *tokenize(char *p);
 /*
  * parse.c=====================================================
  */
+NameData* new_NameData(int tag);
+
 ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number);
 ScopeInfo* ScopeInfo_copy(ScopeInfo* info);
 int ScopeInfo_equal(ScopeInfo*, ScopeInfo*);
@@ -624,7 +639,7 @@ Vector* init_parser();
  * @param long_int size
  * @return Type* 
  */
-Type *new_tp(int,Type*,long int size);
+Type *new_tp(int,Type*,unsigned int size);
 
 
 /**
@@ -808,6 +823,9 @@ Node_t* type_specify(Token_t** token, Node_t*);
 Node_t* struct_union_specify(Token_t**, Node_t*);
 Node_t* struct_declere(Token_t**, Node_t*);
 Node_t* struct_declere_inside(Token_t**, Node_t*);
+Node_t* enum_specify(Token_t**, Node_t*);
+Node_t* enum_list(Token_t**, Node_t*);
+Node_t* enumerator(Token_t**, Node_t*);
 Node_t* expr(Token_t**);
 Node_t *assign(Token_t **);
 Node_t *log_or(Token_t **);

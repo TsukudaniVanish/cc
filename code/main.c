@@ -11,6 +11,7 @@ extern int String_conpair(char*, char*,unsigned int);
 
 int main(int argc, char **argv){
 	controller = NULL;
+	ordinaryNameSpace = NULL;
 
 	//unit test
 	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-T",2))
@@ -34,15 +35,22 @@ int main(int argc, char **argv){
 		buffer = argv[1];
 	}
 	controller = ScopeController_init();
+	ordinaryNameSpace = make_Map();
 	//helperfunction input
 	char *test_print = "test_print";
-	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print,String_len(test_print),&global);
+	NameData* _test_print = new_NameData(TAG_FUNCTION);
+	_test_print -> tp = new_tp(TP_VOID, NULL, 0);
+	Map_add(ordinaryNameSpace, test_print, _test_print);
 
 	char *test_print_int = "test_print_int";
-	declere_glIdent(new_tp(TP_VOID,NULL,0),test_print_int,String_len(test_print_int),&global);
+	NameData* _test_print_int = new_NameData(TAG_FUNCTION);
+	_test_print_int -> tp = new_tp(TP_VOID, NULL, 0);
+	Map_add(ordinaryNameSpace, test_print_int, _test_print_int);
 
 	char *test_error = "test_error";
-	declere_glIdent(new_tp(TP_VOID,NULL,0),test_error,String_len(test_error),&global);
+	NameData* _test_error = new_NameData(TAG_FUNCTION);
+	_test_error -> tp = new_tp(TP_VOID, NULL, 0);
+	Map_add(ordinaryNameSpace, test_error, _test_error);
 		
 	
 

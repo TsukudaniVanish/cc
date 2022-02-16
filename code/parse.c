@@ -7,6 +7,25 @@ extern unsigned int String_len(char*);
 extern int String_conpair(char*,char*,unsigned int);
 extern void Memory_copy(void*,void*,unsigned int);
 
+NameData* new_NameData(int tag) {
+	NameData* data = calloc(1, sizeof(NameData));
+	data -> tp = NULL;
+	data -> tag = tag;
+	data -> scope = ScopeInfo_copy(ScopeController_get_current_scope(controller));
+	return data;
+}
+
+NameData* search_from_ordinary_namespace(char* name, ScopeInfo* scope) {
+	Vector* v = Map_get_all(ordinaryNameSpace, name);
+	for (size_t i = 0; i < Vector_get_length(v); i++)
+	{
+		NameData* maybe = Vector_at(v, i);
+		if(ScopeInfo_in_right(maybe -> scope, scope))
+			return maybe;
+	}
+	return NULL;
+}
+
 ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number) {
 	ScopeInfo* info = calloc(1, sizeof(ScopeInfo));
 	info ->nested = nested;
@@ -85,6 +104,7 @@ void StructData_add(StructData* data, Node_t* member) {
 
 
 Vector* init_parser() {
+	ordinaryNameSpace = ordinaryNameSpace == NULL?make_Map(): ordinaryNameSpace;
 	tagNameSpace = make_Map();
 	nameTable = make_vector();
 	if(controller == NULL)
@@ -103,7 +123,7 @@ Type* new_Type(int label, Type* pointer_to, unsigned int size, char* name) {
 	return tp;
 }
 
-Type* new_tp(int label,Type* pointer_to,long int size) {
+Type* new_tp(int label,Type* pointer_to,unsigned int size) {
 
 	
 	return new_Type(label, pointer_to, size, NULL);
@@ -116,9 +136,10 @@ Type *Type_function_return(char **name,Token_t** token) {
 		free(*name);
 	*name = calloc(buf -> length, sizeof(char));
 	Memory_copy(*name,buf -> str,buf -> length);
-	Lvar *lvar = find_lvar(*name,buf -> length,&global);
-	if(lvar != NULL)
-		return lvar -> tp;
+	
+	NameData* data = search_from_ordinary_namespace(*name, ScopeController_get_current_scope(controller));
+	if(data != NULL)
+		return data -> tp;
 	return NULL;
 }
 
@@ -153,6 +174,11 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 		lvar -> offset = (lvar -> tp->size);
 	}
 	lvar -> scope = ScopeController_get_current_scope(controller);
+
+	// set this to ordinary name space
+	NameData* data = new_NameData(TAG_OBJECT);
+	Map_add(ordinaryNameSpace, lvar -> name, data);
+
 	return lvar;
 }
 
@@ -340,9 +366,15 @@ int Node_read_function_parameters(Token_t **token,Node_t **vector) {
 }
 
 Node_t *new_node_function_call(Token_t **token) {
-	if(find_lvar((*token) -> str, (*token) -> length, &global) == NULL)
+	char* name = calloc((*token) -> length, sizeof(char));
+	Memory_copy(name, (*token) -> str, (*token) -> length);
+	NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+	if(data == NULL || data -> tag != TAG_FUNCTION)
 	{
-		error_at((*token) -> str, "this is not exist in the ordinary name space");
+		if(data == NULL)
+			error_at((*token) -> str, "this is not exist in the ordinary name space");
+		else
+			error_at((*token) -> str, "%s is not function", name);
 	}
 	Node_t *node = new_Node_t(ND_FUNCTIONCALL,NULL,NULL,0,0,NULL,NULL);
 	node -> tp = Type_function_return(&node -> name,token);
@@ -373,7 +405,9 @@ Node_t *new_node_function_definition(Token_t **token) {
 	node = declere_specify(token, node);
 	node = ident_specify(token, node); 
 
-	declere_glIdent(node -> tp,node -> name,String_len(node -> name),&global);
+	NameData* data = new_NameData(TAG_FUNCTION);
+	data -> tp = node -> tp;
+	Map_add(ordinaryNameSpace, node -> name, data);
 	
 	expect('(',token);	
 	node -> val = Node_read_function_parameters(token,&node -> left);
@@ -388,7 +422,16 @@ Node_t *new_node_var(Token_t **token) {
 	Lvar *table = Vector_get_tail(nameTable);
 	Token_t *ident = consume(token);
 	if(ident != NULL)
+	{
+		char* name = NULL;
+		name = calloc(ident -> length, sizeof(char));
+		Memory_copy(name, ident -> str, ident -> length);
+
+		NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+		if(data != NULL && data -> tag != TAG_OBJECT)
+			error_at(ident -> str, "%s is already defined as not object name", name);
 		lvar = find_lvar(ident -> str,ident -> length,&table);
+	}
 	else
 	{
 		fprintf(stderr,"Fail to consume token\n");
@@ -775,6 +818,7 @@ Node_t *declere(Token_t **token) {
 		lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	else
 		error_at((*token) -> str, "Can't use same identifier: %s", node -> name);
+
 	node -> offset = lvar -> offset;
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
 
@@ -812,6 +856,7 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 		Node_t* member = Map_at(data -> memberContainer, member_name);
 		Node_t *initBranch = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
 		node = new_Node_t(ND_INITLIST, node, initBranch, 0, 0, node -> tp, NULL);
+		
 		initBranch -> left = init(token, member);
 		while(find(',', token))
 		{
@@ -885,7 +930,7 @@ Node_t *pointer(Token_t** token, Node_t* node) {
 	return node;
 }
 /*
- * @brief type parse type and struct decleration. change assigned node -> tp when assigned token -> kind >=  TOKEN_TYPE and < TK_STRUCT. 
+ * @brief parse type and struct decleration. change assigned node -> tp only. 
  * */
 Node_t *type_specify(Token_t** token, Node_t* node) {
 	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_STRUCT)
@@ -893,6 +938,12 @@ Node_t *type_specify(Token_t** token, Node_t* node) {
 		node -> tp = (*token) -> tp;
 		*token = (*token) -> next;
 		return node;
+	}
+	if((*token) -> kind == TK_ENUM)
+	{
+		node -> tp = new_tp(TP_ENUM, NULL, 4);
+		consume(token);
+		return enum_specify(token, node);		
 	}
 	if((*token) -> kind == TK_STRUCT || (*token) -> kind == TK_UNION)
 	{
@@ -1017,6 +1068,51 @@ Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
 		member -> offset = 0;
 	}
 	StructData_add(data, member);
+	return node;
+}
+
+Node_t* enum_specify(Token_t** token, Node_t* node) {
+	char* name = NULL;
+	if((*token) -> kind == TK_IDENT)
+	{
+		Token_t* buf = consume(token);
+		name = calloc(buf -> length, sizeof(char));
+		Memory_copy(name, buf -> str, buf -> length);
+	}
+	else
+	{
+		name = "_";
+	}
+
+	if(find('{', token))
+	{
+		node = enum_list(token, node);
+		expect('}', token);
+		return node;
+	}
+	return node;
+}
+
+Node_t* enum_list(Token_t** token, Node_t* node) {
+	node = enumerator(token, node);
+	while (find(',', token))
+	{
+		node = enumerator(token, node);
+	}
+	return node;
+}
+
+Node_t* enumerator(Token_t** token, Node_t* node) {
+	if((*token) -> kind == TK_IDENT)
+	{
+		parsing_here = (*token) -> str;
+
+		char* name = expect_ident(token);
+		if(controller -> currentNest == 0)
+		{// insert global 
+			
+		}
+	}
 	return node;
 }
 
