@@ -370,6 +370,24 @@ void test_union() {
 	test_passed(test);
 }
 
+void test_enum() {
+	char* test = "enum test";
+	enum Hi {
+		HELLO,
+		HI,
+		GOODMORNING = 10,
+	};
+	int a = HELLO;
+	if(a != 0)
+		error_template_int(test, 0, a);
+	if(GOODMORNING != 10)
+		error_template_int(test, 10, 10);
+	enum Hi greeting = HI;
+	if(greeting != 1)
+		error_template_int(test, 1, greeting);
+	test_passed(test);
+}
+
 int g = 100;
 char a[11];
 void test_global() {
@@ -400,6 +418,7 @@ int main(){
 	test_struct();
 	test_array_init();
 	test_union();
+	test_enum();
 	
 	test_global();
 	test_print_int(Character_conpair(2,2));
