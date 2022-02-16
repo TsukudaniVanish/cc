@@ -166,7 +166,7 @@ typedef struct {
 }ScopeInfo;
 
 /**
- * @brief Container which store data which needs calculate an offset to map stack or data section.
+ * @brief Container which store objects that need to calculate an offset to map stack or data section.
  * 
  * @param Lvar_* next
  * @param char_* name
@@ -180,8 +180,8 @@ struct lvar{
 	
 	Lvar *next;
 	char *name;
-	int length;
 	Type *tp;
+	int length;
 	// follwing members are not inputted by utility function
 	/**
 	 * @brief local variable : offset from rbp , string : label number of string literal
@@ -198,6 +198,7 @@ Lvar *global;
 typedef struct {
 	ScopeInfo* scope;
 	Type* tp;// this member is used when tag is Function
+	int val;// this member is used when tag is enumconstant
 	enum {
 		TAG_FUNCTION,
 		TAG_OBJECT,
@@ -595,6 +596,7 @@ Token_t *tokenize(char *p);
  * parse.c=====================================================
  */
 NameData* new_NameData(int tag);
+NameData* search_from_ordinary_namespace(char*, ScopeInfo*);
 
 ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number);
 ScopeInfo* ScopeInfo_copy(ScopeInfo* info);
@@ -627,6 +629,7 @@ typedef struct {
 }StructData;
 StructData* make_StructData();
 void StructData_add(StructData* data, Node_t* member);
+StructData* search_from_tag_namespece(char* name, ScopeInfo*);
 /**
  * @brief initialize parser / make nameTable and ast vector
  * */

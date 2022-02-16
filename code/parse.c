@@ -26,6 +26,17 @@ NameData* search_from_ordinary_namespace(char* name, ScopeInfo* scope) {
 	return NULL;
 }
 
+StructData* search_from_tag_namespece(char* name, ScopeInfo* scope) {
+	Vector* v = Map_get_all(tagNameSpace, name);
+	for (size_t i = 0; i < Vector_get_length(v); i++)
+	{
+		StructData* maybe = Vector_at(v, i);
+		if(ScopeInfo_in_right(maybe -> scope, scope))
+			return maybe;
+	}
+	return NULL;
+}
+
 ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number) {
 	ScopeInfo* info = calloc(1, sizeof(ScopeInfo));
 	info ->nested = nested;
@@ -96,7 +107,7 @@ StructData* make_StructData() {
 void StructData_add(StructData* data, Node_t* member) {
 	if(data -> tag == TAG_STRUCT)
 		data -> size += member -> tp -> size;
-	else
+	else if(data -> tag == TAG_UNION)
 		data -> size = data -> size < member -> tp -> size? member -> tp -> size: data -> size;
 	Vector_push(data -> memberNames, member -> name);
 	Map_add(data -> memberContainer, member -> name, member);
@@ -106,10 +117,13 @@ void StructData_add(StructData* data, Node_t* member) {
 Vector* init_parser() {
 	ordinaryNameSpace = ordinaryNameSpace == NULL?make_Map(): ordinaryNameSpace;
 	tagNameSpace = make_Map();
+
 	nameTable = make_vector();
+
 	if(controller == NULL)
 		controller = ScopeController_init();
-	// fuction ごとのコード
+
+	// code for each function
 	Vector *codes = make_vector();	
 	return codes;
 }
@@ -209,7 +223,7 @@ int typecheck(Node_t *node) {
 }
 
 #if defined(Min)
-	#define Is_type_integer(t) INTEGER_TYPE_START == Min(t,INTEGER_TYPE_START) ? t <= INTEGER_TYPE_END ? 1: 0: 0 
+	#define Is_type_integer(t) INTEGER_TYPE_START == Min(t,INTEGER_TYPE_START) ? t <= INTEGER_TYPE_END ? 1: t == TP_ENUM? 1: 0: 0 
 #endif
 Type *imptypecast(Node_t *node) {
 	int tp_l , tp_r;
@@ -428,6 +442,10 @@ Node_t *new_node_var(Token_t **token) {
 		Memory_copy(name, ident -> str, ident -> length);
 
 		NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+		if(data != NULL && data -> tag == TAG_ENUMCONSTANT)
+		{
+			return new_node_num(data -> val);
+		}
 		if(data != NULL && data -> tag != TAG_OBJECT)
 			error_at(ident -> str, "%s is already defined as not object name", name);
 		lvar = find_lvar(ident -> str,ident -> length,&table);
@@ -590,12 +608,12 @@ Node_t *new_node_glob_ident(Token_t**token) {
 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declere_specify(token, node);
-	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION)
+	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
 			|| (*token) -> kind == TK_IDENT 
 			|| (*token) -> kind == TK_OPERATOR)
 		node = ident_specify(token, node);
 
-	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION)
+	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label != TP_ENUM)
 			&& node -> name == NULL)
 	{
 		expect(';', token);
@@ -712,18 +730,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
  * 		indent
  * 		string literal
  */
-StructData* searchCurentStructOrUnion(char* name) {
-	Vector* data = Map_get_all(tagNameSpace, name);
-	for(int i = 0; i < Vector_get_length(data); i++)
-	{
-		StructData* maybeThisData = Vector_at(data, i);
-		if(ScopeInfo_inscope(maybeThisData ->scope))
-		{
-			return maybeThisData;
-		}
-	}
-	return NULL;
-}
+
 
 int at_eof(Token_t **token) {
 	if((*token)-> kind != TK_EOF)
@@ -800,14 +807,14 @@ Node_t *declere(Token_t **token) {
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
 	node = declere_specify(token, node);
-	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION) 
+	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM) 
 			|| (*token) -> kind == TK_IDENT 
 			|| (*token) -> kind == TK_OPERATOR)
 	{
 		node = ident_specify(token, node);
 	}
 
-	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION) 
+	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM) 
 				&& node -> name == NULL)
 	{//  struct definition only
 		return node;
@@ -850,7 +857,7 @@ Node_t* init(Token_t** token, Node_t* node) {
 Node_t* init_list(Token_t** token, Node_t* node) {
 	if(node -> tp -> Type_label == TP_STRUCT)
 	{
-		StructData* data = searchCurentStructOrUnion(node -> tp ->name);
+		StructData* data = search_from_tag_namespece(node -> tp ->name, ScopeController_get_current_scope(controller));
 		int i = 0;
 		char* member_name = Vector_at(data -> memberNames, i);
 		Node_t* member = Map_at(data -> memberContainer, member_name);
@@ -970,7 +977,7 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	}
 	node -> tp -> name = name;
 	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
-	StructData* structData = searchCurentStructOrUnion(name);
+	StructData* structData = search_from_tag_namespece(name, ScopeController_get_current_scope(controller));
 	if(structData == NULL)
 	{// declere struct or union
 		if((*token) -> kind != TK_PUNCTUATOR || (*token) -> str[0] != '{')
@@ -1029,7 +1036,7 @@ Node_t* struct_declere(Token_t** token, Node_t* node) {
  * */
 Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
 	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
-	StructData* data = searchCurentStructOrUnion(node -> tp -> name);
+	StructData* data = search_from_tag_namespece(node -> tp -> name, ScopeController_get_current_scope(controller));
 	char* previousMember = Vector_get_tail(data -> memberNames);
 	Node_t* member = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 	
@@ -1083,7 +1090,20 @@ Node_t* enum_specify(Token_t** token, Node_t* node) {
 	{
 		name = "_";
 	}
+	node -> name = name;
 
+	StructData* data = search_from_tag_namespece(name, ScopeController_get_current_scope(controller));
+	if(data == NULL)
+	{
+		data = make_StructData();
+		data -> tag = TAG_ENUM;
+		data -> scope = ScopeInfo_copy(ScopeController_get_current_scope(controller));
+		Map_add(tagNameSpace, name, data);
+	}
+	else if(data -> tag != TAG_ENUM)
+	{
+		error_at((*token) -> str, "%s is defined by wong tag name", name);
+	}
 	if(find('{', token))
 	{
 		node = enum_list(token, node);
@@ -1095,7 +1115,7 @@ Node_t* enum_specify(Token_t** token, Node_t* node) {
 
 Node_t* enum_list(Token_t** token, Node_t* node) {
 	node = enumerator(token, node);
-	while (find(',', token))
+	while(find(',', token))
 	{
 		node = enumerator(token, node);
 	}
@@ -1105,13 +1125,31 @@ Node_t* enum_list(Token_t** token, Node_t* node) {
 Node_t* enumerator(Token_t** token, Node_t* node) {
 	if((*token) -> kind == TK_IDENT)
 	{
+		StructData* data = Map_at(tagNameSpace, node -> name);
+		char* prevName = Vector_get_tail(data -> memberNames);
+		Node_t* member = NULL;
+		if(prevName != NULL)
+			member = Map_at(data -> memberContainer, prevName);
 		parsing_here = (*token) -> str;
 
 		char* name = expect_ident(token);
-		if(controller -> currentNest == 0)
-		{// insert global 
-			
+		NameData* nameData = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+		if(nameData != NULL)
+			error_at(parsing_here, "%s is defined as wong identifier name", name);
+		
+		nameData = new_NameData(TAG_ENUMCONSTANT);
+		Map_add(ordinaryNameSpace, name, nameData);
+
+		if(find('=', token))
+		{
+			nameData -> val = expect_num(token);
 		}
+		else
+		{
+			nameData -> val = member != NULL?member -> val + 1: 0;
+		}
+		StructData_add(data, new_Node_t(ND_LVAL, NULL, NULL, nameData -> val, 0, NULL, name));
+		
 	}
 	return node;
 }

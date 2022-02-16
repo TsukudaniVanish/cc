@@ -511,12 +511,15 @@ void unit_test_parse_enum() {
 		NODE_ERR_PRASE_FAILED(node);
 	if(node -> tp -> size != 4)
 		NODE_ERR_PRASE_FAILED(node);
+
+	//test_passed("enum declere");
 	
 	node = Vector_at(v, 1);
 	if(node == NULL || node -> kind != ND_FUNCTIONDEF)
 		NODE_ERR_PRASE_FAILED(node);
 	if(node -> right == NULL || node -> right -> left == NULL || node -> right -> right == NULL)
 		NODE_ERR_PRASE_FAILED(node);
+	//test_passed("enum function declere");
 	
 	Node_t* node_stmt = node -> right;
 	node = node -> right -> left;
@@ -524,6 +527,8 @@ void unit_test_parse_enum() {
 		NODE_ERR_PRASE_FAILED(node);
 	if(node -> left -> tp -> Type_label != TP_ENUM || node -> right -> val != 10)
 		NODE_ERR_PRASE_FAILED(node);
+	//test_passed("enum assing first");
+
 	node = node_stmt -> right -> left;
 	if(node == NULL || node -> kind != ND_ASSIGN)
 		NODE_ERR_PRASE_FAILED(node);
