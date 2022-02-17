@@ -835,6 +835,15 @@ void gen_dot(Node_t* node) {
 	return;
 }
 
+void gen_log_not(Node_t* node) {
+	generate(node -> left);
+	pop_stack(node -> left -> tp -> size, "rax");
+	printf("	cmp %s, 0\n", get_registername("rax", node -> left -> tp -> size));
+	printf("	sete al\n");
+	printf("	movzb eax, al\n");
+	push_stack(4, "rax");
+}
+
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node){
 
@@ -871,7 +880,8 @@ void generate(Node_t *node){
 	case ND_LOGAND:
 	case ND_LOGOR: gen_log_and_or(node);
 		return;
-
+	case ND_LOGNOT: gen_log_not(node);
+		return;
 	case ND_LVAL: gen_right_lval(node);
 		return;
 

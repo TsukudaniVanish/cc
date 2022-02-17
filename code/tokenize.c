@@ -69,6 +69,7 @@ char *get_symbol(int kind) {
 	case STER: return "*";
 	case DOT: return ".";
 	case BACK_SLASH: return "/";
+	case EXCLAMATION: return "!";
 	case COMMA: return ",";
 	case SEMICORRON: return ";";
 	case PARENTHESIS: return "(";
@@ -226,7 +227,7 @@ Token_t *tokenize(char *p) {
 		p = skip(p);
 		if(*p == '\0') break;
 		if(*p == '"')
-		{//文字列リテラル
+		{//string literal
 			cur = new_token(TK_PUNCTUATOR,cur,p);
 			cur -> length = 1;
 			char *q = p;
@@ -239,7 +240,7 @@ Token_t *tokenize(char *p) {
 			p = q+1;
 			if(*p != '"')
 			{
-				error_at(p,"文字リテラルが閉じていません\n");
+				error_at(p,"Tokenizer failed to find end marker of string literal\n");
 			}
 			cur = new_token(TK_PUNCTUATOR,cur,p);
 			cur -> length = 1;
@@ -304,7 +305,7 @@ Token_t *tokenize(char *p) {
 			cur -> length =1;
 			continue;
 		}
-		error_at(cur -> str,"Can't tokenize");
+		error_at(cur -> str,"Failed to tokenize");
 	}
 	new_token(TK_EOF,cur,p);
 	return head.next;

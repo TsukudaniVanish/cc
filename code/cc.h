@@ -257,6 +257,7 @@ typedef enum {
 	BACK_SLASH ,//= '/',
 	AND ,//= '&',
 	ASSIGN,//= '=',
+	EXCLAMATION, //= '!'
 	END_OF_UNIT_OPERATOR,
 	PUNCTUATOR_START,
 	COMMA,// = ','
@@ -404,6 +405,7 @@ typedef enum{
 	ND_MUL, // <-> *
 	ND_DIV, // <-> /
 	ND_ASSIGN, // <-> = 
+	ND_LOGNOT, // <-> !
 	ND_ADDR, //<-> & reference
 	ND_DEREF,// <-> * dereference
 	ND_DOT, // <-> . dot operator :: -> is considered as  *(). 

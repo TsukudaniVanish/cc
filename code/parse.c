@@ -644,7 +644,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 
 			(*token) = (*token) -> next;
 
-			node = new_Node_t(ND_DEREF, unitary(token), NULL,0,0,NULL,NULL);
+			node = new_Node_t(ND_DEREF, postfix(token), NULL,0,0,NULL,NULL);
 			if( node -> left -> tp -> Type_label == TP_ARRAY)
 			{
 				node -> tp = node -> left -> tp -> pointer_to;
@@ -664,7 +664,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 
 			(*token) = (*token) -> next;
 
-			node = new_Node_t(ND_ADDR,unitary(token), NULL,0,0,NULL,NULL);
+			node = new_Node_t(ND_ADDR,postfix(token), NULL,0,0,NULL,NULL);
 			node -> tp = new_tp(TP_POINTER,node -> left -> tp,8);
 			return node;
 		}
@@ -716,8 +716,8 @@ Node_t *new_node_ref_deref(Token_t **token) {
  * mul = unitary ("*" unitary | "/" unitary )*
  * unitary = postfix
  * 			|"sizeof" unitary
- * 			| ('+' | '-' | '*' | '&' ) unitary
- * 			| ('++' | '--') postfix
+ * 			| ('+' | '-' | '*' | '&' | '!' ) postfix
+ * 			| ('++' | '--') unitary
  * postfix = primary 
  * 			|( primary [expr] | primary '++' | primary '--' | primary "." ident | primary "->" ident)*
  * primary = num 
@@ -1331,19 +1331,24 @@ Node_t *unitary(Token_t **token) {
 
 	if( find('+',token) )
 	{
-		node = unitary(token);
+		node = postfix(token);
 		return node;
 		
 	}
 	else if( find('-',token) )
 	{
-		node = new_node(ND_SUB,new_node_num(0),unitary(token), (*token) -> str);
+		node = new_node(ND_SUB,new_node_num(0),postfix(token), (*token) -> str);
 		node -> tp = node -> right -> tp;
 		return node;
 	}
 	else if((*token) -> kind == TK_OPERATOR && ( (*token) -> str[0] == '*' || (*token) -> str[0] == '&'))
 	{
 		node = new_node_ref_deref(token);
+		return node;
+	}
+	else if(find('!', token))
+	{
+		node = new_Node_t(ND_LOGNOT, postfix(token), NULL, 0, 0, new_tp(TP_INT, NULL, 4), NULL);
 		return node;
 	}
 		

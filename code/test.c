@@ -388,6 +388,23 @@ void test_enum() {
 	test_passed(test);
 }
 
+void test_log_not() {
+	char* test = "log not test";
+	int a = 100;
+	if(!a)
+	{
+		error_template_int(test, 0, !a);
+	}
+	
+	if(!0)
+	{/* do nothing */}
+	else
+	{
+		error_template_int(test, 0, !0);
+	}
+	test_passed(test);
+}
+
 int g = 100;
 char a[11];
 void test_global() {
@@ -419,6 +436,7 @@ int main(){
 	test_array_init();
 	test_union();
 	test_enum();
+	test_log_not();
 	
 	test_global();
 	test_print_int(Character_conpair(2,2));

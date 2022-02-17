@@ -537,6 +537,35 @@ void unit_test_parse_enum() {
 	test_passed(test);
 }
 
+#ifdef NODE_ERR
+	#define NODE_ERR_NOT(a) do{ assert(test, ""); NODE_ERR(a);}while(0)
+#endif
+void unit_test_parse_not() {
+	char* test = "Not parsing test";
+	char* arg = "int foo(){ !1;}";
+
+	user_input = arg;
+	parsing_here = arg;
+	Token_t* token = tokenize(arg);
+
+	controller = NULL;
+	ordinaryNameSpace = NULL;
+	Vector* v = init_parser();
+	program(&token, v);
+	Node_t* node = Vector_at(v, 0);
+
+	if(node == NULL || node -> right == NULL)
+		NODE_ERR_NOT(node);
+	node = node -> right -> left;
+	// test_passed("NULL check");
+
+	if(node -> kind != ND_LOGNOT)
+		NODE_ERR_NOT(node);
+	if(node -> left == NULL)
+		NODE_ERR_NOT(node);
+	test_passed(test);
+}
+
 void unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -548,4 +577,5 @@ void unit_test() {
 	unit_test_tokenize_enum();
 	unit_test_parse_union();
 	unit_test_parse_enum();
+	unit_test_parse_not();
 }
