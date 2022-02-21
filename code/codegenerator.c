@@ -244,7 +244,12 @@ void gen_function_def(Node_t *node){
 
 	Lvar* nametable = *rootBlock;
 
-	printf("%s:",node -> name);
+	// function header
+	printf(".globl %s\n", node -> name);
+	printf("	.type %s, @function\n", node -> name);
+	printf("	.text\n");
+
+	printf("%s:\n",node -> name);
 	int return_rsp_number = rsp_counter;
 
 	//prologue=======================================
@@ -290,6 +295,10 @@ void gen_function_def(Node_t *node){
 	printf("	pop rbp\n");
 	rsp_counter -= 8;
 	printf("	ret\n");
+
+	// function footer
+	printf(".LEnd_%s:\n", node -> name);
+	printf("	.size %s, .LEnd_%s - %s\n", node -> name, node -> name, node -> name);
 
 	return;
 }
@@ -547,7 +556,13 @@ void gen_initialize_glob_variable(Node_t* node) {
 	
 }
 void gen_glob_declar(Node_t* node) {
-	printf("%s:\n",node -> kind != ND_INITLIST? node -> name: node -> left -> name);
+	char* name = node -> kind != ND_INITLIST? node -> name: node -> left -> name;
+	Type* type = node -> kind != ND_INITLIST? node -> tp: node -> left -> tp;
+	// register simbol
+	printf(".globl %s\n", name);
+	printf("	.type %s, @object\n", name);
+	printf("	.size %s, %d\n", name, type -> size);
+	printf("%s:\n", name);
 	if(node -> kind == ND_INITLIST)
 	{
 		Node_t* init_branch = node -> right;
