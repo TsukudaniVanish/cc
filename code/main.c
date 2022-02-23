@@ -3,8 +3,7 @@
 //#include<stdbool.h>
 //#include<string.h>
 
-extern void unit_test();
-
+extern int unit_test();
 extern unsigned int String_len(char*);
 extern int String_conpair(char*, char*,unsigned int);
 
@@ -12,6 +11,7 @@ extern int String_conpair(char*, char*,unsigned int);
 int main(int argc, char **argv){
 	controller = NULL;
 	ordinaryNameSpace = NULL;
+	macros = NULL;
 
 	//unit test
 	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-T",2))
@@ -51,13 +51,10 @@ int main(int argc, char **argv){
 	NameData* _test_error = new_NameData(TAG_FUNCTION);
 	_test_error -> tp = new_tp(TP_VOID, NULL, 0);
 	Map_add(ordinaryNameSpace, test_error, _test_error);
-		
-	
-
-
 	
 	
-	//入力をトークン列に変換
+	//conbert an input to a token list
+	macros = make_Map();
 	Token_t *token = tokenize(buffer);
 	
 	Vector* codes = init_parser();

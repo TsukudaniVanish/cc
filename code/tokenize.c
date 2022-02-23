@@ -5,6 +5,7 @@
 
 extern unsigned int String_len(char*);
 extern int String_conpair(char* ,char*, unsigned int);
+extern void Memory_copy(void* src, void* dst, unsigned length);
 int sizeof_token(int kind) {
 	switch (kind)
 	{
@@ -46,6 +47,14 @@ char *skip(char * p) {
 		p++;
 	}
 	return p;	
+}
+
+char* skip_in_macro(char* p) {
+	while(' ' == *p || '\t' == *p || '\r' == *p || '\f' == *p || '\v' == *p)
+	{
+		p++;
+	}
+	return p;
 }
 
 char *get_symbol(int kind) {
@@ -152,6 +161,7 @@ char* get_keyword(keyword kind) {
 		case ELSE: return "else";
 		case FOR: return "for";
 		case IF: return "if";
+		case MACRO_DEFINE: return "#define";
 		case VOID: return "void";
 		case CHAR: return "char";
 		case INT: return "int";
@@ -252,6 +262,11 @@ Token_t *tokenize(char *p) {
 			comment_skip(&p);
 			continue;
 		}
+		else if (*p == '#')
+		{// macro
+			p = tokenize_macro(p);
+			continue;
+		}
 		else if (is_keyword(p, &keyword))
 		{//keywords
 			Token_kind kind = get_correspond_token_kind(keyword);
@@ -259,9 +274,9 @@ Token_t *tokenize(char *p) {
 			p += cur -> length;
 			continue;
 
-		}else if(is_symbol(p))
+		}
+		else if(is_symbol(p))
 		{//operator or punctuator
-			
 			cur = new_token(TK_OPERATOR,cur,p);
 			cur -> length = is_symbol(p);
 			if(cur -> length > 1000)
@@ -274,15 +289,11 @@ Token_t *tokenize(char *p) {
 
 		}else if(isdigit(*p))
 		{//number literal
-
-
 			cur = new_token(TK_CONST,cur,p);
 			cur -> val = strtol(p,&p,10);
 			continue;
-		
 		}else if(*p != ';')
 		{//identifier
-
 			cur = new_token(TK_IDENT,cur,p);
 			//calculate length of identifier
 			char *q = p;
@@ -310,4 +321,119 @@ Token_t *tokenize(char *p) {
 	new_token(TK_EOF,cur,p);
 	return head.next;
 };
+
+char* tokenize_macro(char* p) {
+	Token_t head;// if this is pointer then this course segfault-error
+	head.next = NULL;
+	Token_t* cur = &head;
+
+	keyword keyWord = KEYWORD_START;
+	if(is_keyword(p, &keyWord) && keyWord == MACRO_DEFINE)
+	{
+		p = p + String_len(get_keyword(keyWord));
+		// get identifier
+		p = skip_in_macro(p);
+		char* q = p;
+		while(!is_space(*q) && *q != ',' && !is_symbol(q))
+		{
+			q++;
+		}
+		char* name = calloc(q - p, sizeof(char));
+		Memory_copy(name, p, q - p);
+		p = q;
+		
+
+		// tokenize replace-list
+		while (*p != '\n' && *p != '\0')
+		{
+			p = skip_in_macro(p);
+			if(*p == '\0' || *p == '\n') break;
+
+			if(*p == '"')
+			{//string literal
+				cur = new_token(TK_PUNCTUATOR,cur,p);
+				cur -> length = 1;
+				char *q = p;
+				while (*(q+1) != '"')
+				{
+					q++;
+				}
+				cur = new_token(TK_STRINGLITERAL,cur,p+1);
+				cur -> length = q-p;
+				p = q+1;
+				if(*p != '"')
+				{
+					error_at(p,"Tokenizer failed to find end marker of string literal\n");
+				}
+				cur = new_token(TK_PUNCTUATOR,cur,p);
+				cur -> length = 1;
+				p++;
+				continue;	
+			}
+			else if(is_comment(p))
+			{//comment 
+				comment_skip(&p);
+				continue;
+			}
+			else if (is_keyword(p, &keyWord))
+			{//keywords
+				Token_kind kind = get_correspond_token_kind(keyWord);
+				cur = new_keyword(kind, keyWord,cur, p);
+				p += cur -> length;
+				continue;
+
+			}
+			else if(is_symbol(p))
+			{//operator or punctuator
+				
+				cur = new_token(TK_OPERATOR,cur,p);
+				cur -> length = is_symbol(p);
+				if(cur -> length > 1000)
+				{// punctuator or not
+					cur -> kind = TK_PUNCTUATOR;
+					cur -> length -= 1000;
+				}
+				p += cur -> length;
+				continue;
+
+			}else if(isdigit(*p))
+			{//number literal
+
+
+				cur = new_token(TK_CONST,cur,p);
+				cur -> val = strtol(p,&p,10);
+				continue;
+			
+			}else if(*p != ';')
+			{//identifier
+
+				cur = new_token(TK_IDENT,cur,p);
+				//calculate length of identifier
+				char *q = p;
+				
+				while(1){
+				
+					if( isspace(*q) || q[0] == ','  || is_symbol(q))
+					{ //stop
+						cur -> length = q-p;
+						p =q;
+						break;
+					}
+					q++;
+				}
+				continue;
+			}
+			else if(*p == ';')
+			{
+				cur = new_token(TK_PUNCTUATOR,cur,p++);
+				cur -> length =1;
+				continue;
+			}
+		}
+		// add to map
+		Map_add(macros, name, head.next);
+		return p;
+	}
+	return p;				
+}
 

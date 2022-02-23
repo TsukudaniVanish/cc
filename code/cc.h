@@ -224,6 +224,7 @@ typedef enum {
 	ELSE,
 	FOR,
 	IF,
+	MACRO_DEFINE,
 	TYPE_START,// following entries are represent type 
 	VOID,
 	CHAR,
@@ -586,12 +587,15 @@ int get_correspond_token_kind(keyword);
 /**
  * @fn 
  * tokenize function
- * 演算子は長さの順にtokenizeすること
  * @sa new_token
  * 
  * @return Token_t*
  * */
 Token_t *tokenize(char *p);
+
+// store identifier: macro tokens
+Map *macros;
+char* tokenize_macro(char* p);
 //=====================================================
 
 /*

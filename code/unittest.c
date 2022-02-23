@@ -566,7 +566,29 @@ void unit_test_parse_not() {
 	test_passed(test);
 }
 
-void unit_test() {
+#define TOKEN_ERR(token) do{ Token_show_all(token); exit(1);}while(0)
+#ifdef TOKEN_ERR
+	#define TOKEN_ERR_MACRO_DEFINE(a, token) do{assert(test, a); TOKEN_ERR(token);}while(0)
+#endif 
+void unit_test_tokenize_macro_define() {
+	char* test = "define macro tokenize test";
+	char* arg = "#define Ten 10 \n int g = Ten; int main(){return 0;}";
+	macros = make_Map();
+	Token_t* token = tokenize(arg);
+
+	if(token == NULL)
+		TOKEN_ERR_MACRO_DEFINE("returned null token\n", token);
+	if(token -> kind != TK_TypeINT)
+		TOKEN_ERR_MACRO_DEFINE("expected TK_TypeINT\n", token);
+	if(!Map_contains(macros, "Ten"))
+		TOKEN_ERR_MACRO_DEFINE("can't find Ten in macros\n", token);
+	Token_t* macro = Map_at(macros, "Ten");
+	if(macro == NULL || macro -> kind != TK_CONST)
+		TOKEN_ERR_MACRO_DEFINE("fail to tokenize marco\n", macro);
+	test_passed(test);
+}
+
+int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
 	unit_test_Map();
@@ -578,4 +600,6 @@ void unit_test() {
 	unit_test_parse_union();
 	unit_test_parse_enum();
 	unit_test_parse_not();
+	unit_test_tokenize_macro_define();
+	return 0;
 }
