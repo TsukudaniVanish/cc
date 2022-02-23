@@ -93,3 +93,20 @@ int is_functioncall(Token_t **token) {
         
     return 0;
 }
+
+
+Token_t* Token_copy(Token_t* token) {
+	Token_t* toReturn = new_Token_t(token -> kind, NULL, token -> val, token -> length, token -> str, token -> tp);
+	Token_t *cur = NULL;
+	toReturn -> next = cur;
+	token = token -> next;
+
+	while(token -> kind != TK_EOF)
+	{
+		cur = new_Token_t(token -> kind, NULL, token -> val, token -> length, token -> str, token -> tp);
+		cur = cur -> next;
+		token = token -> next;
+	}
+	cur = new_Token_t(TK_EOF, NULL, 0, 0, "\0", NULL);
+	return toReturn;
+}

@@ -424,6 +424,7 @@ void test_global() {
 	}
 	test_passed("global variable test");
 }
+#define TEST_DEFINE 100
 int main(){
     test_print("\x1b[32mHello\x1b[m\n"); /* display test */
 	test_arithmetic();
@@ -439,7 +440,7 @@ int main(){
 	test_log_not();
 	
 	test_global();
-	test_print_int(Character_conpair(2,2));
-	test_print("\n");
+	if(TEST_DEFINE == 100)
+		test_print("\x1b[32m	macro TEST_DEFINE complied successfully! \x1b[m\n");
 	return 0;
 }

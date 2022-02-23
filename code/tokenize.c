@@ -342,7 +342,6 @@ char* tokenize_macro(char* p) {
 		Memory_copy(name, p, q - p);
 		p = q;
 		
-
 		// tokenize replace-list
 		while (*p != '\n' && *p != '\0')
 		{
@@ -430,6 +429,7 @@ char* tokenize_macro(char* p) {
 				continue;
 			}
 		}
+		cur -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
 		// add to map
 		Map_add(macros, name, head.next);
 		return p;

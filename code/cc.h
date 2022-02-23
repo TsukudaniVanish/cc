@@ -386,6 +386,8 @@ Token_t *consume(Token_t **token);
  * 
  */
 int is_functioncall(Token_t **);
+
+Token_t* Token_copy(Token_t* token);
 //====================================================
 
 
@@ -596,6 +598,10 @@ Token_t *tokenize(char *p);
 // store identifier: macro tokens
 Map *macros;
 char* tokenize_macro(char* p);
+//=====================================================
+
+// preprocess.c
+Token_t* preprocess(Token_t* token);
 //=====================================================
 
 /*
