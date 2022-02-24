@@ -199,7 +199,7 @@ Token_kind get_correspond_token_kind(keyword kind) {
 }
 
 
-int is_keyword(char *p, keyword* kind_of) {
+int is_keyword(char *p) {
 	keyword kind = KEYWORD_START + 1;
 	while(kind < KEYWORD_END)
 	{
@@ -210,115 +210,156 @@ int is_keyword(char *p, keyword* kind_of) {
 			continue;
 		}
 		unsigned int len = String_len(keyword);
-		if(String_conpair(keyword, p, len) && (is_space(*(p + len)) || is_symbol(p+len)))
+		if(String_conpair(p, keyword, len) && (is_space(*(p + len)) || is_symbol(p+len)))
 		{
-			if(kind_of != NULL)
-				*kind_of = kind;
-			return 1;
+			return kind;
 		}
 		kind ++;
 	}
-	if(kind_of != NULL)
-		*kind_of = KEYWORD_END;
-	return 0;
+	return KEYWORD_START;
 }
 
+typedef enum {
+	TOKENIZE_ERR,
+	STRINGLITERAL_START,
+	COMMENT_START,
+	MACRO_START,
+	KEYWORD,
+	SYMBOL,
+	NUMBER,
+	IDENTIFIER,
+	END,
+}TokenizeMarker;
 
+TokenizeMarker tokenize_flow_control(char* p) {
+	if(*p == '\0')
+		return END;
+	
+	if(*p == '"')
+		return STRINGLITERAL_START;
+	
+	if(is_comment(p))
+		return COMMENT_START;
+	
+	if(*p == '#')
+		return MACRO_START;
+	
+	if(is_keyword(p))
+		return KEYWORD;
+	
+	if(is_symbol(p))
+		return SYMBOL;
+	
+	if(isdigit(*p))
+		return NUMBER;
 
+	if(is_alnum(*p))
+		return IDENTIFIER;
+	return TOKENIZE_ERR;
+}
+
+TokenizeMarker tokenize_macro_flow_control(char* p) {
+	if(*p == '\n')
+		return END;
+	return tokenize_flow_control(p);
+}
+
+Token_t* tokenize_string_literal(char** p, Token_t* cur) {
+	cur = new_token(TK_PUNCTUATOR, cur, *p);
+	cur -> length = 1;
+	char *q = *p;
+	while (q && *(q + 1) != '"')
+	{
+		q++;
+	}
+	cur = new_token(TK_STRINGLITERAL, cur, *p + 1);
+	cur -> length = q - *p;
+	*p = q + 1;
+	if(**p != '"')
+	{
+		error_at(*p,"Tokenizer failed to find end marker of string literal\n");
+	}
+	cur = new_token(TK_PUNCTUATOR, cur, *p);
+	cur -> length = 1;
+	(*p)++;
+	return cur;
+}
+
+Token_t* tokenize_keyword(char** p, Token_t* cur) {
+	keyword keyWord = is_keyword(*p);
+	Token_kind kind = get_correspond_token_kind(keyWord);
+	cur = new_keyword(kind, keyWord, cur, *p);
+	*p += cur -> length;
+	return cur;
+}
+
+Token_t* tokenize_symbol(char** p, Token_t* cur) {
+	cur = new_token(TK_OPERATOR, cur, *p);
+	cur -> length = is_symbol(*p);
+	if(cur -> length > 1000)
+	{// punctuator or not
+		cur -> kind = TK_PUNCTUATOR;
+		cur -> length -= 1000;
+	}
+	*p += cur -> length;
+	return cur;
+}
+
+Token_t* tokenize_number(char** p, Token_t* cur) {
+	cur = new_token(TK_CONST, cur, *p);
+	cur -> val = strtol(*p, p, 10);
+	return cur;
+}
+
+Token_t* tokenize_identifier(char** p, Token_t* cur) {
+	cur = new_token(TK_IDENT, cur, *p);
+	//calculate length of identifier
+	char *q = *p;
+	while(1){
+		if( isspace(*q) || q[0] == ','  || is_symbol(q))
+		{ //stop
+			cur -> length = q - *p;
+			*p = q;
+			break;
+		}
+		q++;
+	}
+	return cur;
+}
 
 Token_t *tokenize(char *p) {
 	Token_t head;
 	head.next = NULL;
 	Token_t *cur = &head;
 
-	while(*p != '\0'){
-		keyword keyword = KEYWORD_START;
-
+	while(*p != '\0')
+	{
 		p = skip(p);
-		if(*p == '\0') break;
-		if(*p == '"')
-		{//string literal
-			cur = new_token(TK_PUNCTUATOR,cur,p);
-			cur -> length = 1;
-			char *q = p;
-			while (*(q+1) != '"')
-			{
-				q++;
-			}
-			cur = new_token(TK_STRINGLITERAL,cur,p+1);
-			cur -> length = q-p;
-			p = q+1;
-			if(*p != '"')
-			{
-				error_at(p,"Tokenizer failed to find end marker of string literal\n");
-			}
-			cur = new_token(TK_PUNCTUATOR,cur,p);
-			cur -> length = 1;
-			p++;
-			continue;	
-		}
-		else if(is_comment(p))
-		{//comment 
-			comment_skip(&p);
-			continue;
-		}
-		else if (*p == '#')
-		{// macro
-			p = tokenize_macro(p);
-			continue;
-		}
-		else if (is_keyword(p, &keyword))
-		{//keywords
-			Token_kind kind = get_correspond_token_kind(keyword);
-			cur = new_keyword(kind, keyword,cur, p);
-			p += cur -> length;
-			continue;
-
-		}
-		else if(is_symbol(p))
-		{//operator or punctuator
-			cur = new_token(TK_OPERATOR,cur,p);
-			cur -> length = is_symbol(p);
-			if(cur -> length > 1000)
-			{// punctuator or not
-				cur -> kind = TK_PUNCTUATOR;
-				cur -> length -= 1000;
-			}
-			p += cur -> length;
-			continue;
-
-		}else if(isdigit(*p))
-		{//number literal
-			cur = new_token(TK_CONST,cur,p);
-			cur -> val = strtol(p,&p,10);
-			continue;
-		}else if(*p != ';')
-		{//identifier
-			cur = new_token(TK_IDENT,cur,p);
-			//calculate length of identifier
-			char *q = p;
-			
-			while(1){
-			
-				if( isspace(*q) || q[0] == ','  || is_symbol(q))
-				{ //stop
-					cur -> length = q-p;
-					p =q;
-					break;
-				}
-				q++;
-			}
-			continue;
-		}
-		else if(*p == ';')
+		TokenizeMarker marker = tokenize_flow_control(p);
+		switch (marker)
 		{
-			cur = new_token(TK_PUNCTUATOR,cur,p++);
-			cur -> length =1;
-			continue;
+		case END: 
+			break;
+		case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
+			break;
+		case COMMENT_START: comment_skip(&p);
+			break;
+		case MACRO_START: p = tokenize_macro(p);
+			break;
+		case KEYWORD: cur = tokenize_keyword(&p, cur);
+			break;
+		case SYMBOL: cur = tokenize_symbol(&p, cur);
+			break;
+		case NUMBER: cur = tokenize_number(&p, cur);
+			break;
+		case IDENTIFIER: cur = tokenize_identifier(&p, cur);
+			break;
+		case TOKENIZE_ERR:
+			error_at(cur -> str,"Failed to tokenize");
 		}
-		error_at(cur -> str,"Failed to tokenize");
+		continue;	
 	}
-	new_token(TK_EOF,cur,p);
+	new_token(TK_EOF, cur, p);
 	return head.next;
 };
 
@@ -327,8 +368,8 @@ char* tokenize_macro(char* p) {
 	head.next = NULL;
 	Token_t* cur = &head;
 
-	keyword keyWord = KEYWORD_START;
-	if(is_keyword(p, &keyWord) && keyWord == MACRO_DEFINE)
+	keyword keyWord = is_keyword(p);
+	if(keyWord == MACRO_DEFINE)
 	{
 		p = p + String_len(get_keyword(keyWord));
 		// get identifier
@@ -346,88 +387,27 @@ char* tokenize_macro(char* p) {
 		while (*p != '\n' && *p != '\0')
 		{
 			p = skip_in_macro(p);
-			if(*p == '\0' || *p == '\n') break;
-
-			if(*p == '"')
-			{//string literal
-				cur = new_token(TK_PUNCTUATOR,cur,p);
-				cur -> length = 1;
-				char *q = p;
-				while (*(q+1) != '"')
-				{
-					q++;
-				}
-				cur = new_token(TK_STRINGLITERAL,cur,p+1);
-				cur -> length = q-p;
-				p = q+1;
-				if(*p != '"')
-				{
-					error_at(p,"Tokenizer failed to find end marker of string literal\n");
-				}
-				cur = new_token(TK_PUNCTUATOR,cur,p);
-				cur -> length = 1;
-				p++;
-				continue;	
-			}
-			else if(is_comment(p))
-			{//comment 
-				comment_skip(&p);
-				continue;
-			}
-			else if (is_keyword(p, &keyWord))
-			{//keywords
-				Token_kind kind = get_correspond_token_kind(keyWord);
-				cur = new_keyword(kind, keyWord,cur, p);
-				p += cur -> length;
-				continue;
-
-			}
-			else if(is_symbol(p))
-			{//operator or punctuator
-				
-				cur = new_token(TK_OPERATOR,cur,p);
-				cur -> length = is_symbol(p);
-				if(cur -> length > 1000)
-				{// punctuator or not
-					cur -> kind = TK_PUNCTUATOR;
-					cur -> length -= 1000;
-				}
-				p += cur -> length;
-				continue;
-
-			}else if(isdigit(*p))
-			{//number literal
-
-
-				cur = new_token(TK_CONST,cur,p);
-				cur -> val = strtol(p,&p,10);
-				continue;
-			
-			}else if(*p != ';')
-			{//identifier
-
-				cur = new_token(TK_IDENT,cur,p);
-				//calculate length of identifier
-				char *q = p;
-				
-				while(1){
-				
-					if( isspace(*q) || q[0] == ','  || is_symbol(q))
-					{ //stop
-						cur -> length = q-p;
-						p =q;
-						break;
-					}
-					q++;
-				}
-				continue;
-			}
-			else if(*p == ';')
+			TokenizeMarker marker = tokenize_macro_flow_control(p);
+			switch (marker)
 			{
-				cur = new_token(TK_PUNCTUATOR,cur,p++);
-				cur -> length =1;
-				continue;
+			case END: 
+				break;
+			case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
+				break;
+			case COMMENT_START: comment_skip(&p);
+				break;
+			case KEYWORD: cur = tokenize_keyword(&p, cur);
+				break;
+			case SYMBOL: cur = tokenize_symbol(&p, cur);
+				break;
+			case NUMBER: cur = tokenize_number(&p, cur);
+				break;
+			case IDENTIFIER: cur = tokenize_identifier(&p, cur);
+				break;
+			case TOKENIZE_ERR:
+				error_at(cur -> str,"Failed to tokenize");
 			}
+			continue;	
 		}
 		cur -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
 		// add to map
