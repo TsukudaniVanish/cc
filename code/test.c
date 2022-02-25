@@ -425,6 +425,7 @@ void test_global() {
 	test_passed("global variable test");
 }
 #define TEST_DEFINE 100
+#define timesTen(a) a*10
 int main(){
     test_print("\x1b[32mHello\x1b[m\n"); /* display test */
 	test_arithmetic();
@@ -442,5 +443,15 @@ int main(){
 	test_global();
 	if(TEST_DEFINE == 100)
 		test_print("\x1b[32m	macro TEST_DEFINE complied successfully! \x1b[m\n");
+	int g = 10;
+	if(timesTen(g) == 100)
+		test_print("\x1b[32m 	macro timesTen complied successfully!\x1b[m\n");
+	else
+	{
+		test_print("failed to complie timesTen: got ");
+		test_print_int(timesTen(g));
+		test_print("\n");
+
+	}
 	return 0;
 }

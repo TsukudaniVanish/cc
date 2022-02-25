@@ -582,9 +582,42 @@ void unit_test_tokenize_macro_define() {
 		TOKEN_ERR_MACRO_DEFINE("expected TK_TypeINT\n", token);
 	if(!Map_contains(macros, "Ten"))
 		TOKEN_ERR_MACRO_DEFINE("can't find Ten in macros\n", token);
-	Token_t* macro = Map_at(macros, "Ten");
+	MacroData* macroData = Map_at(macros, "Ten");
+	if(macroData == NULL || macroData -> tag != MACRO_OBJECT)
+		TOKEN_ERR_MACRO_DEFINE("fail to tokenize marco\n", NULL);
+	Token_t* macro = macroData -> macroBody;
 	if(macro == NULL || macro -> kind != TK_CONST)
 		TOKEN_ERR_MACRO_DEFINE("fail to tokenize marco\n", macro);
+	test_passed(test);
+}
+
+#ifdef TOKEN_ERR
+	#define TOKEN_ERR_MACRO_FUNCTION(fmt, token) do{assert(test, fmt); TOKEN_DEFINE(token)}while(0)
+#endif
+void unit_test_tokenize_macro_function() {
+	char* test = "macro function test";
+	char* arg = "#define timesTen(a) a * 10\n int main(){int qaq = 9; return timesTen(qaq);}";
+
+	macros = make_Map();
+	Token_t* token = tokenize(arg);
+
+	if(token == NULL)
+		TOKEN_ERR_MACRO_DEFINE("returned null token\n", token);
+	if(token -> kind != TK_TypeINT)
+		TOKEN_ERR_MACRO_DEFINE("expected TK_TypeINT\n", token);
+
+	if(!Map_contains(macros, "timesTen"))
+		TOKEN_ERR_MACRO_DEFINE("can't find timesTen in macros\n", token);
+	MacroData* macroData = Map_at(macros, "timesTen");
+	if(macroData == NULL || macroData -> tag != MACRO_FUNCTION)
+		TOKEN_ERR_MACRO_DEFINE("fail to tokenize marco macroData can't find\n", NULL);
+
+	Token_t* macro = macroData -> macroBody;
+	if(macro == NULL || macro -> kind != TK_IDENT)
+		TOKEN_ERR_MACRO_DEFINE("fail to tokenize marco\n", macro);
+
+	token = preprocess(token);
+	Token_show_all(token);
 	test_passed(test);
 }
 
@@ -601,5 +634,6 @@ int unit_test() {
 	unit_test_parse_enum();
 	unit_test_parse_not();
 	unit_test_tokenize_macro_define();
+	unit_test_tokenize_macro_function();
 	return 0;
 }

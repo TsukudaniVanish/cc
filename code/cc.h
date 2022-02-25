@@ -387,7 +387,17 @@ Token_t *consume(Token_t **token);
  */
 int is_functioncall(Token_t **);
 
+/** 
+ * @brief copy kind val length str tp not copy next
+ */ 
 Token_t* Token_copy(Token_t* token);
+/**
+ * @brief copy all members
+ * 
+ * @param token 
+ * @return Token_t* 
+ */
+Token_t* Token_copy_all(Token_t* token);
 //====================================================
 
 
@@ -601,6 +611,18 @@ char* tokenize_macro(char* p);
 //=====================================================
 
 // preprocess.c
+typedef struct {
+	char* ident;
+	Vector* parameters;
+	Token_t* macroBody;
+	enum{
+		MACRO_OBJECT,
+		MACRO_FUNCTION,
+	}tag;
+}MacroData;
+MacroData* new_MacroData(char* ident, int tag, Token_t* macroBody, Vector* parameters);
+void* MacroData_get_parameters(MacroData* d, unsigned int index);
+int MacroData_contains_param(MacroData* d, char* name);
 Token_t* preprocess(Token_t* token);
 //=====================================================
 

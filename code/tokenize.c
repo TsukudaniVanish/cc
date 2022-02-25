@@ -382,6 +382,35 @@ char* tokenize_macro(char* p) {
 		char* name = calloc(q - p, sizeof(char));
 		Memory_copy(name, p, q - p);
 		p = q;
+		MacroData* data = new_MacroData(name, MACRO_OBJECT, NULL, NULL);
+
+		skip_in_macro(p);
+		if(*p == '(')
+		{// read parameters
+			data -> tag = MACRO_FUNCTION;
+			Vector* v = make_vector();
+			p++;
+			while(*p != ')')
+			{
+				// read parameters
+				char* q = p;
+				while(*q != ',' && *q != ')' && !is_space(*q))
+					q++;
+				unsigned int length = q -p;
+				char* param = calloc(length, sizeof(char));
+				Memory_copy(param, p, length);
+				
+				Vector_push(v, param);
+
+				p = q;
+				p = skip_in_macro(p);
+				if(*p == ',')
+					p++;
+				continue;
+			}
+			p++;
+			data -> parameters = v;
+		}
 		
 		// tokenize replace-list
 		while (*p != '\n' && *p != '\0')
@@ -411,7 +440,8 @@ char* tokenize_macro(char* p) {
 		}
 		cur -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
 		// add to map
-		Map_add(macros, name, head.next);
+		data -> macroBody = head.next;
+		Map_add(macros, name, data);
 		return p;
 	}
 	return p;				
