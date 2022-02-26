@@ -426,6 +426,7 @@ void test_global() {
 }
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
+#define macro_in_macro(b) b*TEST_DEFINE
 int main(){
     test_print("\x1b[32mHello\x1b[m\n"); /* display test */
 	test_arithmetic();
@@ -451,7 +452,16 @@ int main(){
 		test_print("failed to complie timesTen: got ");
 		test_print_int(timesTen(g));
 		test_print("\n");
-
+	}
+	if(macro_in_macro(g) == 1000)
+	{
+		test_print("\x1b[32m 	macro in macro complied successfully!\x1b[m\n");
+	}
+	else
+	{
+		test_print("failed to complie macro in macro: got ");
+		test_print_int(macro_in_macro(g));
+		test_print("\n");
 	}
 	return 0;
 }

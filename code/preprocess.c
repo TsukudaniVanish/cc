@@ -43,10 +43,10 @@ Vector* read_parameters(Token_t** token) {
     return result;
 }
 
-Token_t* preprocess(Token_t* token) {
-    Token_t* toReturn = token;
+int macro_expansion(Token_t* token) {
+    int macroWasExpanded = 0;
 
-    Token_t* buf = token;
+    Token_t* buf = token;// buf - token or buf == token
     while(token -> kind != TK_EOF) {
         if(token -> kind == TK_IDENT)
         {
@@ -63,6 +63,7 @@ Token_t* preprocess(Token_t* token) {
                 }
 
                 buf -> next = insert;
+                Token_t* buf_in_macro = buf;// buf_in_macro - insert or buf_in_macro == insert
                 while(insert -> next && insert -> next -> kind != TK_EOF)
                 {
                     if(parameters && insert -> kind == TK_IDENT)
@@ -73,11 +74,13 @@ Token_t* preprocess(Token_t* token) {
                         {
                             Token_t* arg = Vector_at(parameters, i);
                             Token_t* replace_ident = Token_copy(arg);
-                            buf -> next = replace_ident;
+                            buf_in_macro -> next = replace_ident;
                             replace_ident -> next = insert;
                         }
+                        buf_in_macro = buf_in_macro -> next;
                         continue;
                     }
+                    buf_in_macro = insert;
                     insert = insert -> next;
                 }
                 if(parameters && insert -> kind == TK_IDENT)
@@ -88,14 +91,27 @@ Token_t* preprocess(Token_t* token) {
                     {
                         Token_t* arg = Vector_at(parameters, i);
                         Token_t* replace_ident = Token_copy(arg);
-                        buf -> next = replace_ident;
+                        insert -> next = replace_ident;
                         replace_ident -> next = token;
+
+                        buf_in_macro = insert;
+                        insert = replace_ident;
+                    }
+                    else
+                    {
+                        buf_in_macro = buf_in_macro -> next;
+                        buf_in_macro -> next = token;
+
+                        insert = token;
                     }
                 }
                 else
                 {
                     insert -> next = token;
                 }
+
+                buf = insert;
+                macroWasExpanded = 1;
                 continue;
             }
             else
@@ -106,6 +122,18 @@ Token_t* preprocess(Token_t* token) {
         }
         buf = token;
         token = token -> next;
+    }
+    return macroWasExpanded;
+}
+
+Token_t* preprocess(Token_t* token) {
+    Token_t* toReturn = token;
+
+    for(;;)
+    {
+        if(macro_expansion(token))
+            continue;
+        break;
     }
     return toReturn;
 }
