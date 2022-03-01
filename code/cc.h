@@ -623,6 +623,37 @@ typedef struct {
 MacroData* new_MacroData(char* ident, int tag, Token_t* macroBody, Vector* parameters);
 void* MacroData_get_parameters(MacroData* d, unsigned int index);
 int MacroData_contains_param(MacroData* d, char* name);
+
+typedef enum {
+    Constant = 0,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    LOGOR,
+    LOGAND,
+    Eq,
+    Neq,
+    LESS,// <
+    LESSEQ,// <=
+    GREAT,// >
+    GREATEQ, // >=
+    Plus,
+    Minus,
+    LogNot,
+}TokenInMacro;
+
+typedef struct expression Expr;
+struct expression{
+    TokenInMacro kind;
+    // if kind == Constant this member has value
+    int value;
+    // below two members are valied if kind > 0
+    Expr* left;
+    Expr* right;
+};
+Expr* parse_macro_expr(Token_t** token);
+
 Token_t* preprocess(Token_t* token);
 //=====================================================
 

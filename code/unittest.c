@@ -617,7 +617,39 @@ void unit_test_tokenize_macro_function() {
 		TOKEN_ERR_MACRO_DEFINE("fail to tokenize marco\n", macro);
 
 	token = preprocess(token);
-	Token_show_all(token);
+	// Token_show_all(token);
+	test_passed(test);
+}
+
+#define EXP_ERR(exp) do{fprintf(stderr, "error at %s\n", test); exit(1);}while(0)
+void unit_test_preprocess_Macro_expression() {
+	char* test = "parsing Macro expression";
+	char* arg = "10* 1";
+
+	Token_t* token = tokenize(arg);
+	if(token == NULL)
+		TOKEN_ERR(token);
+	Expr* exp = parse_macro_expr(&token);
+	if(exp == NULL || exp -> kind != Mul)
+	{
+		fprintf(stderr, "error at %s\n", test);
+		if(exp)
+			fprintf(stderr, "%d was expected but got %d\n", Mul, exp -> kind);
+		exit(1);
+	}
+	arg = "a * (10 - 1)";
+	token = tokenize(arg);
+	if(token == NULL)
+		TOKEN_ERR(token);
+	exp = parse_macro_expr(&token);
+	if(exp == NULL || exp -> kind != Mul)
+		EXP_ERR(exp);
+	exp = exp -> left;
+	if(exp == NULL || exp -> kind != Constant || exp -> value != 0)
+	{
+		fprintf(stderr, "kind %d,val %d", exp -> kind, exp -> value);
+		EXP_ERR(exp);
+	}
 	test_passed(test);
 }
 
@@ -635,5 +667,6 @@ int unit_test() {
 	unit_test_parse_not();
 	unit_test_tokenize_macro_define();
 	unit_test_tokenize_macro_function();
+	unit_test_preprocess_Macro_expression();
 	return 0;
 }

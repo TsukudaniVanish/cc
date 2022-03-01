@@ -31,6 +31,156 @@ int MacroData_contains_parameters(MacroData* d, char* name) {
     return -1;
 }
 
+// macro expression parser
+// token -> ast node -> get value
+
+Expr* new_Expr(int kind, int val, Expr* l, Expr* r) {
+    Expr* exp = calloc(1, sizeof(Expr));
+    exp -> kind = kind;
+    exp -> value = val;
+    exp -> left = l;
+    exp -> right = r;
+    return exp;
+}
+Expr* make_Expr(int kind) {
+    return new_Expr(kind, 0, NULL, NULL);
+}
+/**
+ * 
+ * expression = logicOr
+ * logicOr = logicAnd ( || logicOr)?
+ * logicAnd = logicEq (&& logicAnd)?
+ * logicEq = logicRelation ((== | !=) logicEq)?
+ * logicRelation = add ((> | >= | < | <=) logicRelation)?
+ * add = mul ((+ | -) add)?
+ * mul = unit ((* | /) mul)?
+ * unit = (+ | - | !)? primary
+ * primary = CONST | IdentInMacro | ( expression)
+ */
+static Expr* exprMacro(Token_t**);
+static Expr* logOrMacro(Token_t**);
+static Expr* logAndMacro(Token_t**);
+static Expr* logEqMacro(Token_t**);
+static Expr* logReMacro(Token_t**);
+static Expr* addMacro(Token_t**);
+static Expr* mulMacro(Token_t**);
+static Expr* unitMacro(Token_t**);
+static Expr* primaryMacro(Token_t**);
+
+Expr* parse_macro_expr(Token_t** token) {
+    return exprMacro(token);
+}
+
+static Expr* exprMacro(Token_t** token) {
+    return logOrMacro(token);
+}
+
+static Expr* logOrMacro(Token_t** token) {
+    Expr* exp = logAndMacro(token);
+    if(find(LOG_OR, token))
+    {
+        return new_Expr(LOGOR, 0, exp, logOrMacro(token));
+    }
+    return exp;
+}
+
+static Expr* logAndMacro(Token_t** token) {
+    Expr* exp = logEqMacro(token);
+    
+    if(find(LOG_AND, token))
+        return new_Expr(LOGAND, 0, exp, logAndMacro(token));
+    return exp;
+}
+static Expr* logEqMacro(Token_t** token) {
+    Expr* exp = logReMacro(token);
+    
+    if(find(EQUAL, token))
+        return new_Expr(Eq, 0, exp, logEqMacro(token));
+    
+    if(find(NEQ, token))
+        return new_Expr(Neq, 0, exp, logEqMacro(token));
+    return exp;
+}
+
+#define ReLen 4
+#ifdef ReLen
+    #define getLEQ(j) j == 0? LEQ: LESSEQ
+    #define getGEQ(j) j == 0? GEQ: GREATEQ
+    #define getLE(j) j == 0? LE: LESS
+    #define getGE(j) j == 0? GE: GREAT
+    #define relationals(i, j) i < 3? (i == 0? getLEQ(j): getGEQ(j)):(i == 3? getLE(j): getGE(j))
+#endif
+static Expr* logReMacro(Token_t** token) {
+    Expr* exp = addMacro(token);
+    if(*token && (*token) -> kind == TK_OPERATOR)
+        for(int i = 0; i< ReLen; i++)
+        {
+            if(find(relationals(i, 0), token))
+            {
+                return new_Expr(relationals(i, 1), 0, exp, logReMacro(token));
+            }
+        }
+    return exp;
+}
+
+static Expr* addMacro(Token_t** token) {
+    Expr* exp = mulMacro(token);
+    if(find('+', token))
+        return new_Expr(Add, 0, exp, addMacro(token));
+    if(find('-', token))
+        return new_Expr(Sub, 0, exp, addMacro(token));
+    return exp;
+}
+
+static Expr* mulMacro(Token_t** token) {
+    Expr* exp = unitMacro(token);
+    if(find('*', token))
+        return new_Expr(Mul, 0, exp, mulMacro(token));
+    if(find('/', token))
+        return new_Expr(Div, 0, exp, mulMacro(token));
+    return exp;
+}
+char unitOps[] = {'+', '-', '!'};
+#define OpsLen 3
+#define getOpsKind(i) i == 0? Plus: i == 1? Minus: LogNot
+static Expr* unitMacro(Token_t** token) {
+    if(*token && (*token) -> kind == TK_OPERATOR)
+        for(int i = 0; i < OpsLen; i++)
+        {
+            if(find(unitOps[i], token))
+                return new_Expr(getOpsKind(i), 0, primaryMacro(token), NULL);
+        }
+    return primaryMacro(token);
+}
+
+static Expr* evalIdentInMacroExpr(char* name) {
+    if(Map_contains(macros, name))
+    {
+        MacroData* macroData = Map_at(macros, name);
+        if(macroData ->tag != TAG_OBJECT)
+            return new_Expr(Constant, 0, NULL, NULL);
+        Token_t* token = macroData ->macroBody;
+        return parse_macro_expr(&token);
+    }
+    return new_Expr(Constant, 0, NULL, NULL);
+} 
+
+static Expr* primaryMacro(Token_t** token) {
+    if(*token && (*token) -> kind == TK_CONST)
+        return new_Expr(Constant, consume(token) -> val, NULL, NULL);
+    if(*token && (*token) -> kind == TK_IDENT)
+        return evalIdentInMacroExpr(expect_ident(token));
+    if(find('(', token))
+    {
+        Expr* exp = exprMacro(token);
+        expect(')', token);
+        return exp;
+    }
+    if(*token && (*token) -> kind == TK_EOF)
+        return NULL;
+    error_at((*token) -> str, "invailed syntax");
+}
+
 Vector* read_parameters(Token_t** token) {
     Vector* result = make_vector();
     while (!find(')', token))
