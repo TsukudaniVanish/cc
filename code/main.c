@@ -9,6 +9,7 @@ extern int String_conpair(char*, char*,unsigned int);
 
 
 int main(int argc, char **argv){
+	
 	controller = NULL;
 	ordinaryNameSpace = NULL;
 	macros = NULL;
