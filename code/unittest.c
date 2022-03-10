@@ -622,7 +622,7 @@ void unit_test_tokenize_macro_function() {
 }
 
 #define EXP_ERR(exp) do{fprintf(stderr, "error at %s\n", test); exit(1);}while(0)
-void unit_test_preprocess_Macro_expression() {
+void unit_test_preprocess_macro_expression() {
 	char* test = "parsing Macro expression";
 	char* arg = "10* 1";
 
@@ -653,6 +653,44 @@ void unit_test_preprocess_Macro_expression() {
 	test_passed(test);
 }
 
+extern int eval_Expr(Expr*);
+
+void unit_test_preprocess_macro_exp_eval() {
+	char* test = "eval exp in macro";
+	Expr ten = { Constant, 10, NULL, NULL};
+	Expr eleven = {Constant, 11, NULL, NULL};
+	Expr one = {Constant, 1, NULL, NULL};
+	Expr zero = {Constant, 0, NULL, NULL};
+
+	Expr add = { Add, 0, NULL, NULL};
+	Expr sub = { Sub, 0, NULL, NULL};
+	Expr mul = { Mul, 0, NULL, NULL};
+
+	Expr ge = {Ge, 0, NULL, NULL};
+
+	Expr or = { LogOr, 0, NULL, NULL};
+
+	Expr input = { LogAnd, 0, &or, &one};
+	or.left = &add;
+	or.right = &ge;
+
+	ge.left = &sub;
+	ge.right = &zero;
+
+	add.right = &ten;
+	add.left = &zero;
+
+	sub.left = &ten;
+	sub.right = &eleven;
+
+	if(eval_Expr(&input) != 1)
+	{
+		fprintf(stderr, "eval expr failed: expect 1 but got %d\n", eval_Expr(&input));
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -667,6 +705,7 @@ int unit_test() {
 	unit_test_parse_not();
 	unit_test_tokenize_macro_define();
 	unit_test_tokenize_macro_function();
-	unit_test_preprocess_Macro_expression();
+	unit_test_preprocess_macro_expression();
+	unit_test_preprocess_macro_exp_eval();
 	return 0;
 }

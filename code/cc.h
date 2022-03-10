@@ -216,7 +216,7 @@ void** rootBlock;// this variable points an current root block.
 
 
 // =========================Token =========================
-typedef enum {
+typedef enum keyWords {
 	KEYWORD_START = 0,// start
 	RETURN,
 	SIZEOF,
@@ -236,7 +236,7 @@ typedef enum {
 	ENUM,
 	KEYWORD_END,// end marker
 }keyword;
-typedef enum { 
+typedef enum symbols { 
 	MULTOPERATOR_START=1000,
 	EQUAL, // ==
 	NEQ,// !=
@@ -301,7 +301,7 @@ typedef enum {
 #define TOKEN_FLOW_OPERATION_START 100
 #define TOKEN_SIZEOF 200
 #define TOKEN_TYPE 300
-typedef enum{
+typedef enum tokenKind{
 	// token ====================================================
 	TK_IDENT=0, //identifier
 	TK_CONST=1, //integer
@@ -405,7 +405,7 @@ Token_t* Token_copy_all(Token_t* token);
 //========================= Node =========================
 
 //Mostly used abstract syntax tree
-typedef enum{
+typedef enum nodeKind{
 	//operator =========================
 	ND_EQL,// <-> ==
 	ND_NEQ,// <-> !=
@@ -624,20 +624,20 @@ MacroData* new_MacroData(char* ident, int tag, Token_t* macroBody, Vector* param
 void* MacroData_get_parameters(MacroData* d, unsigned int index);
 int MacroData_contains_param(MacroData* d, char* name);
 
-typedef enum {
+typedef enum tokenInMacro {
     Constant = 0,
     Add,
     Sub,
     Mul,
     Div,
-    LOGOR,
-    LOGAND,
+    LogOr,
+    LogAnd,
     Eq,
     Neq,
-    LESS,// <
-    LESSEQ,// <=
-    GREAT,// >
-    GREATEQ, // >=
+    Le,// <
+    Leq,// <=
+    Ge,// >
+    Geq, // >=
     Plus,
     Minus,
     LogNot,

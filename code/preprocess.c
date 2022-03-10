@@ -55,7 +55,7 @@ Expr* make_Expr(int kind) {
  * add = mul ((+ | -) add)?
  * mul = unit ((* | /) mul)?
  * unit = (+ | - | !)? primary
- * primary = CONST | IdentInMacro | ( expression)
+ * primary = CONST | IdentInMacro | (expression)
  */
 static Expr* exprMacro(Token_t**);
 static Expr* logOrMacro(Token_t**);
@@ -66,6 +66,8 @@ static Expr* addMacro(Token_t**);
 static Expr* mulMacro(Token_t**);
 static Expr* unitMacro(Token_t**);
 static Expr* primaryMacro(Token_t**);
+
+int eval_Expr(Expr*);
 
 Expr* parse_macro_expr(Token_t** token) {
     return exprMacro(token);
@@ -79,7 +81,7 @@ static Expr* logOrMacro(Token_t** token) {
     Expr* exp = logAndMacro(token);
     if(find(LOG_OR, token))
     {
-        return new_Expr(LOGOR, 0, exp, logOrMacro(token));
+        return new_Expr(LogOr, 0, exp, logOrMacro(token));
     }
     return exp;
 }
@@ -88,7 +90,7 @@ static Expr* logAndMacro(Token_t** token) {
     Expr* exp = logEqMacro(token);
     
     if(find(LOG_AND, token))
-        return new_Expr(LOGAND, 0, exp, logAndMacro(token));
+        return new_Expr(LogAnd, 0, exp, logAndMacro(token));
     return exp;
 }
 static Expr* logEqMacro(Token_t** token) {
@@ -104,10 +106,10 @@ static Expr* logEqMacro(Token_t** token) {
 
 #define ReLen 4
 #ifdef ReLen
-    #define getLEQ(j) j == 0? LEQ: LESSEQ
-    #define getGEQ(j) j == 0? GEQ: GREATEQ
-    #define getLE(j) j == 0? LE: LESS
-    #define getGE(j) j == 0? GE: GREAT
+    #define getLEQ(j) j == 0? LEQ: Leq
+    #define getGEQ(j) j == 0? GEQ: Geq
+    #define getLE(j) j == 0? LE: Le
+    #define getGE(j) j == 0? GE: Ge
     #define relationals(i, j) i < 3? (i == 0? getLEQ(j): getGEQ(j)):(i == 3? getLE(j): getGE(j))
 #endif
 static Expr* logReMacro(Token_t** token) {
@@ -179,6 +181,46 @@ static Expr* primaryMacro(Token_t** token) {
     if(*token && (*token) -> kind == TK_EOF)
         return NULL;
     error_at((*token) -> str, "invailed syntax");
+}
+
+int eval_Expr(Expr* exp) {
+    Expr* l = exp -> left;
+    Expr* r = exp -> right;
+    switch(exp -> kind)
+    {
+        case Constant:
+            return exp -> value;
+        case Plus:
+            return + eval_Expr(l);
+        case Minus:
+            return - eval_Expr(l);
+        case LogNot:
+            return !eval_Expr(l);
+        case Mul:
+            return eval_Expr(l) * eval_Expr(r); 
+        case Div:
+            return eval_Expr(l) / eval_Expr(r);
+        case Add:
+            return eval_Expr(l) + eval_Expr(r);
+        case Sub:
+            return eval_Expr(l) - eval_Expr(r);
+        case Eq:
+            return eval_Expr(l) == eval_Expr(r);
+        case Neq:
+            return eval_Expr(l) != eval_Expr(r);
+        case Le:
+            return eval_Expr(l) < eval_Expr(r);
+        case Leq:
+            return eval_Expr(l) <= eval_Expr(r);
+        case Ge:
+            return eval_Expr(l) > eval_Expr(r);
+        case Geq:
+            return eval_Expr(l) >= eval_Expr(r);
+        case LogOr:
+            return eval_Expr(l) || eval_Expr(r);
+        case LogAnd:
+            return eval_Expr(l) && eval_Expr(r);
+    }
 }
 
 Vector* read_parameters(Token_t** token) {
