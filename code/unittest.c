@@ -714,6 +714,20 @@ void unit_test_preprocess_macro_exp_eval() {
 	test_passed(test);
 }
 
+void unit_test_preprocess_if() {
+	char* test = "if endif test";
+	char* arg = "#if defined MACRO\n #define MACROS 10\n#endif";
+
+	macros = make_Map();
+	Token_t* token = tokenize(arg);
+	if(Map_contains(macros, "MACROS"))
+	{
+		fprintf(stderr, "parse #if ... #endif failed");
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -731,5 +745,6 @@ int unit_test() {
 	unit_test_preprocess_macro_expression();
 	unit_test_preprocess_macro_exp_eval();
 	unit_test_preprocess_perse_defined();
+	unit_test_preprocess_if();
 	return 0;
 }

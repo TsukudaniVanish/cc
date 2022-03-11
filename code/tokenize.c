@@ -163,6 +163,8 @@ char* get_keyword(keyword kind) {
 		case FOR: return "for";
 		case IF: return "if";
 		case MACRO_DEFINE: return "#define";
+		case MACRO_ENDIF: return "#endif";
+		case MACRO_IF: return "#if";
 		case VOID: return "void";
 		case CHAR: return "char";
 		case INT: return "int";
@@ -212,7 +214,7 @@ int is_keyword(char *p) {
 			continue;
 		}
 		unsigned int len = String_len(keyword);
-		if(String_conpair(p, keyword, len) && (is_space(*(p + len)) || is_symbol(p+len)))
+		if(String_conpair(p, keyword, len) && (is_space(*(p + len)) || is_symbol(p+len) || (p + len)[0] == '\0'))
 		{
 			return kind;
 		}
@@ -329,6 +331,41 @@ Token_t* tokenize_identifier(char** p, Token_t* cur) {
 	return cur;
 }
 
+Token_t* tokenize_macro_one_line(char** pointer) {
+	char* p = *pointer;
+	Token_t head;// if this is pointer then this course segfault-error
+	head.next = NULL;
+	Token_t* cur = &head;
+	while (*p != '\n' && *p != '\0')
+	{
+		p = skip_in_macro(p);
+		TokenizeMarker marker = tokenize_macro_flow_control(p);
+		switch (marker)
+		{
+		case END: 
+			break;
+		case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
+			break;
+		case COMMENT_START: comment_skip(&p);
+			break;
+		case KEYWORD: cur = tokenize_keyword(&p, cur);
+			break;
+		case SYMBOL: cur = tokenize_symbol(&p, cur);
+			break;
+		case NUMBER: cur = tokenize_number(&p, cur);
+			break;
+		case IDENTIFIER: cur = tokenize_identifier(&p, cur);
+			break;
+		case TOKENIZE_ERR:
+			error_at(cur -> str,"Failed to tokenize");
+		}
+		continue;	
+	}
+	cur -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
+	*pointer = p;
+	return head.next;
+}
+
 Token_t *tokenize(char *p) {
 	Token_t head;
 	head.next = NULL;
@@ -365,86 +402,59 @@ Token_t *tokenize(char *p) {
 	return head.next;
 };
 
+char* tokenize_macro_define(char* p) {
+	// get identifier
+	p = skip_in_macro(p);
+	char* q = p;
+	while(!is_space(*q) && *q != ',' && !is_symbol(q))
+	{
+		q++;
+	}
+	char* name = calloc(q - p, sizeof(char));
+	Memory_copy(name, p, q - p);
+	p = q;
+	MacroData* data = new_MacroData(name, MACRO_OBJECT, NULL, NULL);
+
+	skip_in_macro(p);
+	if(*p == '(')
+	{// read parameters
+		data -> tag = MACRO_FUNCTION;
+		Vector* v = make_vector();
+		p++;
+		while(*p != ')')
+		{
+			// read parameters
+			char* q = p;
+			while(*q != ',' && *q != ')' && !is_space(*q))
+				q++;
+			unsigned int length = q -p;
+			char* param = calloc(length, sizeof(char));
+			Memory_copy(param, p, length);
+			
+			Vector_push(v, param);
+
+			p = q;
+			p = skip_in_macro(p);
+			if(*p == ',')
+				p++;
+			continue;
+		}
+		p++;
+		data -> parameters = v;
+	}
+	
+	data -> macroBody = tokenize_macro_one_line(&p);
+	Map_add(macros, name, data);
+	return p;
+}
+
 char* tokenize_macro(char* p) {
-	Token_t head;// if this is pointer then this course segfault-error
-	head.next = NULL;
-	Token_t* cur = &head;
 
 	keyword keyWord = is_keyword(p);
+	p = p + String_len(get_keyword(keyWord));
 	if(keyWord == MACRO_DEFINE)
 	{
-		p = p + String_len(get_keyword(keyWord));
-		// get identifier
-		p = skip_in_macro(p);
-		char* q = p;
-		while(!is_space(*q) && *q != ',' && !is_symbol(q))
-		{
-			q++;
-		}
-		char* name = calloc(q - p, sizeof(char));
-		Memory_copy(name, p, q - p);
-		p = q;
-		MacroData* data = new_MacroData(name, MACRO_OBJECT, NULL, NULL);
-
-		skip_in_macro(p);
-		if(*p == '(')
-		{// read parameters
-			data -> tag = MACRO_FUNCTION;
-			Vector* v = make_vector();
-			p++;
-			while(*p != ')')
-			{
-				// read parameters
-				char* q = p;
-				while(*q != ',' && *q != ')' && !is_space(*q))
-					q++;
-				unsigned int length = q -p;
-				char* param = calloc(length, sizeof(char));
-				Memory_copy(param, p, length);
-				
-				Vector_push(v, param);
-
-				p = q;
-				p = skip_in_macro(p);
-				if(*p == ',')
-					p++;
-				continue;
-			}
-			p++;
-			data -> parameters = v;
-		}
-		
-		// tokenize replace-list
-		while (*p != '\n' && *p != '\0')
-		{
-			p = skip_in_macro(p);
-			TokenizeMarker marker = tokenize_macro_flow_control(p);
-			switch (marker)
-			{
-			case END: 
-				break;
-			case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
-				break;
-			case COMMENT_START: comment_skip(&p);
-				break;
-			case KEYWORD: cur = tokenize_keyword(&p, cur);
-				break;
-			case SYMBOL: cur = tokenize_symbol(&p, cur);
-				break;
-			case NUMBER: cur = tokenize_number(&p, cur);
-				break;
-			case IDENTIFIER: cur = tokenize_identifier(&p, cur);
-				break;
-			case TOKENIZE_ERR:
-				error_at(cur -> str,"Failed to tokenize");
-			}
-			continue;	
-		}
-		cur -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
-		// add to map
-		data -> macroBody = head.next;
-		Map_add(macros, name, data);
-		return p;
+		return tokenize_macro_define(p);
 	}
 	return p;				
 }

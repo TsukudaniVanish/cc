@@ -226,6 +226,8 @@ typedef enum keyWords {
 	FOR,
 	IF,
 	MACRO_DEFINE,
+	MACRO_IF,
+	MACRO_ENDIF,
 	TYPE_START,// following entries are represent type 
 	VOID,
 	CHAR,
