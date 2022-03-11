@@ -155,6 +155,7 @@ void comment_skip(char **p) {
 char* get_keyword(keyword kind) {
 	switch(kind)
 	{
+		case DEFINED: return "defined";
 		case RETURN: return "return";
 		case SIZEOF: return "sizeof";
 		case WHILE: return "while";
@@ -178,6 +179,7 @@ char* get_keyword(keyword kind) {
 Token_kind get_correspond_token_kind(keyword kind) {
 	switch(kind) 
 	{
+		case DEFINED: return TK_OPERATOR;
 		case RETURN: return TK_RETURN;
 		case SIZEOF: return TK_SIZEOF;
 		case WHILE: return TK_WHILE;
@@ -316,7 +318,7 @@ Token_t* tokenize_identifier(char** p, Token_t* cur) {
 	//calculate length of identifier
 	char *q = *p;
 	while(1){
-		if( isspace(*q) || q[0] == ','  || is_symbol(q))
+		if( isspace(*q) || q[0] == '\0' || q[0] == ','  || is_symbol(q))
 		{ //stop
 			cur -> length = q - *p;
 			*p = q;

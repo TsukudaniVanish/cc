@@ -155,7 +155,9 @@ static Expr* unitMacro(Token_t** token) {
     return primaryMacro(token);
 }
 
+#define LENGTHOFDEFINED 7
 static Expr* evalIdentInMacroExpr(char* name) {
+
     if(Map_contains(macros, name))
     {
         MacroData* macroData = Map_at(macros, name);
@@ -172,6 +174,17 @@ static Expr* primaryMacro(Token_t** token) {
         return new_Expr(Constant, consume(token) -> val, NULL, NULL);
     if(*token && (*token) -> kind == TK_IDENT)
         return evalIdentInMacroExpr(expect_ident(token));
+
+    if(*token && (*token) -> kind == TK_OPERATOR)
+    {
+        if((*token) -> length == LENGTHOFDEFINED && String_conpair((*token) -> str, "defined", LENGTHOFDEFINED))
+        {
+            consume(token);
+            char* ident = expect_ident(token);
+            return new_Expr(Constant, Map_contains(macros, ident), NULL, NULL);
+        }
+    }
+
     if(find('(', token))
     {
         Expr* exp = exprMacro(token);

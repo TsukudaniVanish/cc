@@ -218,6 +218,7 @@ void** rootBlock;// this variable points an current root block.
 // =========================Token =========================
 typedef enum keyWords {
 	KEYWORD_START = 0,// start
+	DEFINED,
 	RETURN,
 	SIZEOF,
 	WHILE,
@@ -236,6 +237,7 @@ typedef enum keyWords {
 	ENUM,
 	KEYWORD_END,// end marker
 }keyword;
+
 typedef enum symbols { 
 	MULTOPERATOR_START=1000,
 	EQUAL, // ==

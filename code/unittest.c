@@ -653,6 +653,29 @@ void unit_test_preprocess_macro_expression() {
 	test_passed(test);
 }
 
+void unit_test_preprocess_perse_defined() {
+	char* test = "parse defined";
+	char* arg = "defined MACRO";
+	macros = make_Map();
+	MacroData* macro = new_MacroData("MACRO", TAG_OBJECT, NULL, NULL);
+	Map_add(macros,"MACRO", macro);
+
+	Token_t* token = tokenize(arg);
+	Expr* exp = parse_macro_expr(&token);
+	if(exp == NULL || exp -> kind != Constant || exp -> value != 1)
+	{
+		fprintf(stderr, "parse defined failed\n");
+		if(exp == NULL)
+			fprintf(stderr, "exp is NULL\n");
+		if(exp -> kind != Constant)
+			fprintf(stderr, "inccorect kind expext %d, but got %d\n", Constant, exp -> kind);
+		if(exp -> value != 1)
+			fprintf(stderr, "inccorrect value expect %d, but got %d\n", 1, exp -> value);
+		exit(1);
+	}
+	test_passed(test);
+}
+
 extern int eval_Expr(Expr*);
 
 void unit_test_preprocess_macro_exp_eval() {
@@ -707,5 +730,6 @@ int unit_test() {
 	unit_test_tokenize_macro_function();
 	unit_test_preprocess_macro_expression();
 	unit_test_preprocess_macro_exp_eval();
+	unit_test_preprocess_perse_defined();
 	return 0;
 }
