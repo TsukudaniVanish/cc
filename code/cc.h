@@ -611,7 +611,7 @@ Token_t *tokenize(char *p);
 
 // store identifier: macro tokens
 Map *macros;
-char* tokenize_macro(char* p);
+Token_t* tokenize_macro(char** p, Token_t* cur);
 //=====================================================
 
 // preprocess.c
@@ -657,6 +657,7 @@ struct expression{
     Expr* right;
 };
 Expr* parse_macro_expr(Token_t** token);
+int eval_Expr(Expr*);
 
 Token_t* preprocess(Token_t* token);
 //=====================================================

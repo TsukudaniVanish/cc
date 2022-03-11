@@ -676,7 +676,6 @@ void unit_test_preprocess_perse_defined() {
 	test_passed(test);
 }
 
-extern int eval_Expr(Expr*);
 
 void unit_test_preprocess_macro_exp_eval() {
 	char* test = "eval exp in macro";

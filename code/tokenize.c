@@ -6,6 +6,7 @@
 extern unsigned int String_len(char*);
 extern int String_conpair(char* ,char*, unsigned int);
 extern void Memory_copy(void* src, void* dst, unsigned length);
+
 int sizeof_token(int kind) {
 	switch (kind)
 	{
@@ -330,7 +331,55 @@ Token_t* tokenize_identifier(char** p, Token_t* cur) {
 	}
 	return cur;
 }
+/**
+ * @brief read one line and make token list T which cur -> next is head of T. return tail of T
+ * 
+ * @param pointer 
+ * @param cur 
+ * @return Token_t* 
+ */
+Token_t* tokenize_one_line(char** pointer, Token_t* cur) {
+	char* p = *pointer;
 
+	while(*p != '\0' || *p != '\n')
+	{
+		p = skip_in_macro(p);
+		TokenizeMarker marker = tokenize_flow_control(p);
+		switch (marker)
+		{
+		case END: 
+			break;
+		case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
+			break;
+		case COMMENT_START: comment_skip(&p);
+			break;
+		case MACRO_START: cur = tokenize_macro(&p, cur);
+			break;
+		case KEYWORD: cur = tokenize_keyword(&p, cur);
+			break;
+		case SYMBOL: cur = tokenize_symbol(&p, cur);
+			break;
+		case NUMBER: cur = tokenize_number(&p, cur);
+			break;
+		case IDENTIFIER: cur = tokenize_identifier(&p, cur);
+			break;
+		case TOKENIZE_ERR:
+			error_at(cur -> str,"Failed to tokenize");
+		}
+		continue;	
+	}
+	
+	if(p[0] == '\n')
+		p++;
+	*pointer = p;
+	return cur;
+}
+/**
+ * @brief read one line and make token list for MacroData.macroBody
+ * 
+ * @param pointer 
+ * @return Token_t* 
+ */
 Token_t* tokenize_macro_one_line(char** pointer) {
 	char* p = *pointer;
 	Token_t head;// if this is pointer then this course segfault-error
@@ -361,7 +410,7 @@ Token_t* tokenize_macro_one_line(char** pointer) {
 		}
 		continue;	
 	}
-	cur -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
+	new_token(TK_EOF, cur, p);
 	*pointer = p;
 	return head.next;
 }
@@ -383,7 +432,7 @@ Token_t *tokenize(char *p) {
 			break;
 		case COMMENT_START: comment_skip(&p);
 			break;
-		case MACRO_START: p = tokenize_macro(p);
+		case MACRO_START: cur = tokenize_macro(&p, cur);
 			break;
 		case KEYWORD: cur = tokenize_keyword(&p, cur);
 			break;
@@ -448,14 +497,33 @@ char* tokenize_macro_define(char* p) {
 	return p;
 }
 
-char* tokenize_macro(char* p) {
+Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
+	char* p = *pointer;
+	p = skip_in_macro(p);
+	// read and eval expression
+	Token_t* token = tokenize_macro_one_line(&p);
+	if(p[0] == '\n')
+		p++;
 
-	keyword keyWord = is_keyword(p);
-	p = p + String_len(get_keyword(keyWord));
+	Expr* exp = parse_macro_expr(&token);
+	if(eval_Expr(exp))
+	{
+		//todo
+	}
+
+	*pointer = p;
+	return cur;
+}
+
+Token_t* tokenize_macro(char** p, Token_t* cur) {
+
+	keyword keyWord = is_keyword(*p);
+	*p = *p + String_len(get_keyword(keyWord));
 	if(keyWord == MACRO_DEFINE)
 	{
-		return tokenize_macro_define(p);
+		*p = tokenize_macro_define(*p);
+		return cur;
 	}
-	return p;				
+	return cur;				
 }
 
