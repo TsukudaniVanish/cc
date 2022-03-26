@@ -13,13 +13,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: check pwd contents
-      run: ls
-    - name: cd code
-      run: export PWD=/home/runner/work/cc/cc/code
-    - name: directory_check
-      run: pwd
     - name: make
       run: make
+      working-directory: ./code
     - name: make test
       run: make test
+      working-directory: ./code
