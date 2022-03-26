@@ -18,6 +18,6 @@ jobs:
     - name: directory_check
     - run: pwd
     - name: make
-      run: if make
+      run: make
     - name: make test
       run: make test
