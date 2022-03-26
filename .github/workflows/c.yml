@@ -16,7 +16,7 @@ jobs:
     - name: cd code
       run: cd code
     - name: directory_check
-    - run: pwd
+      run: pwd
     - name: make
       run: make
     - name: make test
