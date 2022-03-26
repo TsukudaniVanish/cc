@@ -56,7 +56,7 @@ int main(int argc, char **argv){
 	
 	//conbert an input to a token list
 	macros = make_Map();
-	Token_t *token = tokenize(buffer);
+	Token_t *token = lexical_analyze(buffer);
 	token = preprocess(token);
 	
 	Vector* codes = init_parser();

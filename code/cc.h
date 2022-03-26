@@ -607,7 +607,7 @@ int get_correspond_token_kind(keyword);
  * 
  * @return Token_t*
  * */
-Token_t *tokenize(char *p);
+Token_t *lexical_analyze(char *p);
 
 // store identifier: macro tokens
 Map *macros;

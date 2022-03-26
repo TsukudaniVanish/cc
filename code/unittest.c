@@ -292,7 +292,7 @@ void unit_test_tokenize_struct() {
 
 	char* arg = "struct { int s; };";
 	user_input = arg;
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	
 	if(!Token_equal(consume(&token), new_Token_t(TK_STRUCT, NULL, 0, 6, "struct", NULL)))
 	{
@@ -316,7 +316,7 @@ void unit_test_parse_struct() {
 	char* test = "struct parsing test";
 	char* arg = "struct Hi { int s; int a; char* len; }; int main(){ struct Hi greeting;}";
 	user_input = arg;
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	Vector* v = init_parser();
 	program(&token, v);
 	Node_t* node = Vector_at(v, 0);
@@ -390,7 +390,7 @@ void unit_test_parse_struct_init() {
 	char * test = "struct init test";
 	char* arg = "struct Hi {int a; int b; char* c; }; struct Hi a = {10, 10, \"Greeting\"}; int main() { a.a = 100; struct Hi* b = &a; b -> b = 222; return 0;}";
 	user_input = arg;
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	Vector* v = init_parser();
 	program(&token, v);
 	Node_t* node = Vector_at(v, 1);
@@ -442,7 +442,7 @@ void unit_test_parse_struct_init() {
 void unit_test_tokenize_union() {
 	char* test = "union tokenize test";
 	char* arg = "union Hi{ char* greeting, char greeting[]};";
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	
 	if(token == NULL)
 		ERROR_TOKEN(token);
@@ -454,7 +454,7 @@ void unit_test_tokenize_union() {
 void unit_test_tokenize_enum() {
 	char* test = "enum tokenize test";
 	char* arg = "enum Hi { GOOD_MORNING = 1, HELLO, GOOD_NIGHT};";
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 
 	if(token == NULL)
 	{
@@ -474,7 +474,7 @@ void unit_test_parse_union() {
 	char* test = "union parsing test";
 	char* arg = "union Hi { char* greeting; int a;}; union Hi u;";
 
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	
 	parsing_here = arg;
 	user_input = arg;
@@ -500,7 +500,7 @@ void unit_test_parse_enum() {
 	parsing_here = arg;
 	controller = NULL;
 
-	Token_t *token = tokenize(arg);
+	Token_t *token = lexical_analyze(arg);
 	Vector* v = init_parser();
 	program(&token, v);
 
@@ -546,7 +546,7 @@ void unit_test_parse_not() {
 
 	user_input = arg;
 	parsing_here = arg;
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 
 	controller = NULL;
 	ordinaryNameSpace = NULL;
@@ -574,7 +574,7 @@ void unit_test_tokenize_macro_define() {
 	char* test = "define macro tokenize test";
 	char* arg = "#define Ten 10 \n int g = Ten; int main(){return 0;}";
 	macros = make_Map();
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 
 	if(token == NULL)
 		TOKEN_ERR_MACRO_DEFINE("returned null token\n", token);
@@ -599,7 +599,7 @@ void unit_test_tokenize_macro_function() {
 	char* arg = "#define timesTen(a) a * 10\n int main(){int qaq = 9; return timesTen(qaq);}";
 
 	macros = make_Map();
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 
 	if(token == NULL)
 		TOKEN_ERR_MACRO_DEFINE("returned null token\n", token);
@@ -626,7 +626,7 @@ void unit_test_preprocess_macro_expression() {
 	char* test = "parsing Macro expression";
 	char* arg = "10* 1";
 
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	if(token == NULL)
 		TOKEN_ERR(token);
 	Expr* exp = parse_macro_expr(&token);
@@ -638,7 +638,7 @@ void unit_test_preprocess_macro_expression() {
 		exit(1);
 	}
 	arg = "a * (10 - 1)";
-	token = tokenize(arg);
+	token = lexical_analyze(arg);
 	if(token == NULL)
 		TOKEN_ERR(token);
 	exp = parse_macro_expr(&token);
@@ -660,7 +660,7 @@ void unit_test_preprocess_perse_defined() {
 	MacroData* macro = new_MacroData("MACRO", TAG_OBJECT, NULL, NULL);
 	Map_add(macros,"MACRO", macro);
 
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	Expr* exp = parse_macro_expr(&token);
 	if(exp == NULL || exp -> kind != Constant || exp -> value != 1)
 	{
@@ -718,7 +718,7 @@ void unit_test_preprocess_if() {
 	char* arg = "#if defined MACRO\n #define MACROS 10\n#endif";
 
 	macros = make_Map();
-	Token_t* token = tokenize(arg);
+	Token_t* token = lexical_analyze(arg);
 	if(Map_contains(macros, "MACROS"))
 	{
 		fprintf(stderr, "parse #if ... #endif failed");

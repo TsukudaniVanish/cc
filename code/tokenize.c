@@ -415,7 +415,9 @@ Token_t* tokenize_macro_one_line(char** pointer) {
 	return head.next;
 }
 
-Token_t *tokenize(char *p) {
+#define FLAG_MACRO_IF 1
+Token_t *tokenize(char **pointer, Token_t** lastToken, int tokenizeFlag) {
+	char* p = *pointer;
 	Token_t head;
 	head.next = NULL;
 	Token_t *cur = &head;
@@ -432,8 +434,27 @@ Token_t *tokenize(char *p) {
 			break;
 		case COMMENT_START: comment_skip(&p);
 			break;
-		case MACRO_START: cur = tokenize_macro(&p, cur);
-			break;
+		case MACRO_START: 
+			{
+				keyword keyWord = is_keyword(p);
+				if(keyWord == MACRO_ENDIF)
+				{
+					p = p + String_len(get_keyword(keyWord));
+					if(tokenizeFlag != FLAG_MACRO_IF)
+					{
+						error_at(p, "can't find '#if ...'");
+					}
+					if(lastToken != NULL)
+					{
+						(*lastToken) -> next = head.next;
+						*lastToken = cur;
+					}
+					*pointer = p;
+					return head.next;
+				}
+				cur = tokenize_macro(&p, cur);
+				break;
+			}
 		case KEYWORD: cur = tokenize_keyword(&p, cur);
 			break;
 		case SYMBOL: cur = tokenize_symbol(&p, cur);
@@ -447,7 +468,13 @@ Token_t *tokenize(char *p) {
 		}
 		continue;	
 	}
+	if(lastToken != NULL)
+	{
+		(*lastToken) -> next = head.next;
+		*lastToken = cur;
+	}
 	new_token(TK_EOF, cur, p);
+	*pointer = p;
 	return head.next;
 };
 
@@ -497,6 +524,24 @@ char* tokenize_macro_define(char* p) {
 	return p;
 }
 
+char* skip_to_MACRO_ENDIF(char* pointer) {
+	while(*pointer != '\0')
+	{
+		if(pointer[0] == '#')
+		{
+			keyword keyWord = is_keyword(pointer);
+			pointer = pointer + String_len(get_keyword(keyWord));
+			if(keyWord == MACRO_ENDIF)
+			{
+				return pointer;
+			}
+			continue;
+		}
+		pointer ++;
+	}
+	return pointer;
+}
+
 Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	char* p = *pointer;
 	p = skip_in_macro(p);
@@ -508,9 +553,16 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	Expr* exp = parse_macro_expr(&token);
 	if(eval_Expr(exp))
 	{
-		//todo
+		*pointer = p;
+		tokenize(pointer, &cur, FLAG_MACRO_IF);
+		if(**pointer == '\0')
+		{
+			error_at(p, "can't find '#endif'");
+		}
+		return cur;
 	}
-
+	
+	p = skip_to_MACRO_ENDIF(p);
 	*pointer = p;
 	return cur;
 }
@@ -519,11 +571,19 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 
 	keyword keyWord = is_keyword(*p);
 	*p = *p + String_len(get_keyword(keyWord));
-	if(keyWord == MACRO_DEFINE)
+	switch(keyWord)
 	{
+	case MACRO_DEFINE:
 		*p = tokenize_macro_define(*p);
 		return cur;
+	case MACRO_IF:
+		return tokenize_macro_if(p, cur);
 	}
 	return cur;				
 }
 
+Token_t* lexical_analyze(char *p) {
+	Token_t** noMeanningHere = NULL;
+	int noFlag = 0;
+	return tokenize(&p, noMeanningHere, 0);
+}
