@@ -614,12 +614,12 @@ void gen_if(Node_t* node) {
 	switch(node -> kind) {
 	case ND_IF:
 		size = node -> left -> tp -> size;	
-		generate(node -> left);
+		generate(node -> left); // condition 
 		pop_stack(size, "rax");
 		printf("	cmp %s, 0\n", get_registername("rax", size));
 		printf("	je  .Lend%d\n",filenumber);
 		endNumberIf = filenumber++;
-		generate(node -> right);
+		generate(node -> right); // if body 
 	
 		printf(".Lend%d:\n",endNumberIf);
 		
@@ -627,19 +627,15 @@ void gen_if(Node_t* node) {
 	case ND_ELSE:
 		if( node -> left && node -> left -> kind == ND_IFE)
 		{
-			generate(node -> left);
+			generate(node -> left); // condition and true part 
 			endNumberElse = filenumber++;
 			
-			generate(node -> right);
+			generate(node -> right); // false part 
 			
 			printf(".Lend%d:\n",endNumberElse);
 			return;
 		}
-		else
-		{
-			fprintf(stderr,"elseはif(...)...の後に続きます");
-			exit(1);
-		}
+		
 	case ND_IFE:
 		size = node -> left -> tp -> size;
 		generate(node -> left);

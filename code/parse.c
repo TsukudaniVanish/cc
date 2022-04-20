@@ -573,6 +573,8 @@ Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 	case TK_WHILE: return new_node_while(token);
 	case TK_FOR: return new_node_for(token);
 	case TK_RETURN: return new_node_return(token);
+	case TK_ELSE: // ERROR
+		error_at((*token) -> str, "'else' follows after 'if' or 'else if' statement");
 	default:
 		return NULL;
 	}
@@ -774,7 +776,7 @@ Node_t *stmt(Token_t **token) {
 
 	Node_t *node = NULL;
 
-	if( (*token) -> kind > TOKEN_FLOW_OPERATION_START - 1 && (*token) -> kind < TOKEN_SIZEOF)
+	if( (*token) -> kind > TOKEN_FLOW_OPERATION_START - 1 && (*token) -> kind < TK_FLOW_OPERATION_END)
 	{//if (else) while for return
 		node = new_node_flow_operation(consume(token) -> kind,token);
 	}

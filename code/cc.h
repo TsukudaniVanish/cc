@@ -318,6 +318,7 @@ typedef enum tokenKind{
 	TK_WHILE,
 	TK_FOR,
 	TK_RETURN,
+	TK_FLOW_OPERATION_END,// flow operation end 
 	// ====================================================================
 	TK_SIZEOF = TOKEN_SIZEOF,// this keyword acts like operator.
 	//type of variable =====================================================
