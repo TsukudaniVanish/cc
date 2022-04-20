@@ -163,7 +163,7 @@ long gen_lval(Node_t *node){
 	}
 	if(node -> kind == ND_DEREF)
 	{
-		generate(node -> left);
+		generate(node -> left, 0, 0);
 		return node -> tp -> size;
 	}
 	if(node -> kind == ND_DOT)
@@ -190,7 +190,7 @@ void gen_arg_entry(Node_t* node){
 	Vector *arg_types = make_vector();
 
 	for(int i = 0; node -> kind != ND_BLOCKEND; i++ , node = node -> right){
-		generate(node -> left);
+		generate(node -> left, 0, 0);
 		Vector_push(arg_types,node -> left -> tp);
 	}
 	int len = Vector_get_length(arg_types);
@@ -287,7 +287,7 @@ void gen_function_def(Node_t *node){
 	}
 	
 
-	generate(node -> right);//定義本文をコンパイル
+	generate(node -> right, 0, 0);//定義本文をコンパイル
 
 	//epilogue return に書く
 	pop_stack(node -> tp -> size,"rax");
@@ -467,7 +467,7 @@ void gen_assign(Node_t* node) {
 	size[1] = node -> right -> tp -> size;
 	char *rdi = get_registername("rdi",size[0]);
 	char* pref = get_pointerpref(size[0]);
-	generate(node -> right);
+	generate(node -> right, 0, 0);
 
 	pop_stack(size[1],"rdi");// right
 	pop_stack(8, "rax");// left
@@ -479,7 +479,7 @@ void gen_assign(Node_t* node) {
 
 void gen_deref(Node_t *node) {
 		
-	generate(node -> left);
+	generate(node -> left, 0, 0);
 	
 	char* rax = get_registername("rax",node -> tp -> size);
 	char* rcx = get_registername("rcx", node -> tp -> size); 
@@ -525,7 +525,7 @@ void gen_globvar(Node_t* node){
 }
 
 void gen_return(Node_t* node) {
-	generate(node);
+	generate(node, 0, 0);
 	if(node != NULL)// is "return;"?
 		pop_stack(node -> tp -> size, "rax");
 	
@@ -599,7 +599,7 @@ void gen_glob_declar(Node_t* node) {
 void gen_block(Node_t* node) {
 	while (node ->kind != ND_BLOCKEND)
 	{
-		generate(node -> left);
+		generate(node -> left, 0, 0);
 		node = node ->right;
 	}
 	return;
@@ -613,13 +613,14 @@ void gen_if(Node_t* node) {
 	int elseNumber;
 	switch(node -> kind) {
 	case ND_IF:
+		endNumberIf = filenumber++;
+
 		size = node -> left -> tp -> size;	
-		generate(node -> left); // condition 
+		generate(node -> left, 0, 0); // condition 
 		pop_stack(size, "rax");
 		printf("	cmp %s, 0\n", get_registername("rax", size));
-		printf("	je  .Lend%d\n",filenumber);
-		endNumberIf = filenumber++;
-		generate(node -> right); // if body 
+		printf("	je  .Lend%d\n",endNumberIf);
+		generate(node -> right, 0, 0); // if body 
 	
 		printf(".Lend%d:\n",endNumberIf);
 		
@@ -627,10 +628,10 @@ void gen_if(Node_t* node) {
 	case ND_ELSE:
 		if( node -> left && node -> left -> kind == ND_IFE)
 		{
-			generate(node -> left); // condition and true part 
+			generate(node -> left, 0, 0); // condition and true part 
 			endNumberElse = filenumber++;
 			
-			generate(node -> right); // false part 
+			generate(node -> right, 0, 0); // false part 
 			
 			printf(".Lend%d:\n",endNumberElse);
 			return;
@@ -638,7 +639,7 @@ void gen_if(Node_t* node) {
 		
 	case ND_IFE:
 		size = node -> left -> tp -> size;
-		generate(node -> left);
+		generate(node -> left, 0, 0);
 		pop_stack(size,"rax");
 		
 		printf("	cmp %s, 0\n", get_registername("rax", size));
@@ -646,7 +647,7 @@ void gen_if(Node_t* node) {
 		elseNumber = filenumber;
 		filenumber++;
 
-		generate(node -> right);
+		generate(node -> right, 0, 0);
 		
 		printf("	jmp .Lend%d\n",filenumber);
 
@@ -657,19 +658,21 @@ void gen_if(Node_t* node) {
 }
 
 void gen_while(Node_t* node) {
-	printf(".Lbegin%d:\n",filenumber);
-	int beginnumber_while = filenumber++;
+
+	int beginNumberWhile = filenumber++;
+	int endNumberWhile = filenumber++;
 	
-	generate(node -> left);
+	printf(".Lbegin%d:\n",beginNumberWhile);
+	generate(node -> left, beginNumberWhile, endNumberWhile);
 	
 	int size_l = node -> left -> tp -> size;
 	pop_stack(size_l, "rax");
 	
 	printf("	cmp %s, 0\n", get_registername("rax", size_l));
-	printf("	je	.Lend%d\n",filenumber);
-	int endnumber_while = filenumber++;
+	printf("	je	.Lend%d\n",endNumberWhile);
+	
 
-	generate(node -> right);
+	generate(node -> right, beginNumberWhile, endNumberWhile);
 
 	int size_r;
 	if( node -> right -> tp)
@@ -682,8 +685,8 @@ void gen_while(Node_t* node) {
 	}
 	pop_stack(size_r, "rax");
 	
-	printf("	jmp .Lbegin%d\n",beginnumber_while);
-	printf(".Lend%d:\n",endnumber_while);
+	printf("	jmp .Lbegin%d\n", beginNumberWhile);
+	printf(".Lend%d:\n", endNumberWhile);
 	return;
 }
 
@@ -696,22 +699,24 @@ void gen_for(Node_t* node) {
 	}
 	else
 	{
+		int beginNumberFor = filenumber++;
+		int endNumberFor = filenumber++;
+
 		Node_t *conditions = node -> left;
-		Node_t *init_condition = conditions -> left;
+		Node_t *initCondition = conditions -> left;
 		Node_t *update = conditions -> right;
 
-		generate(init_condition -> left);
+		generate(initCondition -> left, beginNumberFor, endNumberFor);
 
-		printf(".Lbegin%d:\n",filenumber);
-		int beginnumber_for = filenumber++;
-		int endnumber_for = filenumber++;
+		printf(".Lbegin%d:\n",beginNumberFor);
 		
-		generate(init_condition -> right);
+		
+		generate(initCondition -> right, beginNumberFor, endNumberFor);
 
 		int size;
-		if(init_condition -> right -> tp)
+		if(initCondition -> right -> tp)
 		{
-			size = init_condition -> right -> tp -> size;
+			size = initCondition -> right -> tp -> size;
 		}
 		else
 		{
@@ -720,14 +725,14 @@ void gen_for(Node_t* node) {
 		pop_stack(size, "rax");
 		
 		printf("	cmp %s, 0\n", get_registername("rax", size));
-		printf("	je .Lend%d\n",endnumber_for);
+		printf("	je .Lend%d\n", endNumberFor);
 
-		generate(node -> right);
+		generate(node -> right, beginNumberFor, endNumberFor);
 
-		generate(update);
+		generate(update, beginNumberFor, endNumberFor);
 
-		printf("	jmp .Lbegin%d\n",beginnumber_for);
-		printf(".Lend%d:\n",endnumber_for);
+		printf("	jmp .Lbegin%d\n", beginNumberFor);
+		printf(".Lend%d:\n", endNumberFor);
 
 		filenumber++;
 
@@ -741,7 +746,7 @@ void gen_log_and_or(Node_t* node) {
 	char* rax_l = get_registername("rax", size_l);
 	char* rax_r = get_registername("rax", size_r);
 
-	generate(node -> left);
+	generate(node -> left, 0, 0);
 	pop_stack(size_l, "rax");
 
 	printf("	cmp %s, 0\n", rax_l);
@@ -749,7 +754,7 @@ void gen_log_and_or(Node_t* node) {
 		printf("	je .Lend%d\n", filenumber);
 	else
 		printf("	jne .Lend%d\n", filenumber);
-	generate(node -> right);
+	generate(node -> right, 0, 0);
 	pop_stack(size_r, "rax");
 
 	printf("	cmp %s, 0\n", rax_r);
@@ -787,7 +792,7 @@ void gen_list_init(Node_t* node) {
 		char* prefix = get_pointerpref(size);
 		while(initBranch -> kind == ND_BLOCK)
 		{
-			generate(initBranch -> left);
+			generate(initBranch -> left, 0, 0);
 			pop_stack(initBranch -> left -> tp -> size, "rdi");
 
 			pop_stack(8, "rax");
@@ -815,7 +820,7 @@ void gen_list_init(Node_t* node) {
 	char* prefix = get_pointerpref(member -> tp -> size);
 	while(initBranch -> kind == ND_BLOCK)
 	{
-			generate(initBranch -> left);
+			generate(initBranch -> left, 0, 0);
 			pop_stack(initBranch -> left -> tp -> size, "rdi");
 
 			pop_stack(8, "rax");
@@ -847,7 +852,7 @@ void gen_dot(Node_t* node) {
 }
 
 void gen_log_not(Node_t* node) {
-	generate(node -> left);
+	generate(node -> left, 0, 0);
 	pop_stack(node -> left -> tp -> size, "rax");
 	printf("	cmp %s, 0\n", get_registername("rax", node -> left -> tp -> size));
 	printf("	sete al\n");
@@ -856,7 +861,7 @@ void gen_log_not(Node_t* node) {
 }
 
 //抽象構文木からアセンブリコードを生成する
-void generate(Node_t *node){
+void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 
 	if(!node) return;
 
@@ -929,16 +934,16 @@ void generate(Node_t *node){
 	case ND_NEQ:
 	case ND_LES:
 	case ND_LEQ:
-		generate(node -> left);
-		generate(node -> right);
+		generate(node -> left, 0, 0);
+		generate(node -> right, 0, 0);
 		gen_compair(node);
 		return;
 	case ND_ADD:
 	case ND_SUB:
 	case ND_MUL:
 	case ND_DIV:
-		generate(node -> left);
-		generate(node -> right);		
+		generate(node -> left, 0, 0);
+		generate(node -> right, 0, 0);		
 		gen_arithmetic_instruction(node);
 		return;
 	default:

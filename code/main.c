@@ -89,7 +89,7 @@ int main(int argc, char **argv){
 			printf("	.text\n");
 			printf("	.global main\n");
 
-			generate(code);
+			generate(code, 0, 0);
 		}
 		rootBlock++; 
 	}

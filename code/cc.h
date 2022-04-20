@@ -974,5 +974,5 @@ void gen_formula(Node_t*);
 
 
 //抽象構文木からアセンブリコードを生成する
-void generate(Node_t *node);
+void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd);
 //=====================================================
