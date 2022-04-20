@@ -581,7 +581,8 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 Token_t* tokenize_macro(char** p, Token_t* cur) {
 
 	keyword keyWord = is_keyword(*p);
-	*p = *p + String_len(get_keyword(keyWord));
+	if(keyWord != KEYWORD_START)
+		*p = *p + String_len(get_keyword(keyWord));
 	switch(keyWord)
 	{
 	case MACRO_DEFINE:
@@ -589,6 +590,8 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 		return cur;
 	case MACRO_IF:
 		return tokenize_macro_if(p, cur);
+	default:
+		error_at(*p, "Anonimus keyword");
 	}
 	return cur;				
 }

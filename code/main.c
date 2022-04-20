@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 	char *buffer;
 	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-f",2))
 	{
-		filepah = argv[2];
+		filepath = argv[2];
 		buffer = file_open(argv[2]);
 		user_input = buffer;
 	}

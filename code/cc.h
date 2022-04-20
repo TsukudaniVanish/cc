@@ -514,7 +514,7 @@ char *file_open(char *);
 char* user_input;
 
 //error assert
-char* filepah;
+char* filepath;
 
 //error assert
 char *parsing_here;

@@ -65,9 +65,9 @@ void error_at(char *loc,char *fmt,...){
 		}
 	}
 
-    int indent = fprintf(stderr , "%s :line %d :" , filepah, linenum);
+    int indent = fprintf(stderr , "%s :line %d :" , filepath, linenum);
     fprintf(stderr,"%.*s" , (int)(end - line) , *line == '\n'? line + 1: line);
-	if(*end != '\n')
+	if((*line == '\n' && *end != '\n') || (*line != '\n'))
 	{
 		fprintf(stderr, "\n");
 	}
