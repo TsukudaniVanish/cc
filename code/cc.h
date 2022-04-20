@@ -218,10 +218,12 @@ void** rootBlock;// this variable points an current root block.
 // =========================Token =========================
 typedef enum keyWords {
 	KEYWORD_START = 0,// start
+	CONTINUE,
 	DEFINED,
 	RETURN,
 	SIZEOF,
 	WHILE,
+	BREAK,
 	ELSE,
 	FOR,
 	IF,
@@ -312,16 +314,18 @@ typedef enum tokenKind{
 	TK_OPERATOR=2, // operator
 	TK_PUNCTUATOR=3,// punctuator
 	TK_STRINGLITERAL,//string
-	//flow operation=====================================================
+	// token flow operation keyword =====================================================
 	TK_IF= TOKEN_FLOW_OPERATION_START,//flow operation
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
 	TK_RETURN,
+	TK_BREAK,
+	TK_CONTINUE,
 	TK_FLOW_OPERATION_END,// flow operation end 
 	// ====================================================================
 	TK_SIZEOF = TOKEN_SIZEOF,// this keyword acts like operator.
-	//type of variable =====================================================
+	//type of variable keyword =====================================================
 	TK_TypeVOID = TOKEN_TYPE,//this list is sorted as in Type_label
 	TK_TypeCHAR,
 	TK_TypeINT,
@@ -448,6 +452,8 @@ typedef enum nodeKind{
 	ND_FOR,
 	ND_FORINITCONDITION,
 	ND_FORUPDATE,
+	ND_BREAK,
+	ND_CONTINUE,
 	ND_BLOCK, // <-> { ... }
 	ND_BLOCKEND,// { ... } end marker
 	//=========================

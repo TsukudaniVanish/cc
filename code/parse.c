@@ -575,6 +575,10 @@ Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 	case TK_RETURN: return new_node_return(token);
 	case TK_ELSE: // ERROR
 		error_at((*token) -> str, "'else' follows after 'if' or 'else if' statement");
+	case TK_CONTINUE:
+		return new_Node_t(ND_CONTINUE, NULL, NULL, 0, 0, NULL, NULL);
+	case TK_BREAK:
+		return new_Node_t(ND_BREAK, NULL, NULL, 0, 0, NULL, NULL);
 	default:
 		return NULL;
 	}

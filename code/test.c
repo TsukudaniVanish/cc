@@ -424,24 +424,45 @@ void test_global() {
 	}
 	test_passed("global variable test");
 }
-#define TEST_DEFINE 100
-#define timesTen(a) a*10
-#define macro_in_macro(b) b*TEST_DEFINE
-int main(){
-    test_print("\x1b[32mHello\x1b[m\n"); /* display test */
-	test_arithmetic();
-	test_pointer_array_access();
-	test_increment_postfix();
-	test_decrement_postfix();	
-	test_inc_dec_prefix();
-	test_logic();
-	test_struct();
-	test_array_init();
-	test_union();
-	test_enum();
-	test_log_not();
-	
-	test_global();
+
+void test_break() {
+	char *test = "test break";
+	int x = 0;
+	while(x < 100) {
+		if(x == 14) break;
+		x++;
+	}
+	if(x != 14)
+	{
+		error_template_int(test, 14, x);
+	}
+	test_passed(test);
+}
+
+void test_continue() {
+	char *test = "test continue";
+
+	int x = 0;
+	int y = 0;
+
+	while(x < 20)
+	{
+		x++;
+		if(x > 9)
+		{
+			continue;
+		}
+		y++;
+	}
+
+	if(y != 9)
+	{
+		error_template_int(test, 9, y);
+	}
+	test_passed(test);
+}
+
+void test_preprocess() {
 	if(TEST_DEFINE == 100)
 		test_print("\x1b[32m	macro TEST_DEFINE complied successfully! \x1b[m\n");
 	int g = 10;
@@ -463,5 +484,44 @@ int main(){
 		test_print_int(macro_in_macro(g));
 		test_print("\n");
 	}
+	if(DEFINEOK != 20)
+	{
+		test_print("failed to complie macro in macro: got ");
+		test_print_int(DEFINEOK);
+		test_print("\n");
+	}
+	else
+	{
+		test_print("\x1b[32m 	conditional preprocess complied successfully!\x1b[m\n");
+	}
+	return;
+}
+
+#define TEST_DEFINE 100
+#define timesTen(a) a*10
+#define macro_in_macro(b) b*TEST_DEFINE
+#if defined TEST_DEFINE
+	#define DEFINEOK 20
+#endif
+int main(){
+    test_print("\x1b[32mHello\x1b[m\n"); /* display test */
+	test_arithmetic();
+	test_pointer_array_access();
+	test_increment_postfix();
+	test_decrement_postfix();	
+	test_inc_dec_prefix();
+	test_logic();
+	test_struct();
+	test_array_init();
+	test_union();
+	test_enum();
+	test_log_not();
+	test_break();
+	test_continue();
+	
+	test_global();
+	test_preprocess();
+	
+		
 	return 0;
 }

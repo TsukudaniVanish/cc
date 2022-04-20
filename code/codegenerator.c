@@ -596,16 +596,16 @@ void gen_glob_declar(Node_t* node) {
 	return;
 }
 
-void gen_block(Node_t* node) {
+void gen_block(Node_t* node, int beginLabel, int endLabel) {
 	while (node ->kind != ND_BLOCKEND)
 	{
-		generate(node -> left, 0, 0);
+		generate(node -> left, beginLabel, endLabel);
 		node = node ->right;
 	}
 	return;
 }
 
-void gen_if(Node_t* node) {
+void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 
 	long size;		
 	int endNumberIf;
@@ -616,11 +616,11 @@ void gen_if(Node_t* node) {
 		endNumberIf = filenumber++;
 
 		size = node -> left -> tp -> size;	
-		generate(node -> left, 0, 0); // condition 
+		generate(node -> left, labelLoopBegin, labelLoopEnd); // condition 
 		pop_stack(size, "rax");
 		printf("	cmp %s, 0\n", get_registername("rax", size));
 		printf("	je  .Lend%d\n",endNumberIf);
-		generate(node -> right, 0, 0); // if body 
+		generate(node -> right, labelLoopBegin, labelLoopEnd); // if body 
 	
 		printf(".Lend%d:\n",endNumberIf);
 		
@@ -628,10 +628,10 @@ void gen_if(Node_t* node) {
 	case ND_ELSE:
 		if( node -> left && node -> left -> kind == ND_IFE)
 		{
-			generate(node -> left, 0, 0); // condition and true part 
+			generate(node -> left, labelLoopBegin, labelLoopEnd); // condition and true part 
 			endNumberElse = filenumber++;
 			
-			generate(node -> right, 0, 0); // false part 
+			generate(node -> right, labelLoopBegin, labelLoopEnd); // false part 
 			
 			printf(".Lend%d:\n",endNumberElse);
 			return;
@@ -639,7 +639,7 @@ void gen_if(Node_t* node) {
 		
 	case ND_IFE:
 		size = node -> left -> tp -> size;
-		generate(node -> left, 0, 0);
+		generate(node -> left, labelLoopBegin, labelLoopEnd);
 		pop_stack(size,"rax");
 		
 		printf("	cmp %s, 0\n", get_registername("rax", size));
@@ -647,7 +647,7 @@ void gen_if(Node_t* node) {
 		elseNumber = filenumber;
 		filenumber++;
 
-		generate(node -> right, 0, 0);
+		generate(node -> right, labelLoopBegin, labelLoopEnd);
 		
 		printf("	jmp .Lend%d\n",filenumber);
 
@@ -673,17 +673,6 @@ void gen_while(Node_t* node) {
 	
 
 	generate(node -> right, beginNumberWhile, endNumberWhile);
-
-	int size_r;
-	if( node -> right -> tp)
-	{
-		size_r = node -> right -> tp -> size;
-	}
-	else
-	{
-		size_r = 0;
-	}
-	pop_stack(size_r, "rax");
 	
 	printf("	jmp .Lbegin%d\n", beginNumberWhile);
 	printf(".Lend%d:\n", endNumberWhile);
@@ -860,6 +849,18 @@ void gen_log_not(Node_t* node) {
 	push_stack(4, "rax");
 }
 
+void gen_continue(int beginLabel) {
+	
+	printf("	jmp .Lbegin%d\n", beginLabel);
+	
+}
+
+void gen_break(int endLabel) {
+	
+	printf("	jmp .Lend%d\n", endLabel);
+
+}
+
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 
@@ -908,7 +909,10 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 
 	case ND_RETURN: gen_return(node -> left);
 		return;
-
+	case ND_BREAK: gen_break(labelLoopEnd);
+		return;
+	case ND_CONTINUE: gen_continue(labelLoopBegin);
+		return;
 	//around an end of the ast tree ==========================================================
 
 	//around the top of the ast tree ===================================================
@@ -918,11 +922,11 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 	case ND_FUNCTIONDEF: gen_function_def(node);
 		return;
 
-	case ND_BLOCK: gen_block(node);
+	case ND_BLOCK: gen_block(node, labelLoopBegin, labelLoopEnd);
 		return;
 	case ND_IF: 
 	case ND_ELSE:
-	case ND_IFE: gen_if(node);
+	case ND_IFE: gen_if(node, labelLoopBegin, labelLoopEnd);
 		return;
 	case ND_WHILE: gen_while(node);
 		return;

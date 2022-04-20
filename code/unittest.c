@@ -714,7 +714,7 @@ void unit_test_preprocess_macro_exp_eval() {
 }
 
 void unit_test_preprocess_if() {
-	char* test = "if endif test";
+	char* test = "preprocess if endif test";
 	char* arg = "#if defined MACRO\n #define MACROS 10\n#endif";
 
 	macros = make_Map();

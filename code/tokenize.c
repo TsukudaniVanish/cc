@@ -156,9 +156,11 @@ void comment_skip(char **p) {
 char* get_keyword(keyword kind) {
 	switch(kind)
 	{
+		case CONTINUE: return "continue";
 		case DEFINED: return "defined";
 		case RETURN: return "return";
 		case SIZEOF: return "sizeof";
+		case BREAK: return "break";
 		case WHILE: return "while";
 		case ELSE: return "else";
 		case FOR: return "for";
@@ -182,9 +184,11 @@ char* get_keyword(keyword kind) {
 Token_kind get_correspond_token_kind(keyword kind) {
 	switch(kind) 
 	{
+		case CONTINUE: return TK_CONTINUE;
 		case DEFINED: return TK_OPERATOR;
 		case RETURN: return TK_RETURN;
 		case SIZEOF: return TK_SIZEOF;
+		case BREAK: return TK_BREAK;
 		case WHILE: return TK_WHILE;
 		case ELSE: return TK_ELSE;
 		case FOR: return TK_FOR;
@@ -444,13 +448,20 @@ Token_t *tokenize(char **pointer, Token_t** lastToken, int tokenizeFlag) {
 					{
 						error_at(p, "can't find '#if ...'");
 					}
-					if(lastToken != NULL)
+
+					if(lastToken != NULL && head.next != NULL)
 					{
 						(*lastToken) -> next = head.next;
 						*lastToken = cur;
+						*pointer = p;
+						return head.next;
 					}
-					*pointer = p;
-					return head.next;
+					else 
+					{ // tokenize doesn't generate token list 
+						*pointer = p;
+						return *lastToken; 
+					}
+					
 				}
 				cur = tokenize_macro(&p, cur);
 				break;
@@ -554,7 +565,7 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	if(eval_Expr(exp))
 	{
 		*pointer = p;
-		tokenize(pointer, &cur, FLAG_MACRO_IF);
+		cur = tokenize(pointer, &cur, FLAG_MACRO_IF);
 		if(**pointer == '\0')
 		{
 			error_at(p, "can't find '#endif'");
