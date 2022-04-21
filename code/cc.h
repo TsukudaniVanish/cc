@@ -825,7 +825,7 @@ Node_t* arrmemaccess(Token_t **token , Node_t**);
  */
 Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char*);
 Node_t* new_node_function_call(Token_t** token);
-int Node_read_function_parameters(Token_t**, Node_t**);
+
 /**
  * @brief 
  * 定数の末端ノードを作る

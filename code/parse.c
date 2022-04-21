@@ -353,32 +353,6 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
 	}
 }
 
-/*
- * @brief read fuction number of function arguments. *v has argument info after call this function
- * */
-int Node_read_function_parameters(Token_t **token,Node_t **vector) {
-
-	int to_return = 0;
-	Node_t* v = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
-	*vector = v;
-	while (!find(')',token))
-	{
-		v -> left = declere(token);
-		find(',',token);
-
-		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
-		v -> right = next;
-
-		to_return ++;
-
-		v = next;
-	}
-
-	v -> kind = ND_BLOCKEND;
-	return to_return;
-	
-}
-
 Node_t *new_node_function_call(Token_t **token) {
 	char* name = calloc((*token) -> length, sizeof(char));
 	Memory_copy(name, (*token) -> str, (*token) -> length);
@@ -615,6 +589,11 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declere_specify(token, node);
 
+	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
+			|| (*token) -> kind == TK_IDENT 
+			|| (*token) -> kind == TK_OPERATOR) // identifier parsing
+		node = ident_specify(token, node);
+
 	if(// struct , union or enum decleration 
 		(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM)
 		&& node -> name == NULL
@@ -624,10 +603,6 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	}
 
 	// global variable decleration 
-	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
-			|| (*token) -> kind == TK_IDENT 
-			|| (*token) -> kind == TK_OPERATOR) // global variable decleration with identifier
-		node = ident_specify(token, node);
 	
 	Lvar *lvar = find_lvar(node -> name, String_len(node -> name), &global);
 	if(lvar == NULL)
