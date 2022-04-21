@@ -503,7 +503,7 @@ void test_preprocess() {
 #if defined TEST_DEFINE
 	#define DEFINEOK 20
 #endif
-int main(){
+int main(){// line comment 
     test_print("\x1b[32mHello\x1b[m\n"); /* display test */
 	test_arithmetic();
 	test_pointer_array_access();

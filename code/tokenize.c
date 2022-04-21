@@ -132,7 +132,7 @@ int is_symbol(char *p) {
 int is_comment(char *p) {
 	if(*p == '/')
 	{
-		return String_conpair(p,"/*",2);
+		return String_conpair(p,"/*",2) || String_conpair(p, "//",2);
 	}
 	return 0;
 }
@@ -141,6 +141,18 @@ int is_comment(char *p) {
 
 
 void comment_skip(char **p) {
+
+	*p += 1;
+	//line comment 
+	if(**p == '/')
+	{
+		while(**p != '\n' && **p != '\0')
+		{
+			*p += 1;
+		}
+		return;
+	}
+	// block comment
 	while (1)
 	{
 		if( **p == '*' && String_conpair(*p,"*/",2))
