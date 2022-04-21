@@ -892,6 +892,9 @@ int at_eof(Token_t **token);
  */
 void program(Token_t **,Vector*);
 Node_t *func(Token_t**);
+int type_parameter_list(Token_t**, Node_t**);
+int parameter_list(Token_t**, Node_t**);
+Node_t *parameter_declere(Token_t**);
 Node_t *stmt(Token_t**);
 Node_t *declere(Token_t**);
 Node_t *init(Token_t**, Node_t*);

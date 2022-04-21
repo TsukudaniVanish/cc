@@ -424,7 +424,7 @@ Node_t *new_node_function_definition(Token_t **token) {
 	Map_add(ordinaryNameSpace, node -> name, data);
 	
 	expect('(',token);	
-	node -> val = Node_read_function_parameters(token,&node -> left);
+	node -> val = type_parameter_list(token,&node -> left);
 	
 	node -> right = stmt(token);
 	return node;
@@ -611,25 +611,28 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	{
 		return new_node_function_definition(token);
 	}
-
+	// global variable decleration or struct-union decleration 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declere_specify(token, node);
-	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
-			|| (*token) -> kind == TK_IDENT 
-			|| (*token) -> kind == TK_OPERATOR)
-		node = ident_specify(token, node);
 
-	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label != TP_ENUM)
-			&& node -> name == NULL)
-	{
+	if(// struct , union or enum decleration 
+		(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM)
+		&& node -> name == NULL
+	) { 
 		expect(';', token);
 		return node;
 	}
+
+	// global variable decleration 
+	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
+			|| (*token) -> kind == TK_IDENT 
+			|| (*token) -> kind == TK_OPERATOR) // global variable decleration with identifier
+		node = ident_specify(token, node);
 	
 	Lvar *lvar = find_lvar(node -> name, String_len(node -> name), &global);
 	if(lvar == NULL)
 		lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
-	if (find('=',token))//変数の代入
+	if (find('=',token))// initialization
 	{
 		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
 			node = init(token, node);
@@ -678,14 +681,18 @@ Node_t *new_node_ref_deref(Token_t **token) {
 }
 
 /*
- * token から構文木を生成 
+ * generate ast from token list 
  */
 /*
- * (someting)* <= something の0以上の繰り返し
- * 生成文法
+ * (someting)* <= something appers at least 0 times.
+ * syntax
  *
  * program = func*
- * func = ident "(" (type? ident)*  ")"  stmt 
+ * 
+ * func = declere_specify ident_specify "(" type_parameter_list  ")"  stmt
+ * type_parameter_list = parameter_list 
+ * parameter_list = parameter_declere ("," parameter_declre)*
+ * parameter_declere = declere_specify ident_specify
  * stmt = expr";"
  * 		| declere ";"
  * 		| "{" stmt* "}"
@@ -771,9 +778,69 @@ Node_t *func(Token_t **token) {
 	if( !( (*token) ->next ) && (*token) -> next -> kind != TK_IDENT ){
 
 
-		error_at((*token) -> str,"Expected function identifier");
+		error_at((*token) -> str,"Expected identifier");
 	}
 	return new_node_glob_ident(token);
+}
+
+
+// parameter parsing
+int type_parameter_list(Token_t** token, Node_t** parameter_container) {
+	return parameter_list(token, parameter_container);
+}
+
+// after this function being called, parameter_list points head of list of nodes which has parameter info.
+int parameter_list(Token_t** token, Node_t** parameter_container) {
+	int to_return = 0;
+	Node_t* v = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
+	*parameter_container = v;
+	while (!find(')',token))
+	{
+		v -> left = parameter_declere(token);
+		find(',',token);
+
+		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
+		v -> right = next;
+
+		to_return ++;
+
+		v = next;
+	}
+
+	v -> kind = ND_BLOCKEND;
+	return to_return;
+}
+
+Node_t* parameter_declere(Token_t** token) {
+	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
+	Lvar *table = Vector_get_tail(nameTable);
+	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+
+	node = declere_specify(token, node);
+	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM) 
+			|| (*token) -> kind == TK_IDENT 
+			|| (*token) -> kind == TK_OPERATOR)
+	{
+		node = ident_specify(token, node);
+	}
+
+	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM) 
+				&& node -> name == NULL)
+	{//  struct definition only
+		return node;
+	}
+
+	// check: scope && name space 
+	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
+	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
+		lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
+	else
+		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
+
+	node -> offset = lvar -> offset;
+	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
+
+	return node;
 }
 
 Node_t *stmt(Token_t **token) {
@@ -826,17 +893,18 @@ Node_t *declere(Token_t **token) {
 		return node;
 	}
 
+	// check: scope && name space 
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
 	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
 		lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	else
-		error_at((*token) -> str, "Can't use same identifier: %s", node -> name);
+		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
 
 	node -> offset = lvar -> offset;
 	Vector_replace(nameTable,Vector_get_length(nameTable)-1,table);
 
 	if(find('=',token))
-	{
+	{ // initialize
 		parsing_here = (*token) -> str;
 		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
 			node = init(token, node);
