@@ -224,6 +224,9 @@ typedef enum keyWords {
 	SIZEOF,
 	WHILE,
 	BREAK,
+	SWITCH,
+	DEFAULT,
+	CASE,
 	ELSE,
 	FOR,
 	IF,
@@ -269,6 +272,7 @@ typedef enum symbols {
 	PUNCTUATOR_START,
 	COMMA,// = ','
 	SEMICORRON,// == ';'
+	CORRON, // == ':'
 	BRACE ,//= '{',
 	BRACE_CLOSE ,//= '}',
 	PARENTHESIS ,//= '(',
@@ -318,6 +322,9 @@ typedef enum tokenKind{
 	TK_IF= TOKEN_FLOW_OPERATION_START,//flow operation
 	TK_ELSE,
 	TK_WHILE,
+	TK_SWITCH,
+	TK_CASE,
+	TK_DEFAULT,
 	TK_FOR,
 	TK_RETURN,
 	TK_BREAK,
@@ -449,6 +456,9 @@ typedef enum nodeKind{
 	ND_ELSE,
 	ND_IFE, //if ... else
 	ND_WHILE,
+	ND_SWITCH,
+	ND_CASE,
+	ND_DEFAULT,
 	ND_FOR,
 	ND_FORINITCONDITION,
 	ND_FORUPDATE,

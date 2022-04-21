@@ -82,6 +82,7 @@ char *get_symbol(int kind) {
 	case EXCLAMATION: return "!";
 	case COMMA: return ",";
 	case SEMICORRON: return ";";
+	case CORRON: return ":";
 	case PARENTHESIS: return "(";
 	case PARANTHESIS_CLOSE: return ")";
 	case BRACE: return "{";
@@ -174,6 +175,9 @@ char* get_keyword(keyword kind) {
 		case SIZEOF: return "sizeof";
 		case BREAK: return "break";
 		case WHILE: return "while";
+		case SWITCH: return "switch";
+		case CASE: return "case";
+		case DEFAULT: return "default";
 		case ELSE: return "else";
 		case FOR: return "for";
 		case IF: return "if";
@@ -202,6 +206,9 @@ Token_kind get_correspond_token_kind(keyword kind) {
 		case SIZEOF: return TK_SIZEOF;
 		case BREAK: return TK_BREAK;
 		case WHILE: return TK_WHILE;
+		case SWITCH: return TK_SWITCH;
+		case CASE: return TK_CASE;
+		case DEFAULT: return TK_DEFAULT;
 		case ELSE: return TK_ELSE;
 		case FOR: return TK_FOR;
 		case IF: return TK_IF;
@@ -455,7 +462,12 @@ Token_t *tokenize(char **pointer, Token_t** lastToken, int tokenizeFlag) {
 				keyword keyWord = is_keyword(p);
 				if(keyWord == MACRO_ENDIF)
 				{
-					p = p + String_len(get_keyword(keyWord));
+					char* endif = get_keyword(keyWord);
+					if(endif == NULL)
+					{
+						error_at("", "compiler was panicked! macro_endif");
+					}
+					p = p + String_len(endif);
 					if(tokenizeFlag != FLAG_MACRO_IF)
 					{
 						error_at(p, "can't find '#if ...'");
@@ -553,7 +565,12 @@ char* skip_to_MACRO_ENDIF(char* pointer) {
 		if(pointer[0] == '#')
 		{
 			keyword keyWord = is_keyword(pointer);
-			pointer = pointer + String_len(get_keyword(keyWord));
+			char* keyWordString = get_keyword(keyWord);
+			if(keyWordString == NULL)
+			{
+				error_at("", "compiler was panicked. keyword is found but there is no string correspond it");
+			}
+			pointer = pointer + String_len(keyWordString);
 			if(keyWord == MACRO_ENDIF)
 			{
 				return pointer;
@@ -593,8 +610,9 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 Token_t* tokenize_macro(char** p, Token_t* cur) {
 
 	keyword keyWord = is_keyword(*p);
-	if(keyWord != KEYWORD_START)
-		*p = *p + String_len(get_keyword(keyWord));
+	char* keywordString = get_keyword(keyWord);
+	if(keyWord != KEYWORD_START && keywordString != NULL)
+		*p = *p + String_len(keywordString);
 	switch(keyWord)
 	{
 	case MACRO_DEFINE:

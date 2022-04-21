@@ -541,12 +541,98 @@ Node_t *new_node_return(Token_t **token) {
 	return node;
 }
 
+// helper function for new_node_switch
+int parse_case_default(int depth, Token_t** token, Node_t** _caseLabel, Node_t** _caseStatement) {
+	Node_t* caseLabel = *_caseLabel;
+	Node_t* caseStatement = *_caseStatement;
+
+	caseLabel -> left = primary(token);
+	expect(':', token);
+
+	Node_t* statements = new_Node_t(ND_BLOCK, stmt(token), NULL, 0, 0, 0, 0);
+	caseStatement -> left = statements;
+
+	statements -> right = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+	statements = statements -> right;
+	while((*token) -> kind != TK_CASE && (*token) -> kind != TK_DEFAULT && ((*token) -> str)[0] != '}')
+	{
+		statements -> left = stmt(token);
+
+		statements -> right = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+		statements = statements -> right;
+	}
+	statements -> kind = ND_BLOCKEND;
+
+	caseLabel -> right = new_Node_t(ND_CASE, NULL, NULL, depth, 0, NULL, NULL);
+	caseStatement -> right = new_Node_t(ND_BLOCK, NULL, NULL, depth, 0, NULL, NULL);
+
+	// return
+	*_caseLabel = caseLabel -> right;
+	*_caseStatement = caseStatement -> right;
+}
+
+Node_t* new_node_switch(Token_t** token) {
+
+	Node_t* node = new_Node_t(ND_SWITCH, NULL, NULL, 0, 0, NULL, NULL);
+	expect('(', token);
+	node -> left = expr(token);
+	expect(')', token);
+
+	Node_t* branch = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+	node -> right = branch;
+
+	int numberOfCase = 0;
+	Node_t* caseLabel = new_Node_t(ND_CASE, NULL, NULL, 0, 0, NULL, NULL);
+	Node_t* caseStatement = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+
+	Node_t** _caseLabel = &caseLabel; // helper pointer
+	Node_t** _caseStatement = &caseStatement; // helper pointer
+
+	// val is depth: initial = 0
+	branch -> left = caseLabel;
+	branch -> right = caseStatement;
+
+	// case start:
+	expect('{', token);
+	while(!find('}', token))
+	{
+		if((*token) -> kind == TK_CASE)
+		{
+			consume(token);
+
+			numberOfCase ++;
+			parse_case_default(numberOfCase, token, _caseLabel, _caseStatement);
+
+			continue;
+		}
+
+		if((*token) -> kind == TK_DEFAULT)
+		{
+			consume(token);
+
+			numberOfCase ++;
+			parse_case_default(numberOfCase, token, _caseLabel, _caseStatement);
+
+			expect('}', token);
+			break;
+		}
+
+		error_at((*token) -> str, "Can't find case or default label");
+	}
+	(*_caseLabel) -> kind = ND_BLOCKEND;
+	(*_caseStatement) -> kind = ND_BLOCKEND;
+	node -> val = numberOfCase;
+
+	return node;
+}
+
 Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 	switch(kind) {
 	case TK_IF: return new_node_if(token);			
 	case TK_WHILE: return new_node_while(token);
 	case TK_FOR: return new_node_for(token);
 	case TK_RETURN: return new_node_return(token);
+	case TK_SWITCH: return new_node_switch(token);
 	case TK_ELSE: // ERROR
 		error_at((*token) -> str, "'else' follows after 'if' or 'else if' statement");
 	case TK_CONTINUE:
@@ -654,6 +740,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 		}
 	return node;
 }
+
 
 /*
  * generate ast from token list 

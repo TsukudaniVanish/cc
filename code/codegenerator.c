@@ -729,6 +729,11 @@ void gen_for(Node_t* node) {
 	return;
 }
 
+void gen_switch(Node_t* node) {
+	// todo
+	error_at("", "Oi! write switch code generation!");
+}
+
 void gen_log_and_or(Node_t* node) {
 	long size_l = node -> left -> tp -> size;
 	long size_r = node -> right -> tp -> size;
@@ -931,6 +936,8 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 	case ND_WHILE: gen_while(node);
 		return;
 	case ND_FOR: gen_for(node);
+		return;
+	case ND_SWITCH: gen_switch(node);
 		return;
 	//around the top of the ast tree ===================================================
 	// operators ===================

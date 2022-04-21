@@ -497,6 +497,38 @@ void test_preprocess() {
 	return;
 }
 
+void test_switch() {
+	char * test = "switch test";
+	int x = 10;
+	switch(x) {
+		case 11:
+			test_print("failed to compile!");
+			error_template_int(test, 11, x);
+		case 12:
+			test_print("failed to compile!");
+			error_template_int(test, 12, x);
+		case 10:
+			test_print("OK!");
+		default:
+			x ++;
+	}
+	if(x != 11) {
+		test_print("Oh , default was not compiled?");
+		error_template_int(test, 11, x);
+	}
+
+	switch(x) {
+		case 20:
+			test_print("failed to compile!");
+			error_template_int(test, 20, x);
+		case 21:
+			test_print("failed to compile!");
+			error_template_int(test, 20, x);
+	}
+
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
