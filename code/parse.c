@@ -609,7 +609,8 @@ Node_t* new_node_switch(Token_t** token) {
 		if((*token) -> kind == TK_DEFAULT)
 		{
 			consume(token);
-
+			(*_caseLabel) -> kind = ND_DEFAULT;
+			(*_caseStatement) -> kind = ND_DEFAULT;
 			numberOfCase ++;
 			parse_case_default(numberOfCase, token, _caseLabel, _caseStatement);
 

@@ -508,7 +508,7 @@ void test_switch() {
 			test_print("failed to compile!");
 			error_template_int(test, 12, x);
 		case 10:
-			test_print("OK!");
+			test_print("\x1b[32mOK!\x1b[m\n");
 		default:
 			x ++;
 	}
@@ -550,6 +550,7 @@ int main(){// line comment
 	test_log_not();
 	test_break();
 	test_continue();
+	test_switch();
 	
 	test_global();
 	test_preprocess();

@@ -729,9 +729,76 @@ void gen_for(Node_t* node) {
 	return;
 }
 
+// store value at rcx. to compair case label with value, we copy value to rax
 void gen_switch(Node_t* node) {
-	// todo
-	error_at("", "Oi! write switch code generation!");
+	int endLable = filenumber++;
+	unsigned int size = node -> left -> tp -> size;
+	char* prefix = get_pointerpref(size);
+	char* rcx = get_registername("rcx", size);
+	char* rdi = get_registername("rdi", size);
+	char* rax = get_registername("rax", size);
+	// get value 
+	generate(node -> left, 0, endLable);
+
+	int depth = node -> val;
+	Node_t* branch = node -> right;
+	Node_t* caseBranch = branch -> left;
+	Node_t* bodyBranch = branch -> right;
+	// case code generation 
+	for(int i = 0; i< depth; i++) {
+		if(caseBranch -> kind == ND_BLOCKEND || caseBranch -> kind == ND_DEFAULT)
+		{
+			break;
+		} else {
+			// get case label 
+			generate(caseBranch ->left, 0, endLable);
+			pop_stack(caseBranch -> left -> tp -> size, "rdi");
+
+			//get value
+			pop_stack(size, "rcx");
+			printf("	mov %s, %s\n", rax, rcx);
+
+			//compair 
+			printf("	cmp %s, %s\n", rax, rdi);
+			printf("	je .Lcase%d\n", i + endLable);
+			push_stack(size, "rcx");
+
+			caseBranch = caseBranch -> right;
+			continue;
+		}
+	}
+	printf("	jmp .Lend%d\n", endLable);
+	// body code generation 
+	for(int j = 0; j < depth; j++) {
+		if(bodyBranch -> kind == ND_DEFAULT) {
+			printf(".Lend%d:\n", endLable);
+
+			Node_t* statement = bodyBranch -> left;
+			while (statement -> kind != ND_BLOCKEND)
+			{
+				generate(statement -> left, 0, endLable);
+				statement = statement -> right;
+			}
+			break;
+		} else {
+			printf(".Lcase%d:\n", j + endLable);
+
+			Node_t* statement = bodyBranch -> left;
+			while (statement -> kind != ND_BLOCKEND)
+			{
+				generate(statement -> left, 0, endLable);
+				statement = statement -> right;
+			}
+
+			bodyBranch = bodyBranch -> right;
+			continue;
+		}
+	}
+	if(bodyBranch -> kind == ND_BLOCKEND)
+	{
+		printf(".Lend%d:\n", endLable);
+	}
+	filenumber += depth;
 }
 
 void gen_log_and_or(Node_t* node) {
