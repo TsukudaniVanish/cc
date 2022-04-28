@@ -80,7 +80,8 @@ a generator function which convert an abstract syntax tree into  assembly codes
 - [x]  add typedef 
 - [ ] add type qualifiers (static, extern)
 - [ ] add do{...}while(...)
-- [ ] add #include to preprocessor  
+- [ ] add #include to preprocessor 
+- [ ] sizeof can accept type-keyword, type alias 
 
 ## coding policy
 
