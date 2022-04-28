@@ -197,7 +197,7 @@ Lvar *global;
 */
 typedef struct {
 	ScopeInfo* scope;
-	Type* tp;// this member is used when tag is Function
+	Type* tp;// this member is used when tag is function or typedef
 	int val;// this member is used when tag is enumconstant
 	enum {
 		TAG_FUNCTION,
@@ -220,6 +220,7 @@ typedef enum keyWords {
 	KEYWORD_START = 0,// start
 	CONTINUE,
 	DEFINED,
+	TYPEDEF,
 	RETURN,
 	SIZEOF,
 	WHILE,
@@ -332,13 +333,18 @@ typedef enum tokenKind{
 	TK_FLOW_OPERATION_END,// flow operation end 
 	// ====================================================================
 	TK_SIZEOF = TOKEN_SIZEOF,// this keyword acts like operator.
+	TK_DECLATION_SPECIFIER_START,
+	TK_TYPEDEF,
 	//type of variable keyword =====================================================
+	TK_TYPESTART,
 	TK_TypeVOID = TOKEN_TYPE,//this list is sorted as in Type_label
 	TK_TypeCHAR,
 	TK_TypeINT,
 	TK_STRUCT,
 	TK_UNION,
 	TK_ENUM,
+	TK_TYPEEND,
+	TK_DECLATION_SPECIFIER_END,
 	//=====================================================
 	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
@@ -403,6 +409,17 @@ Token_t *consume(Token_t **token);
  */
 int is_functioncall(Token_t **);
 
+/**
+ * @brief get ident string from token if kind == TK_IDENT
+ * 
+ */
+char* get_ident_name(Token_t** token);
+
+/**
+ * @brief check ident is type alias
+ * 
+ */
+int is_type_alias(Token_t**);
 /** 
  * @brief copy kind val length str tp not copy next
  */ 
@@ -910,7 +927,7 @@ Node_t *declere(Token_t**);
 Node_t *init(Token_t**, Node_t*);
 Node_t *init_list(Token_t**, Node_t*);
 Node_t* ident_specify(Token_t** , Node_t*);
-Node_t* declere_specify(Token_t** , Node_t* );
+Node_t* declere_specify(Token_t** , Node_t*, int);
 Node_t* pointer(Token_t**, Node_t*);
 Node_t* type_specify(Token_t** token, Node_t*);
 Node_t* struct_union_specify(Token_t**, Node_t*);

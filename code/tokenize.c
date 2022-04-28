@@ -171,6 +171,7 @@ char* get_keyword(keyword kind) {
 	{
 		case CONTINUE: return "continue";
 		case DEFINED: return "defined";
+		case TYPEDEF: return "typedef";
 		case RETURN: return "return";
 		case SIZEOF: return "sizeof";
 		case BREAK: return "break";
@@ -202,6 +203,7 @@ Token_kind get_correspond_token_kind(keyword kind) {
 	{
 		case CONTINUE: return TK_CONTINUE;
 		case DEFINED: return TK_OPERATOR;
+		case TYPEDEF: return TK_TYPEDEF;
 		case RETURN: return TK_RETURN;
 		case SIZEOF: return TK_SIZEOF;
 		case BREAK: return TK_BREAK;

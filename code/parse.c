@@ -272,8 +272,12 @@ Type *imptypecast(Node_t *node) {
 }
 
 int is_lvardec(Token_t **token) {
-	if((*token) -> kind > 299)
+	if((*token) -> kind > TK_DECLATION_SPECIFIER_START)
 		return 1;
+	if(is_type_alias(token))
+	{
+		return 1;
+	}
 	return 0;
 }
 
@@ -390,7 +394,7 @@ Node_t *new_node_function_call(Token_t **token) {
 
 Node_t *new_node_function_definition(Token_t **token) {
 	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
-	node = declere_specify(token, node);
+	node = declere_specify(token, node, is_type_alias(token));
 	node = ident_specify(token, node); 
 
 	NameData* data = new_NameData(TAG_FUNCTION);
@@ -674,7 +678,7 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	}
 	// global variable decleration or struct-union decleration 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
-	node = declere_specify(token, node);
+	node = declere_specify(token, node, is_type_alias(token));
 
 	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
 			|| (*token) -> kind == TK_IDENT 
@@ -742,6 +746,18 @@ Node_t *new_node_ref_deref(Token_t **token) {
 	return node;
 }
 
+Node_t* new_node_set_type_alias(Token_t** token, Node_t* node) {
+	// type qualifier?
+	node = declere_specify(token, node, 0);
+	node = ident_specify(token, node);
+
+	// set to ordinary name space
+	NameData* data = new_NameData(TAG_TYPEDEF);
+	data -> tp = node -> tp;
+	Map_add(ordinaryNameSpace, node -> name, data);
+	return node;
+}
+
 
 /*
  * generate ast from token list 
@@ -763,7 +779,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
  * 		| "while"  "(" expr ")" stmt
  * 		| "for"  "(" expr?; expr? ; expr? ")"stmt
  * 		| "return" expr";"
- * declere = declere_specify ident_specify ( "=" init  )?
+ * declere = declere_specify* ident_specify ( "=" init  )?
  * init =  expr | "{" init_list ","? "}"
  * init_list = init ( "," init)*
  * ident_specify = pointer? ident ("[" expr "]")*
@@ -879,7 +895,7 @@ Node_t* parameter_declere(Token_t** token) {
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
-	node = declere_specify(token, node);
+	node = declere_specify(token, node, is_type_alias(token));
 	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM) 
 			|| (*token) -> kind == TK_IDENT 
 			|| (*token) -> kind == TK_OPERATOR)
@@ -941,17 +957,23 @@ Node_t *declere(Token_t **token) {
 	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+	int isTypeDef = (*token) -> kind == TK_TYPEDEF;
+	int isTypeAlias = (*token) -> kind == TK_IDENT? is_type_alias(token): 0;
 
-	node = declere_specify(token, node);
+	do{
+		node = declere_specify(token, node, isTypeAlias);
+		isTypeAlias = (*token) -> kind == TK_IDENT? is_type_alias(token): 0;
+	}while(((*token) -> kind > TK_DECLATION_SPECIFIER_START && (*token) -> kind < TK_DECLATION_SPECIFIER_END) || isTypeAlias);
+
+
 	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM) 
 			|| (*token) -> kind == TK_IDENT 
 			|| (*token) -> kind == TK_OPERATOR)
 	{
 		node = ident_specify(token, node);
 	}
-
 	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM) 
-				&& node -> name == NULL)
+				&& (node -> name == NULL || (isTypeDef && (*token) -> kind == TK_PUNCTUATOR)))
 	{//  struct definition only
 		return node;
 	}
@@ -1051,8 +1073,22 @@ Node_t* ident_specify(Token_t** token, Node_t* node) {
 }
 /*@brief specify decleration type struct constant or volatile?
  * */
-Node_t* declere_specify(Token_t** token, Node_t* node) {
-	return type_specify(token, node);
+Node_t* declere_specify(Token_t** token, Node_t* node, int isTypeAlias) {
+	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)
+		return type_specify(token, node);
+	if((*token) -> kind == TK_TYPEDEF) {
+		consume(token);
+		return new_node_set_type_alias(token, node);
+	}
+	if(isTypeAlias)
+	{
+		char* name = expect_ident(token);
+		NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+		node -> tp = data -> tp;
+		return node;
+	}
+		
+	error_at((*token) -> str, "type name, strage class specifier or type qualifier was expected");
 }
 
 /*

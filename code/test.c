@@ -529,6 +529,24 @@ void test_switch() {
 	test_passed(test);
 }
 
+void test_typedef() {
+	char* test = "typedef test";
+	typedef struct {
+		int a;
+		int b;
+	}Test;
+	Test t = {10, 11};
+	
+	if(t.a != 10) {
+		error_template_int(test, 10, t.a);
+	}
+	if(t.b != 11) {
+		error_template_int(test, 11, t.b);
+	}
+
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -551,6 +569,7 @@ int main(){// line comment
 	test_break();
 	test_continue();
 	test_switch();
+	test_typedef();
 	
 	test_global();
 	test_preprocess();

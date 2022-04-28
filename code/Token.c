@@ -2,6 +2,7 @@
 
 extern unsigned int String_len(char*);
 extern int String_conpair(char* ,char* ,unsigned int);
+extern void Memory_copy(void* dest,void* source, unsigned int size);
 
 Token_t *new_Token_t(Token_kind kind, Token_t* next, int val, int length, char* str, Type* tp) {
 	Token_t* token = calloc(1, sizeof(Token_t));
@@ -92,6 +93,33 @@ int is_functioncall(Token_t **token) {
         return 1;
         
     return 0;
+}
+
+char* get_ident_name(Token_t** token) {
+	if((*token) -> kind != TK_IDENT)
+	{
+		return NULL;
+	}
+	int len = (*token) -> length;
+	char* name = calloc(len, sizeof(char));
+	Memory_copy(name, (*token) -> str, len);
+	return name;
+}
+
+int is_type_alias(Token_t** token) {
+	if((*token) -> kind != TK_IDENT)
+	{
+		return 0;
+	}
+
+	char* name = get_ident_name(token);
+	NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+
+	if(data == NULL || data -> tag != TAG_TYPEDEF)
+	{
+		return 0;
+	}
+	return 1;
 }
 
 Token_t* Token_copy(Token_t* token) {
