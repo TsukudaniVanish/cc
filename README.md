@@ -1,16 +1,43 @@
 # cc
 [![C/C++ CI](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml/badge.svg)](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml)  
-cc is a subset of c compiler.
+cc is a subset of c compiler. We will cover c89 syntax in th future. 
+this product is developed for my study of computer science. Pull request which related to language implementation will be declined. thank you for your understanding!
 
+## covered language functionalities 
+### type 
+- void 
+- char 
+- int
+- unsigned
+- struct 
+- union 
+- enum 
+### flow operation, statement  
+- if 
+- else 
+- { ... }
+- switch 
+- while 
+- for 
+- continue
+- break
+- return 
+### preprocessor 
+- #define
+- #if ... #endif
 
-## Files
+### other keyword  
+- typedef
+- sizeof 
+
+## code/
 
 ### cc.h
 header file which all used functions are declared in.
 Also, briefs of those functions  are written here.
 
 ### Token.c  
-new token functions which make  new tokens
+new token functions which make  new tokens and token utilities
 
 ### Node.c
 new node functions which make new nodes for abstract syntax tree
@@ -22,13 +49,19 @@ this file serves vector utilities.
 hash map utilities
 
 ### String.c
-string utilities such as standard string library
+string utilities such as strlen, strncmp, strncpy in string.h 
 
 ### error_point.c
 all error point logics are controlled here. 
 
-### test... , unittest.c
+### file.c 
+file reader.
+
+### unittest.c
 functions for unit test.
+
+### test.c 
+test file for application. this file is not used to build cc.
 
 ### tokenize.c
 a tokenizer
@@ -43,7 +76,11 @@ a parsing functions
 a generating local variable function  
 a generator function which convert an abstract syntax tree into  assembly codes 
 
-
+## todo (update: 2020/4/28)
+- [x]  add typedef 
+- [ ] add type qualifiers (static, extern)
+- [ ] add do{...}while(...)
+- [ ] add #include to preprocessor  
 
 ## coding policy
 
