@@ -78,10 +78,10 @@ a generator function which convert an abstract syntax tree into  assembly codes
 
 ## todo (update: 2020/4/28)
 - [x]  add typedef 
+- [x] sizeof can accept type-keyword, type alias 
 - [ ] add type qualifiers (static, extern)
 - [ ] add do{...}while(...)
 - [ ] add #include to preprocessor 
-- [ ] sizeof can accept type-keyword, type alias 
 
 ## coding policy
 
