@@ -1463,8 +1463,32 @@ Node_t *unitary(Token_t **token) {
 	Node_t *node = NULL;
 	if((*token)-> kind == TK_SIZEOF)
 	{
+		
 		(*token) = (*token) -> next;
-		node = unitary(token);
+		// (type) ?
+		if(find('(', token)) {
+			if(((*token) -> kind > TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)) {
+				node = new_Node_t(ND_NUM, NULL, NULL, 0, 0, NULL, NULL);
+				node = declere_specify(token, node, 0);
+				node = pointer(token, node);
+				expect(')', token);
+			} else {
+				if((*token) -> kind == TK_IDENT) {
+					char* name = get_ident_name(token);
+					NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+					if(data -> tag == TAG_TYPEDEF) {
+						consume(token);
+						node = new_Node_t(ND_NUM, NULL, NULL, 0, 0, data -> tp, NULL);
+					} else {
+						node = primary(token);
+					}
+					expect(')', token);
+				}
+			}
+		} else {
+			node = unitary(token);
+		}	
+		
 		if(node -> tp -> Type_label == TP_STRUCT)
 		{
 			StructData *data = Map_at(tagNameSpace, node -> tp -> name);

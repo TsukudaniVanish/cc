@@ -544,6 +544,27 @@ void test_typedef() {
 		error_template_int(test, 11, t.b);
 	}
 
+	if(sizeof(t) != 8)
+	{
+		error_template_int(test, 8, sizeof(t));
+	}
+	test_passed(test);
+}
+
+void test_sizeof() {
+	char *test = "sizeof type test";
+	typedef struct {
+		int a;
+		int b;
+	}Test;
+
+	if(sizeof(int) != 4) {
+		error_template_int(test, 4, sizeof(int));
+	}
+	if(sizeof (Test) != 8) {
+		error_template_int(test, 8, sizeof(Test));
+	}
+
 	test_passed(test);
 }
 
@@ -570,6 +591,7 @@ int main(){// line comment
 	test_continue();
 	test_switch();
 	test_typedef();
+	test_sizeof();
 	
 	test_global();
 	test_preprocess();
