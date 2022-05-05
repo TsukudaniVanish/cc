@@ -78,9 +78,9 @@ a generator function which convert an abstract syntax tree into  assembly codes
 
 ## todo
 - [x]  add typedef 
-- [x] sizeof can accept type-keyword, type alias 
+- [x] sizeof can accept type-keyword, type alias
+- [x] add do{...}while(...) 
 - [ ] add type qualifiers (static, extern)
-- [ ] add do{...}while(...)
 - [ ] add #include to preprocessor 
 
 ## coding policy
