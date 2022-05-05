@@ -1,6 +1,6 @@
 # cc
 [![C/C++ CI](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml/badge.svg)](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml)  
-cc is a subset of c compiler. We will cover the c89 syntax in th future. 
+cc is a subset of c compiler. It will cover the c89 syntax in th future. 
 This product is developed for my study of computer science. Pull requests which are related to language implementation will be declined. Thank you for your understanding!
 
 ## covered language functionalities 
