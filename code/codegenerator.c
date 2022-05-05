@@ -679,6 +679,24 @@ void gen_while(Node_t* node) {
 	return;
 }
 
+void gen_do_while(Node_t* node) {
+	int beginNumber = filenumber++;
+	int endNumber = filenumber++;
+
+	printf(".Lbegin%d:\n", beginNumber);
+	generate(node -> right, beginNumber, endNumber);
+	
+	generate(node -> left, beginNumber, endNumber);
+	int size_l = node -> left -> tp -> size;
+	pop_stack(size_l, "rax");
+	
+	printf("	cmp %s, 0\n", get_registername("rax", size_l));
+	printf("	je	.Lend%d\n", endNumber);
+	printf("	jmp .Lbegin%d\n", beginNumber);
+	printf(".Lend%d:\n", endNumber);
+	return;
+}
+
 void gen_for(Node_t* node) {
 
 	if(!node -> left )
@@ -1001,6 +1019,8 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 	case ND_IFE: gen_if(node, labelLoopBegin, labelLoopEnd);
 		return;
 	case ND_WHILE: gen_while(node);
+		return;
+	case ND_DO: gen_do_while(node);
 		return;
 	case ND_FOR: gen_for(node);
 		return;

@@ -230,11 +230,12 @@ typedef enum keyWords {
 	CASE,
 	ELSE,
 	FOR,
+	DO,
 	IF,
 	MACRO_DEFINE,
 	MACRO_IF,
 	MACRO_ENDIF,
-	TYPE_START,// following entries are represent type 
+	TYPE_START,// following entries are representing type 
 	VOID,
 	CHAR,
 	INT,
@@ -323,6 +324,7 @@ typedef enum tokenKind{
 	TK_IF= TOKEN_FLOW_OPERATION_START,//flow operation
 	TK_ELSE,
 	TK_WHILE,
+	TK_DO,
 	TK_SWITCH,
 	TK_CASE,
 	TK_DEFAULT,
@@ -472,6 +474,7 @@ typedef enum nodeKind{
 	ND_IF,// if statement which has no else block.
 	ND_ELSE,
 	ND_IFE, //if ... else
+	ND_DO,
 	ND_WHILE,
 	ND_SWITCH,
 	ND_CASE,

@@ -182,6 +182,7 @@ char* get_keyword(keyword kind) {
 		case ELSE: return "else";
 		case FOR: return "for";
 		case IF: return "if";
+		case DO: return "do";
 		case MACRO_DEFINE: return "#define";
 		case MACRO_ENDIF: return "#endif";
 		case MACRO_IF: return "#if";
@@ -214,6 +215,7 @@ Token_kind get_correspond_token_kind(keyword kind) {
 		case ELSE: return TK_ELSE;
 		case FOR: return TK_FOR;
 		case IF: return TK_IF;
+		case DO: return TK_DO;
 		case VOID: return TK_TypeVOID;
 		case UNSIGNED:
 		case UNSIGNED_INT:

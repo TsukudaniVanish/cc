@@ -568,6 +568,28 @@ void test_sizeof() {
 	test_passed(test);
 }
 
+void test_do_while() {
+	char* test = "do while test";
+	int x = 0;
+	int y = 110;
+	do{
+		x++;
+	}while(0);
+
+	if(x != 1) {
+		error_template_int(test, 1, x);
+	}
+
+	do{
+		y--;
+	}while(y > 0);
+
+	if(y != 0) {
+		error_template_int(test, 0, y);
+	}
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -592,6 +614,7 @@ int main(){// line comment
 	test_switch();
 	test_typedef();
 	test_sizeof();
+	test_do_while();
 	
 	test_global();
 	test_preprocess();

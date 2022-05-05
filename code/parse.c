@@ -497,15 +497,23 @@ Node_t *new_node_if(Token_t** token)
 			0,0,NULL,NULL);
 }
 
-Node_t *new_node_while(Token_t **token)
-{
+Node_t *new_node_while(Token_t **token) {
 	Node_t *condition = expr(token);
 	Node_t *statement = stmt(token);
 	return new_Node_t(ND_WHILE,condition,statement,0,0,NULL,NULL);
 }
 
-Node_t *new_node_for(Token_t **token)
-{
+Node_t* new_node_do_while(Token_t** token) {
+	Node_t* statement = stmt(token);
+	if((*token) -> kind != TK_WHILE) {
+		error_at((*token) -> str, "while was expected");
+	}
+	consume(token);
+	Node_t* condition = expr(token);
+	return new_Node_t(ND_DO, condition, statement,0, 0, NULL, NULL);
+}
+
+Node_t *new_node_for(Token_t **token) {
 	Node_t *init,*check,*update = NULL;
 	expect('(',token);
 	if(!find(';',token))
@@ -633,7 +641,8 @@ Node_t* new_node_switch(Token_t** token) {
 
 Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 	switch(kind) {
-	case TK_IF: return new_node_if(token);			
+	case TK_IF: return new_node_if(token);
+	case TK_DO: return new_node_do_while(token);			
 	case TK_WHILE: return new_node_while(token);
 	case TK_FOR: return new_node_for(token);
 	case TK_RETURN: return new_node_return(token);
