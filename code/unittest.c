@@ -727,6 +727,23 @@ void unit_test_preprocess_if() {
 	test_passed(test);
 }
 
+void unit_test_token_splice() {
+	char* test = "token splice";
+	Token_t* ins = new_Token_t(TK_CONST, new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL), 12, 0, NULL, NULL);
+	Token_t* head = new_Token_t(TK_IDENT, NULL, 0, 0, NULL, NULL);
+	Token_t* tail = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
+	head -> next = tail;
+	Token_splice(ins, head, tail);
+
+	Token_t* check = head -> next;
+	if(check -> kind != TK_CONST || check -> val != 12) {
+		fprintf(stderr, "splicing fail expected : kind -> %d, val -> %d but got \n", TK_CONST, 12);
+		fprintf(stderr, "                         kind -> %d, val -> %d\n", check -> kind, check -> val);
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -745,5 +762,6 @@ int unit_test() {
 	unit_test_preprocess_macro_exp_eval();
 	unit_test_preprocess_perse_defined();
 	unit_test_preprocess_if();
+	unit_test_token_splice();
 	return 0;
 }

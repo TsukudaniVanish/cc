@@ -433,6 +433,9 @@ Token_t* Token_copy(Token_t* token);
  * @return Token_t* 
  */
 Token_t* Token_copy_all(Token_t* token);
+
+// insert first param between second param and third param 
+void Token_splice(Token_t*, Token_t*, Token_t*);
 //====================================================
 
 

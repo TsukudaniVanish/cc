@@ -142,3 +142,13 @@ Token_t* Token_copy_all(Token_t* token) {
 	buf -> next = cur;
 	return toReturn;
 }
+
+void Token_splice(Token_t* insert, Token_t* pre, Token_t* next) {
+	pre -> next = insert;
+	while (insert -> next -> kind != TK_EOF)
+	{
+		insert = insert -> next;
+	}
+	insert -> next = next;
+	return;
+}

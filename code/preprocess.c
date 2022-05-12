@@ -248,6 +248,30 @@ Vector* read_parameters(Token_t** token) {
     return result;
 }
 
+// replace parameters and return previous token of end
+Token_t* replace_arguments(MacroData* macroData,Token_t* buf, Token_t* head, Token_t* end,Vector* arguments) {
+    while(head -> next && head -> next != end)
+    {
+        if(arguments && head -> kind == TK_IDENT)
+        {
+            char* name = expect_ident(&head);
+            int i = MacroData_contains_parameters(macroData, name);
+            if(i > -1)
+            {
+                Token_t* arg = Vector_at(arguments, i);
+                Token_t* replace_ident = Token_copy(arg);
+                replace_ident -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
+                Token_splice(replace_ident, buf, head);
+            }
+            buf = buf -> next;
+            continue;
+        }
+        buf = head;
+        head = head -> next;
+    }
+    return head;
+}
+
 int macro_expansion(Token_t* token) {
     int macroWasExpanded = 0;
 
@@ -267,55 +291,11 @@ int macro_expansion(Token_t* token) {
                     parameters = read_parameters(&token);
                 }
 
-                buf -> next = insert;
                 Token_t* buf_in_macro = buf;// buf_in_macro - insert or buf_in_macro == insert
-                while(insert -> next && insert -> next -> kind != TK_EOF)
-                {
-                    if(parameters && insert -> kind == TK_IDENT)
-                    {
-                        char* name = expect_ident(&insert);
-                        int i = MacroData_contains_parameters(macroData, name);
-                        if(i > -1)
-                        {
-                            Token_t* arg = Vector_at(parameters, i);
-                            Token_t* replace_ident = Token_copy(arg);
-                            buf_in_macro -> next = replace_ident;
-                            replace_ident -> next = insert;
-                        }
-                        buf_in_macro = buf_in_macro -> next;
-                        continue;
-                    }
-                    buf_in_macro = insert;
-                    insert = insert -> next;
-                }
-                if(parameters && insert -> kind == TK_IDENT)
-                {
-                    char* name = expect_ident(&insert);
-                    int i = MacroData_contains_parameters(macroData, name);
-                    if(i > -1)
-                    {
-                        Token_t* arg = Vector_at(parameters, i);
-                        Token_t* replace_ident = Token_copy(arg);
-                        insert -> next = replace_ident;
-                        replace_ident -> next = token;
+                Token_splice(insert, buf_in_macro, token);
 
-                        buf_in_macro = insert;
-                        insert = replace_ident;
-                    }
-                    else
-                    {
-                        buf_in_macro = buf_in_macro -> next;
-                        buf_in_macro -> next = token;
-
-                        insert = token;
-                    }
-                }
-                else
-                {
-                    insert -> next = token;
-                }
-
-                buf = insert;
+                if(parameters)
+                    buf = replace_arguments(macroData, buf_in_macro, insert, token, parameters);
                 macroWasExpanded = 1;
                 continue;
             }
