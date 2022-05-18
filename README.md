@@ -82,7 +82,7 @@ a generator function which convert an abstract syntax tree into  assembly codes
 - [x] add do{...}while(...) 
 - [x] refactoring preprocessor (especially macro_expansion)
 - [ ] add type qualifiers (static, extern)
-- [ ] add #include to preprocessor 
+- [x] add #include to preprocessor 
 
 ## coding policy
 
