@@ -12,13 +12,16 @@ cc: $(OBJS)
 $(OBJS): cc.h
 
 test: cc $(HELPER)
-	./cc -f test.c > tmp.s
+	./cc -f ./test/test.c > tmp.s
 	cc -g -o tmp tmp.s $(HELPER)
 	./tmp
 utest: cc $(HELPER)
-	./cc -f test_2.c > tmp.s
+	./cc -f ./test/test_2.c > tmp.s
 	cc -g -o tmp tmp.s $(HELPER)
 	./tmp
+
+etest: cc $(HELPER)
+	./test/test.sh
 
 clean:
 	rm -f cc *.o *~ tmp* *.log
