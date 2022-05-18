@@ -99,14 +99,14 @@ void Token_show(Token_t* token) {
 	fprintf(stderr, "kind :%d\n", token -> kind);
 	if(token -> length > 0)
 	{
-		fprintf(stderr, "%*s", token -> length, token -> str);
+		fprintf(stderr, "%s", token -> str);
 	}
 	return;
 }
 void Token_show_all(Token_t* token) {
 	for(Token_t* p = token; p -> kind != TK_EOF; p = p -> next)
 	{
-		Token_show(token);
+		Token_show(p);
 	}
 	return;
 }
@@ -467,6 +467,15 @@ void unit_test_tokenize_enum() {
 	test_passed(test);
 }
 
+void unit_test_tokenize_include() {
+	char* test = "include test";
+	char* buf = "#include \"./test/test.h\"\n#include \"./test/test.h\"\nint foo(){return 1;}";
+
+	macros = make_Map();
+	Token_t* token = lexical_analyze(buf);
+	Token_show_all(token);
+}
+
 #ifdef NODE_ERR
 	#define NODE_ERR_PRASE_FAILED(a) do{assert(test, ""); NODE_ERR(a);}while(0)
 #endif
@@ -745,23 +754,24 @@ void unit_test_token_splice() {
 }
 
 int unit_test() {
-	unit_test_Vector();
-	unit_test_String();
-	unit_test_Map();
-	unit_test_tokenize_struct();
-	unit_test_parse_struct();
-	unit_test_parse_struct_init();
-	unit_test_tokenize_union();
-	unit_test_tokenize_enum();
-	unit_test_parse_union();
-	unit_test_parse_enum();
-	unit_test_parse_not();
-	unit_test_tokenize_macro_define();
-	unit_test_tokenize_macro_function();
-	unit_test_preprocess_macro_expression();
-	unit_test_preprocess_macro_exp_eval();
-	unit_test_preprocess_perse_defined();
-	unit_test_preprocess_if();
-	unit_test_token_splice();
+	// unit_test_Vector();
+	// unit_test_String();
+	// unit_test_Map();
+	// unit_test_tokenize_struct();
+	// unit_test_parse_struct();
+	// unit_test_parse_struct_init();
+	// unit_test_tokenize_union();
+	// unit_test_tokenize_enum();
+	// unit_test_parse_union();
+	// unit_test_parse_enum();
+	// unit_test_parse_not();
+	// unit_test_tokenize_macro_define();
+	// unit_test_tokenize_macro_function();
+	// unit_test_preprocess_macro_expression();
+	// unit_test_preprocess_macro_exp_eval();
+	// unit_test_preprocess_perse_defined();
+	// unit_test_preprocess_if();
+	// unit_test_token_splice();
+	unit_test_tokenize_include();
 	return 0;
 }

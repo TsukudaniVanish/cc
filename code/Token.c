@@ -152,3 +152,16 @@ void Token_splice(Token_t* insert, Token_t* pre, Token_t* next) {
 	insert -> next = next;
 	return;
 }
+
+Token_t* Token_tailHead(Token_t* newToken, Token_t* old) {
+	old -> next = newToken;
+	return Token_consume_to_last(newToken);
+}
+
+Token_t* Token_consume_to_last(Token_t* token) {
+	while (token -> next && token -> next -> kind != TK_EOF)
+	{
+		token = token ->next;
+	}
+	return token;
+}

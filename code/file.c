@@ -17,9 +17,9 @@ char* file_open(char* path)
 {
 	FILE *fp = fopen(path , "r");
 	if(!fp)
-		error("ファイルが見つかりません パス: %s",path,strerror(errno));
+		error("Failed to find file. given pass: %*s",path,strerror(errno));
 	
-	//ファイルの長さを調べる
+	//check file length
 	if(fseek(fp,0,SEEK_END) == -1)
 	{
 		error("%s : fseek :%s",path,strerror(errno));
@@ -35,7 +35,7 @@ char* file_open(char* path)
 	char *buf = calloc(1,size +2);
 	fread(buf,size,1,fp);
 
-	//ファイルが改行で終わるようにする
+	//make sure file ended at newline
 	if(size == 0 || buf[size -1] != '\n')
 	{
 		buf[size] = '\n';

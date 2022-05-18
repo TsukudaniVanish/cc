@@ -193,7 +193,7 @@ static Expr* primaryMacro(Token_t** token) {
     }
     if(*token && (*token) -> kind == TK_EOF)
         return NULL;
-    error_at((*token) -> str, "invailed syntax");
+    error_at((*token) -> str, "invalid syntax");
 }
 
 int eval_Expr(Expr* exp) {

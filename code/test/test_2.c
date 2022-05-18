@@ -1,3 +1,5 @@
+#include "./test/test.h"
+#include "./test/test.h"
 void print_int(int x) {
 	test_print_int(x);
 	test_print("\n");
@@ -16,5 +18,7 @@ int main() {
 	}while(y > 0);
 
 	print_int(y);
+
+	print_int(inc_test(3));
 	return 0;
 }

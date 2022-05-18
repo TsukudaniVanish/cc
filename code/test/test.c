@@ -1,3 +1,5 @@
+#include "./test/test.h"
+
 int Character_conpair(char c, char d) {
 	if(c == d) return 1;
 	return 0;
@@ -590,6 +592,18 @@ void test_do_while() {
 	test_passed(test);
 }
 
+void test_include() {
+	char* test = "include test";
+
+	if(inc_test(3) != 300) {
+		error_template_int(test, 300, inc_test(3));
+	}
+	if(INCLUDE_TEST != 100) {
+		error_template(test, "include fail at #define");
+	}
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -615,6 +629,7 @@ int main(){// line comment
 	test_typedef();
 	test_sizeof();
 	test_do_while();
+	test_include();
 	
 	test_global();
 	test_preprocess();

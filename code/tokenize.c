@@ -5,7 +5,7 @@
 
 extern unsigned int String_len(char*);
 extern int String_conpair(char* ,char*, unsigned int);
-extern void Memory_copy(void* src, void* dst, unsigned length);
+extern void Memory_copy(void* dst, void* src, unsigned length);
 
 int sizeof_token(int kind) {
 	switch (kind)
@@ -186,6 +186,7 @@ char* get_keyword(keyword kind) {
 		case MACRO_DEFINE: return "#define";
 		case MACRO_ENDIF: return "#endif";
 		case MACRO_IF: return "#if";
+		case MACRO_INCLUDE: return "#include";
 		case VOID: return "void";
 		case CHAR: return "char";
 		case INT: return "int";
@@ -598,7 +599,7 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	if(eval_Expr(exp))
 	{
 		*pointer = p;
-		cur = tokenize(pointer, &cur, FLAG_MACRO_IF);
+		tokenize(pointer, &cur, FLAG_MACRO_IF);
 		if(**pointer == '\0')
 		{
 			error_at(p, "can't find '#endif'");
@@ -609,6 +610,33 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	p = skip_to_MACRO_ENDIF(p);
 	*pointer = p;
 	return cur;
+}
+
+Token_t* tokenize_macro_include(char** pointer, Token_t** cur) {
+	char* p = *pointer;
+	p = skip_in_macro(p);
+	if(*p == '"') {
+		p++;
+		char* q = p;
+		while(*q != '\"') {
+			if(*q == '\n' || *q == '\0') {
+				error_at(p, "include file is not specified");
+			}
+			q++;
+		}
+		int len = q - p;
+		char* fileName = calloc(len, sizeof(char));
+		Memory_copy(fileName, p,len);
+		char* includeBuf = file_open(fileName);
+		Token_t* token = tokenize(&includeBuf, NULL, 0); // cur points end of include file
+		*pointer = q + 1;
+		if(token -> kind != TK_EOF)
+			return Token_tailHead(token, *cur);
+		else
+			return *cur;
+	} else {
+		error_at(p, "include file is not specified");
+	}
 }
 
 Token_t* tokenize_macro(char** p, Token_t* cur) {
@@ -624,6 +652,8 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 		return cur;
 	case MACRO_IF:
 		return tokenize_macro_if(p, cur);
+	case MACRO_INCLUDE:
+		return tokenize_macro_include(p, &cur);
 	default:
 		error_at(*p, "Anonimus keyword");
 	}
@@ -631,7 +661,7 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 }
 
 Token_t* lexical_analyze(char *p) {
-	Token_t** noMeanningHere = NULL;
+	Token_t** noMeaningHere = NULL;
 	int noFlag = 0;
-	return tokenize(&p, noMeanningHere, 0);
+	return tokenize(&p, noMeaningHere, noFlag);
 }

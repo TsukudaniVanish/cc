@@ -235,6 +235,7 @@ typedef enum keyWords {
 	MACRO_DEFINE,
 	MACRO_IF,
 	MACRO_ENDIF,
+	MACRO_INCLUDE,
 	TYPE_START,// following entries are representing type 
 	VOID,
 	CHAR,
@@ -436,6 +437,10 @@ Token_t* Token_copy_all(Token_t* token);
 
 // insert first param between second param and third param 
 void Token_splice(Token_t*, Token_t*, Token_t*);
+
+Token_t* Token_tailHead(Token_t* newToken, Token_t* old);
+
+Token_t* Token_consume_to_last(Token_t* token);
 //====================================================
 
 
