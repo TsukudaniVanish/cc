@@ -131,6 +131,7 @@ Type* new_Type(int label, Type* pointer_to, unsigned int size, char* name) {
 	
 	Type* tp = calloc(1,sizeof(Type));
 	tp -> Type_label = label;
+	tp -> qualifier = Q_NONE;
 	tp -> pointer_to = pointer_to;
 	tp -> size = size;
 	tp -> name = NULL;
@@ -168,6 +169,7 @@ Lvar *find_lvar(char *name,int length,Lvar **locals) {
 	return NULL;
 }
 
+// add variable to lvar and store ordinary name space
 Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 
 	Lvar *lvar = calloc(1,sizeof(Lvar));

@@ -149,6 +149,11 @@ struct type{
 		TP_UNION,
 		TP_ENUM,
 	}Type_label;
+	enum{
+		Q_NONE,
+		Q_STATIC,
+		Q_EXTERN,
+	}qualifier;
 	/**
 	 * @brief size of type 
 	 */
@@ -232,6 +237,8 @@ typedef enum keyWords {
 	FOR,
 	DO,
 	IF,
+	STATIC,
+	EXTERN,
 	MACRO_DEFINE,
 	MACRO_IF,
 	MACRO_ENDIF,
@@ -338,6 +345,8 @@ typedef enum tokenKind{
 	TK_SIZEOF = TOKEN_SIZEOF,// this keyword acts like operator.
 	TK_DECLATION_SPECIFIER_START,
 	TK_TYPEDEF,
+	TK_STATIC,
+	TK_EXTERN,
 	//type of variable keyword =====================================================
 	TK_TYPESTART,
 	TK_TypeVOID = TOKEN_TYPE,//this list is sorted as in Type_label
