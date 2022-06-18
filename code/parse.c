@@ -1082,7 +1082,7 @@ Node_t* ident_specify(Token_t** token, Node_t* node) {
 	}
 	return node;
 }
-/*@brief specify decleration type struct constant or volatile?
+/*@brief specify declaration type struct static or extern?
  * */
 Node_t* declere_specify(Token_t** token, Node_t* node, int isTypeAlias) {
 	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)
@@ -1098,6 +1098,7 @@ Node_t* declere_specify(Token_t** token, Node_t* node, int isTypeAlias) {
 		node -> tp = data -> tp;
 		return node;
 	}
+	// todo -- add static   remove qualifier from type struct and add it to lvar and node (actually qualifier is name for const and volatile not for static extern)
 		
 	error_at((*token) -> str, "type name, strage class specifier or type qualifier was expected");
 }

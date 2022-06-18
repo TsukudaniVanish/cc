@@ -106,6 +106,12 @@ char* get_ident_name(Token_t** token) {
 	return name;
 }
 
+/**
+ * @brief check if identifier token is in ordinary name space 
+ * 
+ * @param token 
+ * @return int 
+ */
 int is_type_alias(Token_t** token) {
 	if((*token) -> kind != TK_IDENT)
 	{
