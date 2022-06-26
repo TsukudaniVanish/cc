@@ -1,5 +1,5 @@
 #include "cc.h"
-
+// storage_class is initialized by SC_AUTO 
 Node_t *new_Node_t(Node_kind kind,Node_t *l,Node_t *r,int v,unsigned int off,Type* tp,char *name)
 {
 	Node_t *node = calloc(1,sizeof(Node_t));
@@ -10,6 +10,7 @@ Node_t *new_Node_t(Node_kind kind,Node_t *l,Node_t *r,int v,unsigned int off,Typ
 	node -> offset = off;
 	node -> tp = tp;
 	node -> name = name;
+	node -> storage_class = SC_AUTO;
 	return node;
 }
 

@@ -125,6 +125,15 @@ int Map_contains(Map*, char*);
 // ====================================================
 
 /**
+ * @brief  represent storage class
+ */
+typedef enum {
+	SC_AUTO,
+	SC_EXTERN,
+	SC_STATIC,
+}StorageClass;
+
+/**
  * @brief represent type of identifier.
  * 
  * @param Type_label label of identifier which stands for type.
@@ -149,11 +158,6 @@ struct type{
 		TP_UNION,
 		TP_ENUM,
 	}Type_label;
-	enum{
-		Q_NONE,
-		Q_STATIC,
-		Q_EXTERN,
-	}qualifier;
 	/**
 	 * @brief size of type 
 	 */
@@ -187,6 +191,8 @@ struct lvar{
 	char *name;
 	Type *tp;
 	int length;
+	// this member is initialized as SC_AUTO when new_lvar is called 
+	StorageClass storage_class;
 	// follwing members are not inputted by utility function
 	/**
 	 * @brief local variable : offset from rbp , string : label number of string literal
@@ -535,6 +541,8 @@ struct node {
 	unsigned int offset;// offset from rbp
 	Type *tp;
 	char *name;
+	// this member is initialized as SC_AUTO when new_lvar is called 
+	StorageClass storage_class;
 	ScopeInfo* scope;// this member can't initiate when new_Node_t, and other new functions
 };
 /**

@@ -131,7 +131,6 @@ Type* new_Type(int label, Type* pointer_to, unsigned int size, char* name) {
 	
 	Type* tp = calloc(1,sizeof(Type));
 	tp -> Type_label = label;
-	tp -> qualifier = Q_NONE;
 	tp -> pointer_to = pointer_to;
 	tp -> size = size;
 	tp -> name = NULL;
@@ -169,17 +168,18 @@ Lvar *find_lvar(char *name,int length,Lvar **locals) {
 	return NULL;
 }
 
-// add variable to lvar and store ordinary name space
+// add variable to lvar and store ordinary name space. storage_class is initialized by SC_AUTO
 Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 
 	Lvar *lvar = calloc(1,sizeof(Lvar));
 	lvar -> next = next;
-	//名前コピー
+	// identifier name copy
 	lvar -> name = calloc(length,sizeof(char));
 	Memory_copy(lvar -> name,name,length);
-	// 名前コピー終わり
+
 	lvar -> length = length;
 	lvar -> tp = tp;
+	lvar -> storage_class = SC_AUTO;
 
 	if(next)
 	{
