@@ -4,7 +4,7 @@
 #include<ctype.h>
 
 extern unsigned int String_len(char*);
-extern int String_conpair(char* ,char*, unsigned int);
+extern int String_compare(char* ,char*, unsigned int);
 extern void Memory_copy(void* dst, void* src, unsigned length);
 
 int sizeof_token(int kind) {
@@ -81,10 +81,10 @@ char *get_symbol(int kind) {
 	case BACK_SLASH: return "/";
 	case EXCLAMATION: return "!";
 	case COMMA: return ",";
-	case SEMICORRON: return ";";
-	case CORRON: return ":";
+	case SEMICOLON: return ";";
+	case COLON: return ":";
 	case PARENTHESIS: return "(";
-	case PARANTHESIS_CLOSE: return ")";
+	case PARENTHESIS_CLOSE: return ")";
 	case BRACE: return "{";
 	case BRACE_CLOSE: return "}";
 	case BRACKET: return "[";
@@ -117,7 +117,7 @@ int is_symbol(char *p) {
 			default:
 				operator = get_symbol(kind);
 				len = String_len(operator);
-				if(String_conpair(operator, p, len))
+				if(String_compare(operator, p, len))
 				{
 					if(kind > PUNCTUATOR_START && kind < END_OF_SYMBOLS)
 						len += 1000;
@@ -133,7 +133,7 @@ int is_symbol(char *p) {
 int is_comment(char *p) {
 	if(*p == '/')
 	{
-		return String_conpair(p,"/*",2) || String_conpair(p, "//",2);
+		return String_compare(p,"/*",2) || String_compare(p, "//",2);
 	}
 	return 0;
 }
@@ -156,7 +156,7 @@ void comment_skip(char **p) {
 	// block comment
 	while (1)
 	{
-		if( **p == '*' && String_conpair(*p,"*/",2))
+		if( **p == '*' && String_compare(*p,"*/",2))
 		{
 			*p += 2;
 			return;
@@ -247,7 +247,7 @@ int is_keyword(char *p) {
 			continue;
 		}
 		unsigned int len = String_len(keyword);
-		if(String_conpair(p, keyword, len) && (is_space(*(p + len)) || is_symbol(p+len) || (p + len)[0] == '\0'))
+		if(String_compare(p, keyword, len) && (is_space(*(p + len)) || is_symbol(p+len) || (p + len)[0] == '\0'))
 		{
 			return kind;
 		}
@@ -659,7 +659,7 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 	case MACRO_INCLUDE:
 		return tokenize_macro_include(p, &cur);
 	default:
-		error_at(*p, "Anonimus keyword");
+		error_at(*p, "Anonymous keyword");
 	}
 	return cur;				
 }

@@ -5,7 +5,7 @@
 
 extern int unit_test();
 extern unsigned int String_len(char*);
-extern int String_conpair(char*, char*,unsigned int);
+extern int String_compare(char*, char*,unsigned int);
 
 
 int main(int argc, char **argv){
@@ -15,7 +15,7 @@ int main(int argc, char **argv){
 	macros = NULL;
 
 	//unit test
-	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-T",2))
+	if(String_len(argv[1]) == 2 && String_compare(argv[1],"-T",2))
 	{
 		unit_test();
 		return 0;
@@ -23,7 +23,7 @@ int main(int argc, char **argv){
 
 	
 	char *buffer;
-	if(String_len(argv[1]) == 2 && String_conpair(argv[1],"-f",2))
+	if(String_len(argv[1]) == 2 && String_compare(argv[1],"-f",2))
 	{
 		filepath = argv[2];
 		buffer = file_open(argv[2]);
@@ -37,7 +37,7 @@ int main(int argc, char **argv){
 	}
 	controller = ScopeController_init();
 	ordinaryNameSpace = make_Map();
-	//helperfunction input
+	//helper function input
 	char *test_print = "test_print";
 	NameData* _test_print = new_NameData(TAG_FUNCTION);
 	_test_print -> tp = new_tp(TP_VOID, NULL, 0);
@@ -54,7 +54,7 @@ int main(int argc, char **argv){
 	Map_add(ordinaryNameSpace, test_error, _test_error);
 	
 	
-	//conbert an input to a token list
+	//convert an input to a token list
 	macros = make_Map();
 	Token_t *token = lexical_analyze(buffer);
 	token = preprocess(token);
@@ -75,7 +75,7 @@ int main(int argc, char **argv){
 		Node_t *code = Vector_at(codes, i);
 		if(code -> kind == ND_GLOBVALDEF || code -> kind == ND_INITLIST)
 		{
-			gen_glob_declar(code);
+			gen_glob_declare(code);
 		}
 	}
 

@@ -3,7 +3,7 @@
 //#include<stdlib.h>
 
 extern unsigned int String_len(char* );
-extern int String_conpair(char* ,char* ,unsigned int);
+extern int String_compare(char* ,char* ,unsigned int);
 long int rsp_counter = 0;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
 int filenumber = 0; // use for operarion flow
 
@@ -27,7 +27,7 @@ char * get_registername(char *register_name,long int size)
 	//name search
 	for(char ** name = registers; *name ; name++)
 	{
-		if(String_len(*name) <= String_len(register_name) && String_conpair(register_name,*name,String_len(*name)))
+		if(String_len(*name) <= String_len(register_name) && String_compare(register_name,*name,String_len(*name)))
 		{
 			int i = name - registers;
 			if( size < 5 && size > 1)
@@ -328,7 +328,7 @@ void gen_inc_dec(Node_t *node) {
 		instruction = "sub";
 		break;
 	default:
-		fprintf(stderr,"conpile error\n	unexpected node at increment, decrement");
+		fprintf(stderr,"compile error\n	unexpected node at increment, decrement");
 		exit(1);
 	}
 	long size;
@@ -384,7 +384,7 @@ char* get_cmpInstruction(Node_kind kind) {
 	}
 }
 
-void gen_compair(Node_t* node) {
+void gen_compare(Node_t* node) {
 	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
 	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
 	long size = size_r > size_l? size_r: size_l;
@@ -555,10 +555,10 @@ void gen_initialize_glob_variable(Node_t* node) {
 	}
 	
 }
-void gen_glob_declar(Node_t* node) {
+void gen_glob_declare(Node_t* node) {
 	char* name = node -> kind != ND_INITLIST? node -> name: node -> left -> name;
 	Type* type = node -> kind != ND_INITLIST? node -> tp: node -> left -> tp;
-	// register simbol
+	// register symbol
 	printf(".globl %s\n", name);
 	printf("	.type %s, @object\n", name);
 	printf("	.size %s, %d\n", name, type -> size);
@@ -747,7 +747,7 @@ void gen_for(Node_t* node) {
 	return;
 }
 
-// store value at rcx. to compair case label with value, we copy value to rax
+// store value at rcx. to compare case label with value, we copy value to rax
 void gen_switch(Node_t* node) {
 	int endLable = filenumber++;
 	unsigned int size = node -> left -> tp -> size;
@@ -776,7 +776,7 @@ void gen_switch(Node_t* node) {
 			pop_stack(size, "rcx");
 			printf("	mov %s, %s\n", rax, rcx);
 
-			//compair 
+			//compare to case value 
 			printf("	cmp %s, %s\n", rax, rdi);
 			printf("	je .Lcase%d\n", i + endLable);
 			push_stack(size, "rcx");
@@ -1034,7 +1034,7 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 	case ND_LEQ:
 		generate(node -> left, 0, 0);
 		generate(node -> right, 0, 0);
-		gen_compair(node);
+		gen_compare(node);
 		return;
 	case ND_ADD:
 	case ND_SUB:

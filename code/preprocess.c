@@ -1,6 +1,6 @@
 #include "cc.h"
 extern unsigned int String_len(char*);
-extern int String_conpair(char* , char* , unsigned );
+extern int String_compare(char* , char* , unsigned );
 
 MacroData* new_MacroData(char* ident, int tag, Token_t* macroBody, Vector* param) {
     MacroData* d = calloc(1, sizeof(MacroData));
@@ -25,7 +25,7 @@ int MacroData_contains_parameters(MacroData* d, char* name) {
     for(unsigned i = 0; i < len; i++)
     {
         char* p = Vector_at(v, i);
-        if(String_conpair(p , name, String_len(p)))
+        if(String_compare(p , name, String_len(p)))
             return i;
     }
     return -1;
@@ -177,7 +177,7 @@ static Expr* primaryMacro(Token_t** token) {
 
     if(*token && (*token) -> kind == TK_OPERATOR)
     {
-        if((*token) -> length == LENGTHOFDEFINED && String_conpair((*token) -> str, "defined", LENGTHOFDEFINED))
+        if((*token) -> length == LENGTHOFDEFINED && String_compare((*token) -> str, "defined", LENGTHOFDEFINED))
         {
             consume(token);
             char* ident = expect_ident(token);

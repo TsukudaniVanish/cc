@@ -1,6 +1,6 @@
 #include "./test/test.h"
 
-int Character_conpair(char c, char d) {
+int Character_compare(char c, char d) {
 	if(c == d) return 1;
 	return 0;
 }
@@ -10,11 +10,11 @@ unsigned int String_len(char* s) {
 	return res;
 }
 
-int String_conpair(char* s1, char* s2, unsigned int size) {
+int String_compare(char* s1, char* s2, unsigned int size) {
 	if(String_len(s1) == 0 || String_len(s2) == 0 || String_len(s1) < size || String_len(s2) < size) return 0;
 	int res = 1;
 	for(int i = 0; i < size; i++) {
-		res = res && Character_conpair(s1[i], s2[i]);
+		res = res && Character_compare(s1[i], s2[i]);
 	}
 	return res;
 }
@@ -57,7 +57,7 @@ void test_add_sub() {
     test_passed(test);
 }
 
-void test_braket() {
+void test_bracket() {
 	char *test = "bracket test";
     int x = (20 -10)*5;
     if(x != 50)
@@ -85,7 +85,7 @@ void test_unit_pm() {
 
 void test_arithmetic() {
 	test_add_sub();
-	test_braket();
+	test_bracket();
 	test_unit_pm();
 	test_passed("	arithmetic test");
 	test_print("\n");
@@ -119,7 +119,7 @@ void test_arraycast () {
     test_passed(test);
 }
 
-void test_array_accsess() {
+void test_array_access() {
 
 	char *test = "array index access test";
     int a[2];
@@ -134,7 +134,7 @@ void test_array_accsess() {
 void test_pointer_array_access() {
 	test_ref_deref();
 	test_arraycast();
-	test_array_accsess();
+	test_array_access();
 	test_passed("	pointer array access test");
 	test_print("\n");
 }
@@ -308,7 +308,7 @@ void test_struct() {
 		error_template_int(test, 11, a.b);
 	}
 	char* d = "Hi";
-	if(Character_conpair(*a.c, *d) == 0)
+	if(Character_compare(*a.c, *d) == 0)
 	{
 		test_print("error at struct test");
 		test_error();
@@ -318,7 +318,7 @@ void test_struct() {
 	{
 		error_template_int(test, 10, b -> a);
 	}
-	if(String_len(b -> c) != 2 || String_conpair(a.c, b -> c, 2) == 0)
+	if(String_len(b -> c) != 2 || String_compare(a.c, b -> c, 2) == 0)
 	{
 		test_print("error at struct test\n");
 		test_error();
@@ -360,7 +360,7 @@ void test_union() {
 	};
 	union Hi a;
 	a.greeting = "Hello";
-	if(String_len(a.greeting) != 5 || String_conpair(a.greeting, "Hello", 5) == 0)
+	if(String_len(a.greeting) != 5 || String_compare(a.greeting, "Hello", 5) == 0)
 	{
 		error_template(test, a.greeting);
 	}
@@ -472,7 +472,7 @@ void test_preprocess() {
 		test_print("\x1b[32m 	macro timesTen complied successfully!\x1b[m\n");
 	else
 	{
-		test_print("failed to complie timesTen: got ");
+		test_print("failed to compile timesTen: got ");
 		test_print_int(timesTen(g));
 		test_print("\n");
 	}
@@ -482,13 +482,13 @@ void test_preprocess() {
 	}
 	else
 	{
-		test_print("failed to complie macro in macro: got ");
+		test_print("failed to compile macro in macro: got ");
 		test_print_int(macro_in_macro(g));
 		test_print("\n");
 	}
 	if(DEFINEOK != 20)
 	{
-		test_print("failed to complie macro in macro: got ");
+		test_print("failed to compile macro in macro: got ");
 		test_print_int(DEFINEOK);
 		test_print("\n");
 	}

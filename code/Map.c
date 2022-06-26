@@ -3,7 +3,7 @@
 #define TABLESIZE 128
 
 extern unsigned int String_len(char* s);
-extern int String_conpair(char* s1, char* s2, unsigned int size);
+extern int String_compare(char* s1, char* s2, unsigned int size);
 
 unsigned long hash(char* key){
 
@@ -65,7 +65,7 @@ void* Map_at(Map* m, char* key) {
 	unsigned int len = String_len(key);
 	for(Container* p = m -> body[index]; p; p = p -> next)
 	{
-		if(String_len(p -> key) == len && String_conpair(p -> key, key, String_len(key))) 
+		if(String_len(p -> key) == len && String_compare(p -> key, key, String_len(key))) 
 			return p -> data;
 	}
 	return NULL;
@@ -78,7 +78,7 @@ Vector* Map_get_all(Map* m, char* key) {
 
 	for(Container* p = m -> body[index]; p; p = p -> next)
 	{
-		if(String_len(p -> key) == len && String_conpair(p -> key, key, len))
+		if(String_len(p -> key) == len && String_compare(p -> key, key, len))
 			Vector_push(toReturn, p -> data);
 	}
 	return toReturn;
@@ -89,7 +89,7 @@ void* Map_delete(Map* m, char* key) {
 	unsigned len = String_len(key);
 	for(Container* p = m -> body[index]; p; p = p -> next)
 	{
-		if(String_len(p -> key) == len && String_conpair(p -> key, key, String_len(key))) 
+		if(String_len(p -> key) == len && String_compare(p -> key, key, String_len(key))) 
 		{
 			if(p -> prev != NULL)
 			{
@@ -113,7 +113,7 @@ int Map_contains(Map* m, char* key) {
 	unsigned int len = String_len(key);
 	for(Container* p = m -> body[index]; p ; p = p -> next)
 	{
-		if(String_len(p -> key) == len && String_conpair(p -> key, key, len))
+		if(String_len(p -> key) == len && String_compare(p -> key, key, len))
 		{
 			return 1;
 		}

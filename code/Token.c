@@ -1,7 +1,7 @@
 #include "cc.h"
 
 extern unsigned int String_len(char*);
-extern int String_conpair(char* ,char* ,unsigned int);
+extern int String_compare(char* ,char* ,unsigned int);
 extern void Memory_copy(void* dest,void* source, unsigned int size);
 
 Token_t *new_Token_t(Token_kind kind, Token_t* next, int val, int length, char* str, Type* tp) {
@@ -50,7 +50,7 @@ int find(int kind,Token_t **token) {
 	if(kind > MULTOPERATOR_START)
 	{ // len >= 2 identifier
 		char *multoper = get_symbol(kind);
-		if((*token) -> length == String_len(multoper) && String_conpair(multoper,(*token) -> str,String_len(multoper)))
+		if((*token) -> length == String_len(multoper) && String_compare(multoper,(*token) -> str,String_len(multoper)))
 		{	
 			consume(token);
 			return 1;

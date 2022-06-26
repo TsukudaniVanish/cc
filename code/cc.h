@@ -48,7 +48,7 @@ int _is_acceptable(Vector *,size_t);
 void _maybe_realloc(Vector* vector);
 
 /**
- * @brief get vec -> length if vec is aviable.
+ * @brief get vec -> length if vec is available.
  * 
  * @param vec 
  * @return int 
@@ -138,7 +138,7 @@ typedef enum {
  * 
  * @param Type_label label of identifier which stands for type.
  * @param Type_* pointer_to 
- * @param size_t size : actall memory size.
+ * @param size_t size : actual memory size.
  * 
  */
 #define VOID_TYPE_VALUE 0
@@ -193,7 +193,7 @@ struct lvar{
 	int length;
 	// this member is initialized as SC_AUTO when new_lvar is called 
 	StorageClass storage_class;
-	// follwing members are not inputted by utility function
+	// following members are not inputted by utility function
 	/**
 	 * @brief local variable : offset from rbp , string : label number of string literal
 	 * 
@@ -209,7 +209,7 @@ Lvar *global;
 typedef struct {
 	ScopeInfo* scope;
 	Type* tp;// this member is used when tag is function or typedef
-	int val;// this member is used when tag is enumconstant
+	int val;// this member is used when tag is enum constant
 	enum {
 		TAG_FUNCTION,
 		TAG_OBJECT,
@@ -287,12 +287,12 @@ typedef enum symbols {
 	END_OF_UNIT_OPERATOR,
 	PUNCTUATOR_START,
 	COMMA,// = ','
-	SEMICORRON,// == ';'
-	CORRON, // == ':'
+	SEMICOLON,// == ';'
+	COLON, // == ':'
 	BRACE ,//= '{',
 	BRACE_CLOSE ,//= '}',
 	PARENTHESIS ,//= '(',
-	PARANTHESIS_CLOSE ,//= ')',
+	PARENTHESIS_CLOSE ,//= ')',
 	BRACKET ,//= '[',
 	BRACKET_CLOSE ,//= ']'
 	END_OF_SYMBOLS,
@@ -349,7 +349,7 @@ typedef enum tokenKind{
 	TK_FLOW_OPERATION_END,// flow operation end 
 	// ====================================================================
 	TK_SIZEOF = TOKEN_SIZEOF,// this keyword acts like operator.
-	TK_DECLATION_SPECIFIER_START,
+	TK_DECLARATION_SPECIFIER_START,
 	TK_TYPEDEF,
 	TK_STATIC,
 	TK_EXTERN,
@@ -362,7 +362,7 @@ typedef enum tokenKind{
 	TK_UNION,
 	TK_ENUM,
 	TK_TYPEEND,
-	TK_DECLATION_SPECIFIER_END,
+	TK_DECLARATION_SPECIFIER_END,
 	//=====================================================
 	TK_EOF=-1, //Symbol which represents end of a list of tokens
 
@@ -402,7 +402,7 @@ Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
 
 
 /**
- * @brief Compair if *token -> str and given string are equal.
+ * @brief Compare if *token -> str and given string are equal.
  * @param int kind
  * @param Token_t_** token 
  * @return bool
@@ -486,7 +486,7 @@ typedef enum nodeKind{
 	ND_GLOBVALDEF,//  a definition of global variable
 	ND_GLOBVALCALL,// a left value which represents global variable
 	ND_LVAL, // a local variable
-	ND_INITLIST, // <-> variable declere = { ... }; 
+	ND_INITLIST, // <-> variable declare = { ... }; 
 	ND_FUNCTIONCALL,//A function call
 	ND_FUNCTIONDEF,//Definition of a function call
 	ND_ARGMENT,// an argument of a function
@@ -519,7 +519,7 @@ typedef enum nodeKind{
  * @param Node_t_* left
  * @param Node_t_* right
  * @param int val : When kind is ND_FUNCTION..,ND_IDENT,ND_LVAL this member has a role
- * @param long_int offsett
+ * @param long_int offset
  * @param Type*   when kind is ND_LVAL this member has a role
  * @param char_* name : if kind is  ND_LVAL  this has a role
  */
@@ -714,7 +714,7 @@ struct expression{
     TokenInMacro kind;
     // if kind == Constant this member has value
     int value;
-    // below two members are valied if kind > 0
+    // below two members are valid if kind > 0
     Expr* left;
     Expr* right;
 };
@@ -838,7 +838,7 @@ int is_lvardec(Token_t **token);
  * @param int len 
  * @param Lvar** table
  */
-Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table);
+Lvar *declare_ident(Type *tp, char *name,int len ,Lvar **table);
 
 /**
  * @brief ファイルスコープの識別子宣言
@@ -848,7 +848,7 @@ Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table);
  * @param int len
  * @param Lvar** table
  */
-Lvar *declere_glIdent(Type *,char*,int,Lvar**);
+Lvar *declare_glIdent(Type *,char*,int,Lvar**);
 
 /**
  * @brief トークン列が配列要素へのアクセスかどうか判定する
@@ -949,18 +949,18 @@ void program(Token_t **,Vector*);
 Node_t *func(Token_t**);
 int type_parameter_list(Token_t**, Node_t**);
 int parameter_list(Token_t**, Node_t**);
-Node_t *parameter_declere(Token_t**);
+Node_t *parameter_declare(Token_t**);
 Node_t *stmt(Token_t**);
-Node_t *declere(Token_t**);
+Node_t *declare(Token_t**);
 Node_t *init(Token_t**, Node_t*);
 Node_t *init_list(Token_t**, Node_t*);
 Node_t* ident_specify(Token_t** , Node_t*);
-Node_t* declere_specify(Token_t** , Node_t*, int);
+Node_t* declare_specify(Token_t** , Node_t*, int);
 Node_t* pointer(Token_t**, Node_t*);
 Node_t* type_specify(Token_t** token, Node_t*);
 Node_t* struct_union_specify(Token_t**, Node_t*);
-Node_t* struct_declere(Token_t**, Node_t*);
-Node_t* struct_declere_inside(Token_t**, Node_t*);
+Node_t* struct_declare(Token_t**, Node_t*);
+Node_t* struct_declare_inside(Token_t**, Node_t*);
 Node_t* enum_specify(Token_t**, Node_t*);
 Node_t* enum_list(Token_t**, Node_t*);
 Node_t* enumerator(Token_t**, Node_t*);
@@ -1031,8 +1031,8 @@ void pop_stack(long int size,char *);
  * 
  */
 void set_stringiter();
-// generate global var decrlaring code
-void gen_glob_declar(Node_t*);
+// generate global var declaring code
+void gen_glob_declare(Node_t*);
 //式をコンパイル
 void gen_formula(Node_t*);
 

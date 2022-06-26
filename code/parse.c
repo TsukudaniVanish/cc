@@ -1,10 +1,10 @@
 #include "cc.h"
 //#include<stdlib.h>
-//#inclide<string.h>
+//#include<string.h>
 
 
 extern unsigned int String_len(char*);
-extern int String_conpair(char*,char*,unsigned int);
+extern int String_compare(char*,char*,unsigned int);
 extern void Memory_copy(void*,void*,unsigned int);
 
 NameData* new_NameData(int tag) {
@@ -160,7 +160,7 @@ Type *Type_function_return(char **name,Token_t** token) {
 Lvar *find_lvar(char *name,int length,Lvar **locals) {
 	for(Lvar *var = *locals; var;var = var -> next)
 	{
-		if( var -> length == length && String_conpair( name, var ->name,length))
+		if( var -> length == length && String_compare( name, var ->name,length))
 		{
 			return var; 
 		}
@@ -274,7 +274,7 @@ Type *imptypecast(Node_t *node) {
 }
 
 int is_lvardec(Token_t **token) {
-	if((*token) -> kind > TK_DECLATION_SPECIFIER_START)
+	if((*token) -> kind > TK_DECLARATION_SPECIFIER_START)
 		return 1;
 	if(is_type_alias(token))
 	{
@@ -283,13 +283,13 @@ int is_lvardec(Token_t **token) {
 	return 0;
 }
 
-Lvar *declere_ident(Type *tp, char *name,int len ,Lvar **table) {
+Lvar *declare_ident(Type *tp, char *name,int len ,Lvar **table) {
 	Lvar *lvar = new_lvar(tp,name,len,*table);
 	*table = lvar;
 	return lvar;
 }
 
-Lvar *declere_glIdent(Type *tp,char *name, int len, Lvar **table) {
+Lvar *declare_glIdent(Type *tp,char *name, int len, Lvar **table) {
 	Lvar *lvar = find_lvar(name,len,table);
 	if(lvar != NULL)
 		return NULL;
@@ -384,10 +384,10 @@ Node_t *new_node_function_call(Token_t **token) {
 		node -> val++;
 
 		node_end -> kind = ND_ARGMENT;
-		Node_t *node_rightend = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);
+		Node_t *node_right_end = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);
 		node_end ->left = add(token);
-		node_end ->right = node_rightend;
-		node_end = node_rightend;
+		node_end ->right = node_right_end;
+		node_end = node_right_end;
 		find(',',token);
 	}
 	node_end -> kind = ND_BLOCKEND;
@@ -396,7 +396,7 @@ Node_t *new_node_function_call(Token_t **token) {
 
 Node_t *new_node_function_definition(Token_t **token) {
 	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
-	node = declere_specify(token, node, is_type_alias(token));
+	node = declare_specify(token, node, is_type_alias(token));
 	node = ident_specify(token, node); 
 
 	NameData* data = new_NameData(TAG_FUNCTION);
@@ -521,7 +521,7 @@ Node_t *new_node_for(Token_t **token) {
 	if(!find(';',token))
 	{// this is not infinite loop
 		if(is_lvardec(token))
-			init = declere(token);
+			init = declare(token);
 		else
 			init = expr(token);
 		expect(';',token);
@@ -670,7 +670,7 @@ Node_t *new_node_num(int val) {
 Node_t *new_node_stringiter(Token_t ** token) {
 	Node_t *node = new_Node_t(ND_STRINGLITERAL,NULL,NULL,0,0,new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8),NULL);
 	
-	Lvar *iter = declere_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
+	Lvar *iter = declare_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
 	
 	node -> name = calloc(iter -> length, sizeof(char));
     Memory_copy(node -> name,iter -> name,iter -> length);
@@ -687,16 +687,16 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	{
 		return new_node_function_definition(token);
 	}
-	// global variable decleration or struct-union decleration 
+	// global variable declaration or struct-union declaration 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
-	node = declere_specify(token, node, is_type_alias(token));
+	node = declare_specify(token, node, is_type_alias(token));
 
 	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
 			|| (*token) -> kind == TK_IDENT 
 			|| (*token) -> kind == TK_OPERATOR) // identifier parsing
 		node = ident_specify(token, node);
 
-	if(// struct , union or enum decleration 
+	if(// struct , union or enum declaration 
 		(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM)
 		&& node -> name == NULL
 	) { 
@@ -704,11 +704,11 @@ Node_t *new_node_glob_ident(Token_t**token) {
 		return node;
 	}
 
-	// global variable decleration 
+	// global variable declaration 
 	
 	Lvar *lvar = find_lvar(node -> name, String_len(node -> name), &global);
 	if(lvar == NULL)
-		lvar = declere_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
+		lvar = declare_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))// initialization
 	{
 		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
@@ -738,7 +738,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 			}
 			if( node -> left -> tp -> Type_label != TP_POINTER )
 			{
-				error_at((*token)->str, "Cannot accsess this variable\n");
+				error_at((*token)->str, "Cannot access this variable\n");
 			}
 			else
 			{
@@ -759,7 +759,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 
 Node_t* new_node_set_type_alias(Token_t** token, Node_t* node) {
 	// type qualifier?
-	node = declere_specify(token, node, 0);
+	node = declare_specify(token, node, 0);
 	node = ident_specify(token, node);
 
 	// set to ordinary name space
@@ -774,27 +774,27 @@ Node_t* new_node_set_type_alias(Token_t** token, Node_t* node) {
  * generate ast from token list 
  */
 /*
- * (someting)* <= something appers at least 0 times.
+ * (something)* <= something appears at least 0 times.
  * syntax
  *
  * program = func*
  * 
- * func = declere_specify ident_specify "(" type_parameter_list  ")"  stmt
+ * func = declare_specify ident_specify "(" type_parameter_list  ")"  stmt
  * type_parameter_list = parameter_list 
- * parameter_list = parameter_declere ("," parameter_declre)*
- * parameter_declere = declere_specify ident_specify
+ * parameter_list = parameter_declare ("," parameter_declare)*
+ * parameter_declare = declare_specify ident_specify
  * stmt = expr";"
- * 		| declere ";"
+ * 		| declare ";"
  * 		| "{" stmt* "}"
  * 		| "if" "(" expr  ")" stmt ( "else" stmt  )?
  * 		| "while"  "(" expr ")" stmt
  * 		| "for"  "(" expr?; expr? ; expr? ")"stmt
  * 		| "return" expr";"
- * declere = declere_specify* ident_specify ( "=" init  )?
+ * declare = declare_specify* ident_specify ( "=" init  )?
  * init =  expr | "{" init_list ","? "}"
  * init_list = init ( "," init)*
  * ident_specify = pointer? ident ("[" expr "]")*
- * declere_specify =  type_specify
+ * declare_specify =  type_specify
  * type_specify = "void"
  * 		| "int"
  * 		| "unsigned int"
@@ -802,9 +802,9 @@ Node_t* new_node_set_type_alias(Token_t** token, Node_t* node) {
  * 		| "char"
  * 		| enum_specify
  * 		| struct_union_specify
- * 	struct_union_specify = ("struct" | "union") ( ident? "{" struct_declere* "}" | ident )
- * 	struct_declere = struct_declere_inside ("," struct_declere_inside)* ";"  
- * 	struct_declere_inside = type_specify ident_specify
+ * 	struct_union_specify = ("struct" | "union") ( ident? "{" struct_declare* "}" | ident )
+ * 	struct_declare = struct_declare_inside ("," struct_declare_inside)* ";"  
+ * 	struct_declare_inside = type_specify ident_specify
  * 	enum_specify = "enum" ( ident | ident? "{" enum_list "}" )
  * 	enum_list = enum ( "," enum )*
  * 	enum = indent ( "-" expr)
@@ -846,7 +846,7 @@ int at_eof(Token_t **token) {
 	}
 }
 /*
- * implimentation
+ * implementation
  */
 void program(Token_t **token,Vector *codes) {
 
@@ -862,7 +862,7 @@ Node_t *func(Token_t **token) {
 
 	if ((*token) -> kind <= TOKEN_TYPE - 1){
 
-		error_at((*token) -> str , "Expected type specifyer");
+		error_at((*token) -> str , "Expected type specifier");
 
 	}
 	if( !( (*token) ->next ) && (*token) -> next -> kind != TK_IDENT ){
@@ -886,7 +886,7 @@ int parameter_list(Token_t** token, Node_t** parameter_container) {
 	*parameter_container = v;
 	while (!find(')',token))
 	{
-		v -> left = parameter_declere(token);
+		v -> left = parameter_declare(token);
 		find(',',token);
 
 		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
@@ -901,12 +901,12 @@ int parameter_list(Token_t** token, Node_t** parameter_container) {
 	return to_return;
 }
 
-Node_t* parameter_declere(Token_t** token) {
+Node_t* parameter_declare(Token_t** token) {
 	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
-	node = declere_specify(token, node, is_type_alias(token));
+	node = declare_specify(token, node, is_type_alias(token));
 	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM) 
 			|| (*token) -> kind == TK_IDENT 
 			|| (*token) -> kind == TK_OPERATOR)
@@ -923,7 +923,7 @@ Node_t* parameter_declere(Token_t** token) {
 	// check: scope && name space 
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
 	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
-		lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
+		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	else
 		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
 
@@ -949,7 +949,7 @@ Node_t *stmt(Token_t **token) {
 	}
 	else if(is_lvardec(token))
 	{
-		node = declere(token);
+		node = declare(token);
 		expect(';',token);
 		if(node -> kind == ND_LVAL)
 			return NULL;
@@ -964,7 +964,7 @@ Node_t *stmt(Token_t **token) {
 	return node;
 }
 
-Node_t *declere(Token_t **token) {
+Node_t *declare(Token_t **token) {
 	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
@@ -972,9 +972,9 @@ Node_t *declere(Token_t **token) {
 	int isTypeAlias = (*token) -> kind == TK_IDENT? is_type_alias(token): 0;
 
 	do{
-		node = declere_specify(token, node, isTypeAlias);
+		node = declare_specify(token, node, isTypeAlias);
 		isTypeAlias = (*token) -> kind == TK_IDENT? is_type_alias(token): 0;
-	}while(((*token) -> kind > TK_DECLATION_SPECIFIER_START && (*token) -> kind < TK_DECLATION_SPECIFIER_END) || isTypeAlias);
+	}while(((*token) -> kind > TK_DECLARATION_SPECIFIER_START && (*token) -> kind < TK_DECLARATION_SPECIFIER_END) || isTypeAlias);
 
 
 	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM) 
@@ -992,7 +992,7 @@ Node_t *declere(Token_t **token) {
 	// check: scope && name space 
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
 	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
-		lvar = declere_ident(node -> tp, node -> name,String_len(node -> name),&table);
+		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	else
 		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
 
@@ -1066,7 +1066,7 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 	}
 	return NULL;
 }
-/*@brief specify identifier : is it an pointer to someting ? identifier name?
+/*@brief specify identifier : is it an pointer to something ? identifier name?
  * */
 Node_t* ident_specify(Token_t** token, Node_t* node) {
 	if((*token) -> kind == TK_OPERATOR)
@@ -1084,7 +1084,7 @@ Node_t* ident_specify(Token_t** token, Node_t* node) {
 }
 /*@brief specify declaration type struct static or extern?
  * */
-Node_t* declere_specify(Token_t** token, Node_t* node, int isTypeAlias) {
+Node_t* declare_specify(Token_t** token, Node_t* node, int isTypeAlias) {
 	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)
 		return type_specify(token, node);
 	if((*token) -> kind == TK_TYPEDEF) {
@@ -1100,7 +1100,7 @@ Node_t* declere_specify(Token_t** token, Node_t* node, int isTypeAlias) {
 	}
 	// todo -- add static   remove qualifier from type struct and add it to lvar and node (actually qualifier is name for const and volatile not for static extern)
 		
-	error_at((*token) -> str, "type name, strage class specifier or type qualifier was expected");
+	error_at((*token) -> str, "type name, storage class specifier or type qualifier was expected");
 }
 
 /*
@@ -1122,7 +1122,7 @@ Node_t *pointer(Token_t** token, Node_t* node) {
 	return node;
 }
 /*
- * @brief parse type and struct decleration. change assigned node -> tp only. 
+ * @brief parse type and struct declaration. change assigned node -> tp only. 
  * */
 Node_t *type_specify(Token_t** token, Node_t* node) {
 	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_STRUCT)
@@ -1164,7 +1164,7 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
 	StructData* structData = search_from_tag_namespece(name, ScopeController_get_current_scope(controller));
 	if(structData == NULL)
-	{// declere struct or union
+	{// declare struct or union
 		if((*token) -> kind != TK_PUNCTUATOR || (*token) -> str[0] != '{')
 		{
 			error_at((*token) -> str, "unknown type name");
@@ -1184,7 +1184,7 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	{
 		while(!find('}', token))
 		{
-			struct_declere(token, node);
+			struct_declare(token, node);
 		}
 	}
 	if(node -> tp -> Type_label == TP_UNION)
@@ -1207,11 +1207,11 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 /*
  * @brief Doesn't change node address
  * */
-Node_t* struct_declere(Token_t** token, Node_t* node) {
-	node = struct_declere_inside(token, node);
+Node_t* struct_declare(Token_t** token, Node_t* node) {
+	node = struct_declare_inside(token, node);
 	while(find(',', token))
 	{
-		node = struct_declere_inside(token, node);
+		node = struct_declare_inside(token, node);
 	}
 	expect(';', token);
 	return node;
@@ -1219,7 +1219,7 @@ Node_t* struct_declere(Token_t** token, Node_t* node) {
 /*
  * @brief Doesn't change node address
  * */
-Node_t* struct_declere_inside(Token_t** token, Node_t* node) {
+Node_t* struct_declare_inside(Token_t** token, Node_t* node) {
 	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
 	StructData* data = search_from_tag_namespece(node -> tp -> name, ScopeController_get_current_scope(controller));
 	char* previousMember = Vector_get_tail(data -> memberNames);
@@ -1481,7 +1481,7 @@ Node_t *unitary(Token_t **token) {
 		if(find('(', token)) {
 			if(((*token) -> kind > TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)) {
 				node = new_Node_t(ND_NUM, NULL, NULL, 0, 0, NULL, NULL);
-				node = declere_specify(token, node, 0);
+				node = declare_specify(token, node, 0);
 				node = pointer(token, node);
 				expect(')', token);
 			} else {

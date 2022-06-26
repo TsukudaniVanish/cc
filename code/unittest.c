@@ -7,7 +7,7 @@ void Node_show_all(Node_t* node, unsigned depth);
  * for Map test
  */
 extern int String_len(char*);
-extern int String_conpair(char*, char*, unsigned int);
+extern int String_compare(char*, char*, unsigned int);
 extern void Memory_copy(void*, void*, unsigned int);
 typedef struct {
 	char* name;
@@ -25,10 +25,10 @@ void Person_show(Person* p) {
 	fprintf(stderr, "name : %s, age : %d\n", p -> name, p -> age);
 }
 
-int Person_conpair(Person* p, Person* q) {
+int Person_compare(Person* p, Person* q) {
 	if(p == NULL || q == NULL)	return 0;
 	if(String_len(p -> name) != String_len(q -> name)) return 0;
-	if(!String_conpair(p -> name, q -> name,String_len(p -> name))) return 0;
+	if(!String_compare(p -> name, q -> name,String_len(p -> name))) return 0;
 	if(p -> age != q -> age) return 0;
 	return 1;
 }
@@ -44,7 +44,7 @@ int assert_Person(char* test, Person* expect, Person* get) {
 		}
 		return 0;
 	}
-	if(!Person_conpair(expect,get)) 
+	if(!Person_compare(expect,get)) 
 	{
 		fprintf(stderr, "	expect\n		");
 		Person_show(expect);
@@ -87,7 +87,7 @@ int Token_equal(Token_t* token, Token_t* tester) {
 	}
 	if(tester -> length > 0)
 	{
-		if(!String_conpair(token -> str, tester -> str, tester -> length))
+		if(!String_compare(token -> str, tester -> str, tester -> length))
 		{	
 			return 0;
 		}
@@ -218,9 +218,9 @@ void unit_test_String(){
 	
 	assert_int("String length: ab",2,String_len("ab"));
 	assert_int("String length: empty",0, String_len("\0"));
-	assert_int("String cmp: ab, ac",0, String_conpair("ab","ac",String_len("ab")));
-	assert_int("String cmp: ab, ab",1, String_conpair("ab","ab",String_len("ab")));
-	assert_int("long string cmp:",1,String_conpair("==","== 1llls}",2));
+	assert_int("String cmp: ab, ac",0, String_compare("ab","ac",String_len("ab")));
+	assert_int("String cmp: ab, ab",1, String_compare("ab","ab",String_len("ab")));
+	assert_int("long string cmp:",1,String_compare("==","== 1llls}",2));
 
 	char *test = "String copy test";
 	char * x = calloc(3,sizeof(char));
@@ -376,7 +376,7 @@ void unit_test_parse_struct() {
 		Node_show_all(node, 0);
 		exit(1);
 	}
-	if(!String_conpair(lval -> tp -> name, "Hi", 2))
+	if(!String_compare(lval -> tp -> name, "Hi", 2))
 	{
 		Node_show_all(node, 0);
 		exit(1);
@@ -410,7 +410,7 @@ void unit_test_parse_struct_init() {
 		NODE_ERR_STRUCT(node);
 	}
 	i = 3;
-	if(String_len(global -> name) != 1 || !String_conpair(global -> name, "a", 1))
+	if(String_len(global -> name) != 1 || !String_compare(global -> name, "a", 1))
 	{
 		NODE_ERR_STRUCT(node);
 	}
@@ -521,14 +521,14 @@ void unit_test_parse_enum() {
 	if(node -> tp -> size != 4)
 		NODE_ERR_PRASE_FAILED(node);
 
-	//test_passed("enum declere");
+	//test_passed("enum declare");
 	
 	node = Vector_at(v, 1);
 	if(node == NULL || node -> kind != ND_FUNCTIONDEF)
 		NODE_ERR_PRASE_FAILED(node);
 	if(node -> right == NULL || node -> right -> left == NULL || node -> right -> right == NULL)
 		NODE_ERR_PRASE_FAILED(node);
-	//test_passed("enum function declere");
+	//test_passed("enum function declare");
 	
 	Node_t* node_stmt = node -> right;
 	node = node -> right -> left;
@@ -536,7 +536,7 @@ void unit_test_parse_enum() {
 		NODE_ERR_PRASE_FAILED(node);
 	if(node -> left -> tp -> Type_label != TP_ENUM || node -> right -> val != 10)
 		NODE_ERR_PRASE_FAILED(node);
-	//test_passed("enum assing first");
+	//test_passed("enum assign first");
 
 	node = node_stmt -> right -> left;
 	if(node == NULL || node -> kind != ND_ASSIGN)
@@ -677,9 +677,9 @@ void unit_test_preprocess_perse_defined() {
 		if(exp == NULL)
 			fprintf(stderr, "exp is NULL\n");
 		if(exp -> kind != Constant)
-			fprintf(stderr, "inccorect kind expext %d, but got %d\n", Constant, exp -> kind);
+			fprintf(stderr, "incorrect kind expression %d, but got %d\n", Constant, exp -> kind);
 		if(exp -> value != 1)
-			fprintf(stderr, "inccorrect value expect %d, but got %d\n", 1, exp -> value);
+			fprintf(stderr, "incorrect value expect %d, but got %d\n", 1, exp -> value);
 		exit(1);
 	}
 	test_passed(test);
