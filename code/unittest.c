@@ -753,25 +753,51 @@ void unit_test_token_splice() {
 	test_passed(test);
 }
 
+void unit_test_perse_static() {
+	char * test = "parse_static";
+	char* arg = "static int a = 0;";
+
+	Token_t* token = lexical_analyze(arg);
+
+	user_input = arg;
+	parsing_here = arg;
+	controller = NULL;
+
+	Vector* asts = init_parser();
+
+	program(&token, asts);
+
+	Lvar* l = find_lvar("a", 1, &global);
+	if(l == NULL){
+		fprintf(stderr, "%s: got NULL", test);
+		exit(1);
+	}
+	if(l -> storage_class != SC_STATIC) {
+		fprintf(stderr, "SC_STATIC was expected but got %d", l -> storage_class);
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
-	// unit_test_Vector();
-	// unit_test_String();
-	// unit_test_Map();
-	// unit_test_tokenize_struct();
-	// unit_test_parse_struct();
-	// unit_test_parse_struct_init();
-	// unit_test_tokenize_union();
-	// unit_test_tokenize_enum();
-	// unit_test_parse_union();
-	// unit_test_parse_enum();
-	// unit_test_parse_not();
-	// unit_test_tokenize_macro_define();
-	// unit_test_tokenize_macro_function();
-	// unit_test_preprocess_macro_expression();
-	// unit_test_preprocess_macro_exp_eval();
-	// unit_test_preprocess_perse_defined();
-	// unit_test_preprocess_if();
-	// unit_test_token_splice();
-	unit_test_tokenize_include();
+	unit_test_Vector();
+	unit_test_String();
+	unit_test_Map();
+	unit_test_tokenize_struct();
+	unit_test_parse_struct();
+	unit_test_parse_struct_init();
+	unit_test_tokenize_union();
+	unit_test_tokenize_enum();
+	unit_test_parse_union();
+	unit_test_parse_enum();
+	unit_test_parse_not();
+	unit_test_tokenize_macro_define();
+	unit_test_tokenize_macro_function();
+	unit_test_preprocess_macro_expression();
+	unit_test_preprocess_macro_exp_eval();
+	unit_test_preprocess_perse_defined();
+	unit_test_preprocess_if();
+	unit_test_token_splice();
+	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }
