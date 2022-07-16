@@ -1,5 +1,5 @@
-/.vscode/settings.json
-/.vim/*
+.vscode/
+.vim/
 /code/test_2.c
 Dockerfile
 /sandbox
