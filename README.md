@@ -81,7 +81,7 @@ a generator function which convert an abstract syntax tree into  assembly codes
 - [x] sizeof can accept type-keyword, type alias
 - [x] add do{...}while(...) 
 - [x] refactoring preprocessor (especially macro_expansion)
-- [ ] add type qualifiers (static, extern)
+- [ ] add storage class specifiers (static, extern)
 - [x] add #include to preprocessor 
 
 ## coding policy
