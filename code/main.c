@@ -86,8 +86,7 @@ int main(int argc, char **argv){
 		Node_t* code = Vector_at(codes, i);
 		if(code -> kind == ND_FUNCTIONDEF )
 		{
-			printf("	.text\n");
-			printf("	.global main\n");
+			printf(".text\n");
 
 			generate(code, 0, 0);
 		}

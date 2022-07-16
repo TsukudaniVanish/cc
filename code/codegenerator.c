@@ -558,8 +558,12 @@ void gen_initialize_glob_variable(Node_t* node) {
 void gen_glob_declare(Node_t* node) {
 	char* name = node -> kind != ND_INITLIST? node -> name: node -> left -> name;
 	Type* type = node -> kind != ND_INITLIST? node -> tp: node -> left -> tp;
+	int storage_class = node -> kind != ND_INITLIST? node -> storage_class: node -> left -> storage_class;
 	// register symbol
-	printf(".globl %s\n", name);
+	if(storage_class != SC_STATIC)
+		printf(".global %s\n", name);
+	else
+		printf(".local %s\n", name);
 	printf("	.type %s, @object\n", name);
 	printf("	.size %s, %d\n", name, type -> size);
 	printf("%s:\n", name);

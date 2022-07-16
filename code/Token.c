@@ -77,7 +77,9 @@ Token_t *consume(Token_t **token) {
 int is_functioncall(Token_t **token) {
     Token_t * buf = (*token);
 
-    if(buf -> kind > 299)
+	if (buf -> kind == TK_STATIC || buf -> kind == TK_EXTERN)
+		consume(&buf);
+    if(buf -> kind >= TOKEN_TYPE)
         consume(&buf);
 
     expect_ident(&buf);

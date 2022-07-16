@@ -716,6 +716,8 @@ Node_t *new_node_glob_ident(Token_t**token) {
 		else
 			node -> val = expect_num(token);
 	}
+
+	lvar -> storage_class = node -> storage_class;
 	expect(';',token);
 	return node;
 	
@@ -860,12 +862,13 @@ void program(Token_t **token,Vector *codes) {
 
 Node_t *func(Token_t **token) {
 
-	if ((*token) -> kind <= TOKEN_TYPE - 1){
+	int is_storage_class = (*token) -> kind == TK_STATIC || (*token) -> kind == TK_EXTERN;
+	if (((*token) -> kind <= TOKEN_TYPE - 1) && !is_storage_class){
 
 		error_at((*token) -> str , "Expected type specifier");
 
 	}
-	if( !( (*token) ->next ) && (*token) -> next -> kind != TK_IDENT ){
+	if( !((*token) ->next ) && (*token) -> next -> kind != TK_IDENT){
 
 
 		error_at((*token) -> str,"Expected identifier");
@@ -1087,6 +1090,7 @@ Node_t* ident_specify(Token_t** token, Node_t* node) {
 Node_t* declare_specify(Token_t** token, Node_t* node, int isTypeAlias) {
 	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)
 		return type_specify(token, node);
+		
 	if((*token) -> kind == TK_TYPEDEF) {
 		consume(token);
 		return new_node_set_type_alias(token, node);
@@ -1098,8 +1102,27 @@ Node_t* declare_specify(Token_t** token, Node_t* node, int isTypeAlias) {
 		node -> tp = data -> tp;
 		return node;
 	}
-	// todo -- add static   remove qualifier from type struct and add it to lvar and node (actually qualifier is name for const and volatile not for static extern)
-		
+	if((*token) -> kind == TK_STATIC) {
+		if(node -> storage_class != SC_AUTO) {
+			// static or extern can't declare twice.
+			error_at((*token) -> str, "static or extern can't declare twice.");
+		}
+		consume(token);
+		node -> storage_class = SC_STATIC;
+		int ita = (*token) -> kind == TK_IDENT? is_type_alias(token): 0; 
+		return declare_specify(token,node, ita);
+	}
+	if((*token) -> kind == TK_EXTERN) {
+		if(node -> storage_class != SC_AUTO) {
+			// static or extern can't declare twice.
+			error_at((*token) -> str, "static or extern can't declare twice.");
+		}
+		consume(token);
+		node -> storage_class = SC_EXTERN;
+		int ita = (*token) -> kind == TK_IDENT? is_type_alias(token): 0;
+		return declare_specify(token, node, ita);
+	}
+
 	error_at((*token) -> str, "type name, storage class specifier or type qualifier was expected");
 }
 

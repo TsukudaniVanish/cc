@@ -753,7 +753,7 @@ void unit_test_token_splice() {
 	test_passed(test);
 }
 
-void unit_test_perse_static() {
+void unit_test_parse_static() {
 	char * test = "parse_static";
 	char* arg = "static int a = 0;";
 
@@ -798,6 +798,7 @@ int unit_test() {
 	unit_test_preprocess_perse_defined();
 	unit_test_preprocess_if();
 	unit_test_token_splice();
+	unit_test_parse_static();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

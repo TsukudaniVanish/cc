@@ -541,7 +541,7 @@ struct node {
 	unsigned int offset;// offset from rbp
 	Type *tp;
 	char *name;
-	// this member is initialized as SC_AUTO when new_lvar is called 
+	// this member is initialized as SC_AUTO when new_Note_t called
 	StorageClass storage_class;
 	ScopeInfo* scope;// this member can't initiate when new_Node_t, and other new functions
 };
