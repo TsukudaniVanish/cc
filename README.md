@@ -77,11 +77,12 @@ a generating local variable function
 a generator function which convert an abstract syntax tree into  assembly codes 
 
 ## todo
+- [ ] add ? : 
 - [x]  add typedef 
 - [x] sizeof can accept type-keyword, type alias
 - [x] add do{...}while(...) 
 - [x] refactoring preprocessor (especially macro_expansion)
-- [ ] add storage class specifiers (static, extern)
+- [x] add storage class specifiers (static, extern)
 - [x] add #include to preprocessor 
 
 ## coding policy
