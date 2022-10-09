@@ -77,7 +77,8 @@ a generating local variable function
 a generator function which convert an abstract syntax tree into  assembly codes 
 
 ## todo
-- [ ] add ? : 
+- [ ] refactoring/ remove dependency on standard library
+- [x] add ? : 
 - [x]  add typedef 
 - [x] sizeof can accept type-keyword, type alias
 - [x] add do{...}while(...) 
