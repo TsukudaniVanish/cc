@@ -955,6 +955,28 @@ void gen_break(int endLabel) {
 
 }
 
+void gen_conditional_operator(Node_t* node) {
+	long condition_size = node -> left -> tp -> size;
+	int first_expr = filenumber++;
+	int second_expr = filenumber++;
+
+	generate(node -> left, 0, 0);
+	pop_stack(condition_size, "rax");
+	printf("	cmp %s, 0\n", get_registername("rax", condition_size));
+	printf("	je .Lbegin%d\n", second_expr);
+	printf("	jmp .Lbegin%d\n", first_expr);
+
+	
+	Node_t* r = node -> right;
+	printf(".Lbegin%d:\n", first_expr);
+	generate(r -> left, 0, 0);
+	printf("	jmp .Lend%d\n", second_expr);
+	printf(".Lbegin%d:\n", second_expr);
+	generate(r -> right, 0, 0);
+	printf(".Lend%d:\n", second_expr);
+	return;
+}
+
 //抽象構文木からアセンブリコードを生成する
 void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 
@@ -995,7 +1017,8 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 		return;
 	case ND_LVAL: gen_right_lval(node);
 		return;
-
+	case ND_CONDITIONAL: gen_conditional_operator(node);
+		return;
 	case ND_GLOBVALCALL: gen_globvar(node);
 		return;
 	case ND_FUNCTIONCALL: gen_function_call(node);//function call abi -> System V AMD64 ABI (Linux) 

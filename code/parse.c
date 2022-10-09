@@ -1396,6 +1396,13 @@ Node_t* conditional(Token_t** token) {
 		exprs -> left = expr(token);
 		expect(':',token);
 		exprs -> right = conditional(token);
+
+		if(exprs -> left -> tp -> size >= exprs -> right -> tp -> size) {
+			exprs -> tp = exprs -> left -> tp;
+		} else {
+			exprs -> tp = exprs -> right -> tp;
+		}
+		node -> tp = exprs -> tp;
 	}
 	return node;
 }

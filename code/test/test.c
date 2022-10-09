@@ -604,6 +604,26 @@ void test_include() {
 	test_passed(test);
 }
 
+int helper_func_for_conditional(int x) {
+	return x * 10;
+}
+void test_conditional_operator() {
+	char* test = "conditional operator test";
+	int a = 0? 10: 11;
+	if(a != 11) {
+		error_template_int(test, 11, a);
+	}
+	a = 1? 100: 101;
+	if(a != 100) {
+		error_template_int(test, 100, a);
+	}
+	a = helper_func_for_conditional(0)? 0: helper_func_for_conditional(2);
+	if(a != 20) {
+		error_template_int(test, 20, a);
+	}
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -630,6 +650,7 @@ int main(){// line comment
 	test_sizeof();
 	test_do_while();
 	test_include();
+	test_conditional_operator();
 	
 	test_global();
 	test_preprocess();
