@@ -284,6 +284,7 @@ typedef enum symbols {
 	AND ,//= '&',
 	ASSIGN,//= '=',
 	EXCLAMATION, //= '!'
+	QUESTION, //= '?'
 	END_OF_UNIT_OPERATOR,
 	PUNCTUATOR_START,
 	COMMA,// = ','

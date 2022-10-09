@@ -779,6 +779,24 @@ void unit_test_parse_static() {
 	test_passed(test);
 }
 
+void unit_test_conditional_operator() {
+	char* test = "conditional operator test";
+	char* arg = "3? 1: 0;";
+	Token_t* token = lexical_analyze(arg);
+
+	token = token -> next;
+
+	if(token == NULL) {
+		fprintf(stderr, "lexical analyze: left is null");
+		exit(1);
+	}
+	if(token -> kind != TK_OPERATOR || token -> str[0] != '?') {
+		fprintf(stderr, "lexical analyze: expect '?' but got %c", token -> str[0]);
+		exit(1);
+	} 
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -799,6 +817,7 @@ int unit_test() {
 	unit_test_preprocess_if();
 	unit_test_token_splice();
 	unit_test_parse_static();
+	unit_test_conditional_operator();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

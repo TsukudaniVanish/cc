@@ -1,3 +1,64 @@
+/* bnf 
+ * (something)* : something appears at least 0 times.
+ * syntax
+ *
+ * program = func*
+ * 
+ * func = declare_specify ident_specify "(" type_parameter_list  ")"  stmt
+ * type_parameter_list = parameter_list 
+ * parameter_list = parameter_declare ("," parameter_declare)*
+ * parameter_declare = declare_specify ident_specify
+ * stmt = expr";"
+ * 		| declare ";"
+ * 		| "{" stmt* "}"
+ * 		| "if" "(" expr  ")" stmt ( "else" stmt  )?
+ * 		| "while"  "(" expr ")" stmt
+ * 		| "for"  "(" expr?; expr? ; expr? ")"stmt
+ * 		| "return" expr";"
+ * declare = declare_specify* ident_specify ( "=" init  )?
+ * init =  expr | "{" init_list ","? "}"
+ * init_list = init ( "," init)*
+ * ident_specify = pointer? ident ("[" expr "]")*
+ * declare_specify =  type_specify
+ * type_specify = "void"
+ * 		| "int"
+ * 		| "unsigned int"
+ * 		| "unsigned"
+ * 		| "char"
+ * 		| enum_specify
+ * 		| struct_union_specify
+ * 	struct_union_specify = ("struct" | "union") ( ident? "{" struct_declare* "}" | ident )
+ * 	struct_declare = struct_declare_inside ("," struct_declare_inside)* ";"  
+ * 	struct_declare_inside = type_specify ident_specify
+ * 	enum_specify = "enum" ( ident | ident? "{" enum_list "}" )
+ * 	enum_list = enum ( "," enum )*
+ * 	enum = indent ( "-" expr)
+ * pointer = "*"*
+ * expr = assign
+ * assign = conditional ("=" expr )?
+ * conditional = log_or | log_or "?" expr ":" conditional 
+ * log_or = log_and (|| log_or)?
+ * log_and = equality (&& log_and)?
+ * equality = relational("==" relational | "!=" relational)*
+ * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
+ * add = mul( "+"mul | "-"mul)* 
+ * mul = unitary ("*" unitary | "/" unitary )*
+ * unitary = postfix
+ * 			|"sizeof" unitary
+ * 			| ('+' | '-' | '*' | '&' | '!' ) postfix
+ * 			| ('++' | '--') unitary
+ * postfix = primary 
+ * 			|( primary [expr] | primary '++' | primary '--' | primary "." ident | primary "->" ident)*
+ * primary = num 
+ * 			| indent 
+ * 			| "(" expr ")"
+ * 			| "\"" string literal "\""
+ * end markers:
+ * 		"..."
+ * 		num
+ * 		indent
+ * 		string literal
+ */
 #include "cc.h"
 //#include<stdlib.h>
 //#include<string.h>
@@ -775,67 +836,6 @@ Node_t* new_node_set_type_alias(Token_t** token, Node_t* node) {
 /*
  * generate ast from token list 
  */
-/*
- * (something)* <= something appears at least 0 times.
- * syntax
- *
- * program = func*
- * 
- * func = declare_specify ident_specify "(" type_parameter_list  ")"  stmt
- * type_parameter_list = parameter_list 
- * parameter_list = parameter_declare ("," parameter_declare)*
- * parameter_declare = declare_specify ident_specify
- * stmt = expr";"
- * 		| declare ";"
- * 		| "{" stmt* "}"
- * 		| "if" "(" expr  ")" stmt ( "else" stmt  )?
- * 		| "while"  "(" expr ")" stmt
- * 		| "for"  "(" expr?; expr? ; expr? ")"stmt
- * 		| "return" expr";"
- * declare = declare_specify* ident_specify ( "=" init  )?
- * init =  expr | "{" init_list ","? "}"
- * init_list = init ( "," init)*
- * ident_specify = pointer? ident ("[" expr "]")*
- * declare_specify =  type_specify
- * type_specify = "void"
- * 		| "int"
- * 		| "unsigned int"
- * 		| "unsigned"
- * 		| "char"
- * 		| enum_specify
- * 		| struct_union_specify
- * 	struct_union_specify = ("struct" | "union") ( ident? "{" struct_declare* "}" | ident )
- * 	struct_declare = struct_declare_inside ("," struct_declare_inside)* ";"  
- * 	struct_declare_inside = type_specify ident_specify
- * 	enum_specify = "enum" ( ident | ident? "{" enum_list "}" )
- * 	enum_list = enum ( "," enum )*
- * 	enum = indent ( "-" expr)
- * pointer = "*"*
- * expr = assign
- * assign = log_or ("=" expr )?
- * log_or = log_and (|| log_or)?
- * log_and = equality (&& log_and)?
- * equality = relational("==" relational | "!=" relational)*
- * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
- * add = mul( "+"mul | "-"mul)* 
- * mul = unitary ("*" unitary | "/" unitary )*
- * unitary = postfix
- * 			|"sizeof" unitary
- * 			| ('+' | '-' | '*' | '&' | '!' ) postfix
- * 			| ('++' | '--') unitary
- * postfix = primary 
- * 			|( primary [expr] | primary '++' | primary '--' | primary "." ident | primary "->" ident)*
- * primary = num 
- * 			| indent 
- * 			| "(" expr ")"
- * 			| "\"" string literal "\""
- * end markers:
- * 		"..."
- * 		num
- * 		indent
- * 		string literal
- */
-
 
 int at_eof(Token_t **token) {
 	if((*token)-> kind != TK_EOF)
@@ -847,6 +847,7 @@ int at_eof(Token_t **token) {
 		return 1;
 	}
 }
+
 /*
  * implementation
  */
@@ -1365,7 +1366,7 @@ Node_t* enumerator(Token_t** token, Node_t* node) {
 Node_t *expr(Token_t** token) {
 	return assign(token);
 }
-
+// TODO: change log_or to conditional
 Node_t *assign(Token_t **token) {
 	char* parsing_here = (*token) -> str;// for error detection
 	Node_t *node = log_or(token);
@@ -1384,6 +1385,8 @@ Node_t *assign(Token_t **token) {
 	}
 	return node;
 }
+
+// TODO: add syntax analyzing function 'conditional'. see bnf
 
 Node_t* log_or(Token_t **token) {
 	Node_t *node = log_and(token);

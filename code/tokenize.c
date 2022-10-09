@@ -80,6 +80,7 @@ char *get_symbol(int kind) {
 	case DOT: return ".";
 	case BACK_SLASH: return "/";
 	case EXCLAMATION: return "!";
+	case QUESTION: return "?";
 	case COMMA: return ",";
 	case SEMICOLON: return ";";
 	case COLON: return ":";
