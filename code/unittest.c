@@ -794,6 +794,34 @@ void unit_test_conditional_operator() {
 		fprintf(stderr, "lexical analyze: expect '?' but got %c", token -> str[0]);
 		exit(1);
 	} 
+
+	// parsing test 
+	char* arg2 = "int main() { 3? 1: 0; return 0;}";
+	Token_t *token2 = lexical_analyze(arg2);
+	user_input = arg;
+	parsing_here = arg;
+	Vector* v = init_parser();
+	program(&token2, v);
+	Node_t* node = Vector_at(v, 0);
+	node = node -> right -> left;
+	if(node == NULL) {
+		fprintf(stderr, "parse: expect not null");
+		exit(1);
+	}
+	if(node -> kind != ND_CONDITIONAL) {
+		fprintf(stderr, "parse: expect %d but got %d", ND_CONDITIONAL, node -> kind);
+		exit(1);
+	}
+	Node_t* r = node -> right;
+	if(r == NULL) {
+		fprintf(stderr, "parse: expect not null (node -> right)");
+		exit(1);
+	}
+	if(r -> kind != ND_CONDITIONAL_EXPRS) {
+		fprintf(stderr, "parse: expect node -> r -> kind == %d but got %d", ND_CONDITIONAL_EXPRS, r -> kind);
+		exit(1);
+	}
+
 	test_passed(test);
 }
 

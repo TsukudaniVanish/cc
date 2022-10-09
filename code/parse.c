@@ -1366,10 +1366,9 @@ Node_t* enumerator(Token_t** token, Node_t* node) {
 Node_t *expr(Token_t** token) {
 	return assign(token);
 }
-// TODO: change log_or to conditional
 Node_t *assign(Token_t **token) {
 	char* parsing_here = (*token) -> str;// for error detection
-	Node_t *node = log_or(token);
+	Node_t *node = conditional(token);
 	
 	if( find('=',token) )
 	{
@@ -1386,7 +1385,20 @@ Node_t *assign(Token_t **token) {
 	return node;
 }
 
-// TODO: add syntax analyzing function 'conditional'. see bnf
+Node_t* conditional(Token_t** token) {
+	Node_t* node = log_or(token);
+
+	if(find('?', token)) {
+		node = new_Node_t(ND_CONDITIONAL, node, NULL, 0, 0, NULL, NULL);
+		Node_t* exprs = new_Node_t(ND_CONDITIONAL_EXPRS, NULL, NULL, 0, 0, NULL, NULL);
+		node -> right = exprs;
+
+		exprs -> left = expr(token);
+		expect(':',token);
+		exprs -> right = conditional(token);
+	}
+	return node;
+}
 
 Node_t* log_or(Token_t **token) {
 	Node_t *node = log_and(token);

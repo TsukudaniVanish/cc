@@ -481,6 +481,8 @@ typedef enum nodeKind{
 	ND_ADDR, //<-> & reference
 	ND_DEREF,// <-> * dereference
 	ND_DOT, // <-> . dot operator :: -> is considered as  *(). 
+	ND_CONDITIONAL, // <-> ?
+	ND_CONDITIONAL_EXPRS, // <-> ... : ... (right after ?)
 	ND_NUM, // <-> integer
 	ND_STRINGLITERAL,
 	//=========================
@@ -967,6 +969,7 @@ Node_t* enum_list(Token_t**, Node_t*);
 Node_t* enumerator(Token_t**, Node_t*);
 Node_t* expr(Token_t**);
 Node_t *assign(Token_t **);
+Node_t* conditional(Token_t**);
 Node_t *log_or(Token_t **);
 Node_t *log_and(Token_t **);
 Node_t *equality(Token_t **);
