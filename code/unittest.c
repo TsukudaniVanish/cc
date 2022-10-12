@@ -9,6 +9,7 @@ void Node_show_all(Node_t* node, unsigned depth);
 extern int String_len(char*);
 extern int String_compare(char*, char*, unsigned int);
 extern void Memory_copy(void*, void*, unsigned int);
+extern char* String_add(char*, char*);
 typedef struct {
 	char* name;
 	int age;
@@ -825,6 +826,18 @@ void unit_test_conditional_operator() {
 	test_passed(test);
 }
 
+void uint_test_String_add() {
+	char* test = "string add test";
+	char* a = "abc";
+	char* b = "abcd";
+	char* c = String_add(a, b); 
+	if(!String_compare(c, "abcabcd", 7)) {
+		fprintf(stderr, "expected abcabcd but got %s", c);
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -846,6 +859,7 @@ int unit_test() {
 	unit_test_token_splice();
 	unit_test_parse_static();
 	unit_test_conditional_operator();
+	uint_test_String_add();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

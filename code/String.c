@@ -4,6 +4,9 @@ int Character_compare(char c, char d) {
 	return 0;
 }
 
+/*
+ * @brief return length of string not included  character '\0'.
+*/
 unsigned int String_len(char* s) {
 	unsigned int res = 0;
 	while(s[res]) res++;
@@ -31,3 +34,20 @@ void Memory_copy(void* dest,void* source, unsigned int size) {
 	return;
 }
 
+/*
+ * @brief allocate memory and make new string has length len
+*/
+char* new_String(unsigned int len) {
+	char* a = calloc(len, sizeof(char));
+	a[len - 1] = '\0';
+	return a;
+}
+
+char* String_add(char* s1, char* s2) {
+	unsigned int len1 = String_len(s1);
+	unsigned int len2 = String_len(s2);
+	char* s = new_String(len1 + len2 + 1); // with '\0'
+	Memory_copy(s, s1,len1);
+	Memory_copy(s +len1,s2,len2);
+	return s;
+}
