@@ -1,5 +1,5 @@
 .vscode/
 .vim/
-/code/test_2.c
+/code/test/test_2.c
 Dockerfile
 /sandbox
