@@ -223,12 +223,6 @@ void set_stringiter()
 }
 
 long gen_lval(Node_t *node){
-	if(!is_lval(node)){
-		fprintf(stderr, "error at code generating\n");
-		fprintf(stderr,"	this is not variables\n");
-		fprintf(stderr, "generating node kind : %d\n", node -> kind);
-		exit(1);
-	}
 	if(node -> kind == ND_GLOBVALCALL)
 	{
 		char* pref = get_pointerpref(node -> tp -> size);
