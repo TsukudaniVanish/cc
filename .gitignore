@@ -3,3 +3,8 @@
 /code/test/test_2.c
 Dockerfile
 /sandbox
+cc
+*.o
+*.log
+*~
+tmp*
