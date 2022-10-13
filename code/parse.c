@@ -1521,8 +1521,7 @@ Node_t *unitary(Token_t **token) {
 	if((*token)-> kind == TK_SIZEOF)
 	{
 		
-		(*token) = (*token) -> next;
-		// (type) ?
+		consume(token);
 		if(find('(', token)) {
 			if(((*token) -> kind > TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)) {
 				node = new_Node_t(ND_NUM, NULL, NULL, 0, 0, NULL, NULL);

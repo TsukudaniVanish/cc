@@ -838,6 +838,27 @@ void uint_test_String_add() {
 	test_passed(test);
 }
 
+void unit_test_long_long_int() {
+	char* test = "long long int";
+	char* arg = "long a = 1;";
+	Token_t* token = lexical_analyze(arg);
+	if(token -> kind != TK_TypeLONG) {
+		fprintf(stderr, "1:token -> kind != TK_TypeLONG");
+		exit(1);
+	}
+	arg = "long int a = 1;";
+	token = lexical_analyze(arg);
+	if(token -> kind != TK_TypeLONG) {
+		fprintf(stderr, "2:token -> kind != TK_TypeLONG");
+		exit(1);
+	}
+	if(token -> next -> kind != TK_IDENT) {
+		fprintf(stderr, "token -> next -> kind != TK_IDENT");
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -860,6 +881,7 @@ int unit_test() {
 	unit_test_parse_static();
 	unit_test_conditional_operator();
 	uint_test_String_add();
+	unit_test_long_long_int();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

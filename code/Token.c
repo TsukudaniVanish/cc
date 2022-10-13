@@ -25,6 +25,7 @@ unsigned int get_type_size(int kind) {
 	switch(kind) {
 		case TP_VOID: return 0;
 		case TP_INT: return 4;
+		case TP_LONG: return 8;
 		case TP_CHAR: return 1;
 		default:
 			return 0;

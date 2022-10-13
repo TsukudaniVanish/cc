@@ -1030,8 +1030,9 @@ void gen_list_init(Node_t* node) {
 			generate(initBranch -> left, 0, 0);
 			pop_stack(initBranch -> left -> tp -> size, RN_RDI);
 
+			// assign value
 			pop_stack(8, RN_RAX);
-			printf("	mov %s, %s\n",get_pointer( prefix, RN_RAX), get_registername(RN_RDI, initBranch -> left -> tp -> size));
+			printf("	mov %s, %s\n",get_pointer( prefix, RN_RAX), get_registername(RN_RDI, size));
 			printf("	add rax, %d\n", size);
 			push_stack(8, RN_RAX);
 			

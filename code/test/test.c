@@ -624,6 +624,22 @@ void test_conditional_operator() {
 	test_passed(test);
 }
 
+void test_long_long_int() {
+	char* test = "long long int";
+	long a = 1100;
+	if(a != 1100) {
+		error_template_int(test, 1100, a);
+	}
+	long int b[2] = {1, 2};
+	if(b[1] != 2) {
+		error_template_int(test, 2, b[1]);
+	}
+	if(sizeof a != 8) {
+		error_template_int(test, 8, sizeof a);
+	}
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -651,6 +667,7 @@ int main(){// line comment
 	test_do_while();
 	test_include();
 	test_conditional_operator();
+	test_long_long_int();
 	
 	test_global();
 	test_preprocess();

@@ -149,14 +149,15 @@ typedef enum {
 #define VOID_TYPE_VALUE 0
 #define POINTER_TYPE_VALUE 10
 #define INTEGER_TYPE_START 1
-#define INTEGER_TYPE_END 2
+#define INTEGER_TYPE_END 3
 typedef struct type Type;
 
 struct type{
 	enum{
 		TP_VOID = VOID_TYPE_VALUE,
 		TP_CHAR = INTEGER_TYPE_START, //char
-		TP_INT = INTEGER_TYPE_END,//int
+		TP_INT,//int
+		TP_LONG= INTEGER_TYPE_END, // long 
 		TP_POINTER = POINTER_TYPE_VALUE,// pointer type 8byte
 		TP_ARRAY,// array type
 		TP_STRUCT,
@@ -260,6 +261,8 @@ typedef enum keyWords {
 	INT,
 	UNSIGNED_INT,
 	UNSIGNED,
+	LONG_INT,
+	LONG,
 	STRUCT,
 	UNION,
 	ENUM,
@@ -364,6 +367,7 @@ typedef enum tokenKind{
 	TK_TypeVOID = TOKEN_TYPE,//this list is sorted as in Type_label
 	TK_TypeCHAR,
 	TK_TypeINT,
+	TK_TypeLONG,
 	TK_STRUCT,
 	TK_UNION,
 	TK_ENUM,
