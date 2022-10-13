@@ -180,13 +180,13 @@ void pop_stack(int long size,RegisterName register_name){
 
 	if(size < 5 && size > 1)
 	{
-		printf("	mov %s, DWORD PTR [rsp]\n",name);
+		printf("	mov %s, %s\n",name, get_pointer(get_pointerpref(size), RN_RSP));
 		printf("	add rsp, 4\n");
 		rsp_counter -= 4;
 	}
 	else if(0 < size && size < 2)
 	{
-		printf("	movsx %s, BYTE PTR [rsp]\n",get_registername(register_name,4));
+		printf("	movsx %s, %s\n",get_registername(register_name,4), get_pointer(get_pointerpref(size), RN_RSP));
 		printf("	add rsp, 1\n");
 		rsp_counter -= 1;
 	}
@@ -202,7 +202,7 @@ void set_register_to_stack(long int offset,long int size,RegisterName reg)
 {
 	printf("	mov r11,rbp\n");
 	printf("	sub r11, %ld\n",offset);
-	printf("	mov %s [r11], %s\n",get_pointerpref(size),get_registername(reg,size));
+	printf("	mov %s, %s\n",get_pointer(get_pointerpref(size), RN_R11),get_registername(reg,size));
 
 }
 
@@ -420,14 +420,14 @@ void gen_inc_dec(Node_t *node) {
 		
 		pop_stack(8,RN_RAX);
 		printf("	mov rcx, rax\n");
-		printf("	mov %s, %s[rax]\n", rax,pref);
+		printf("	mov %s, %s\n", rax,get_pointer(pref, RN_RAX));
 
 		push_stack(size, RN_RAX);
 		
-		printf("	mov %s, %s[rcx]\n", rdi, pref);
+		printf("	mov %s, %s\n", rdi, get_pointer(pref, RN_RCX));
 		printf("	%s %s, %d\n",instruction, rdi, operand);
 
-		printf("	mov %s[rcx], %s\n", pref, rdi);
+		printf("	mov %s, %s\n", get_pointer(pref, RN_RCX), rdi);
 		return;
 	}
 	if(node -> right == NULL && node -> left != NULL)
@@ -437,13 +437,13 @@ void gen_inc_dec(Node_t *node) {
 		
 		pop_stack(8, RN_RAX);
 		printf("	mov rcx, rax\n");
-		printf("	mov %s, %s[rax]\n", rax, pref);
+		printf("	mov %s, %s\n", rax, get_pointer(pref, RN_RAX));
 
 		printf("	%s %s, %d\n", instruction, rax, operand);
 		
 		push_stack(size, RN_RAX);
 
-		printf("	mov %s[rcx], %s\n", pref, rax);
+		printf("	mov %s, %s\n", get_pointer(pref, RN_RCX), rax);
 		return;
 	}
 }
@@ -548,7 +548,7 @@ void gen_assign(Node_t* node) {
 	pop_stack(size[1],RN_RDI);// right
 	pop_stack(8, RN_RAX);// left
 
-	printf("	mov %s [rax], %s\n", pref,rdi);//代入
+	printf("	mov %s, %s\n", get_pointer(pref, RN_RAX),rdi);//代入
 	push_stack(size[1], RN_RDI);
 	return;
 }
@@ -562,7 +562,7 @@ void gen_deref(Node_t *node) {
 	char * pointer_pref = get_pointerpref(node -> tp -> size);
 	
 	pop_stack(8,RN_RAX);
-	printf("	mov %s, %s [rax]\n",rcx,pointer_pref);	
+	printf("	mov %s, %s\n",rcx,get_pointer(pointer_pref, RN_RAX));	
 	push_stack(node -> tp -> size,RN_RCX);
 	return;
 }
@@ -581,7 +581,7 @@ void gen_right_lval(Node_t* node) {
 	if(node -> tp -> Type_label == TP_ARRAY) return;
 	pop_stack(8, RN_RAX);
 
-	printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
+	printf("	mov %s, %s\n",register_name, get_pointer(pointer_pref, RN_RAX));
 	push_stack(node -> tp -> size,RN_RAX);
 	return;
 }
@@ -595,7 +595,7 @@ void gen_globvar(Node_t* node){
 	if(node -> tp -> Type_label == TP_ARRAY) return;
 
 	pop_stack(8, RN_RAX);
-	printf("	mov %s, %s [rax]\n", rax, pref);
+	printf("	mov %s, %s\n", rax, get_pointer(pref, RN_RAX));
 	push_stack(size, RN_RAX);
 	return;
 }
@@ -955,7 +955,7 @@ void gen_list_init(Node_t* node) {
 			pop_stack(initBranch -> left -> tp -> size, RN_RDI);
 
 			pop_stack(8, RN_RAX);
-			printf("	mov %s[rax], %s\n", prefix, get_registername(RN_RDI, initBranch -> left -> tp -> size));
+			printf("	mov %s, %s\n",get_pointer( prefix, RN_RAX), get_registername(RN_RDI, initBranch -> left -> tp -> size));
 			printf("	add rax, %d\n", size);
 			push_stack(8, RN_RAX);
 			
@@ -983,7 +983,7 @@ void gen_list_init(Node_t* node) {
 			pop_stack(initBranch -> left -> tp -> size, RN_RDI);
 
 			pop_stack(8, RN_RAX);
-			printf("	mov %s [rax], %s\n", prefix, get_registername(RN_RDI, initBranch -> left -> tp -> size));
+			printf("	mov %s, %s\n", get_pointer(prefix, RN_RAX), get_registername(RN_RDI, initBranch -> left -> tp -> size));
 		
 			i++;
 			char* memberName = Vector_at(memberNames, i);
@@ -1005,7 +1005,7 @@ void gen_list_init(Node_t* node) {
 void gen_dot(Node_t* node) {
 	gen_lval(node);
 	pop_stack(8, RN_RAX);
-	printf("	mov %s, %s [rax]\n", get_registername(RN_RAX, node -> tp -> size),get_pointerpref(node -> tp -> size));
+	printf("	mov %s, %s\n", get_registername(RN_RAX, node -> tp -> size), get_pointer(get_pointerpref(node -> tp -> size), RN_RAX));
 	push_stack(node -> tp -> size, RN_RAX);
 	return;
 }
