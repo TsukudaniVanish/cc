@@ -1,8 +1,7 @@
 CFLAGS=-std=c11 -g -static
 SRC=$(wildcard *.c)
 SRCSS=$(filter-out test.c, $(SRC))
-SRCSSS=$(filter-out helper_functions.c, $(SRCSS))
-SRCS=$(filter-out test_2.c, $(SRCSSS))
+SRCS=$(filter-out test_2.c, $(SRCSS))
 OBJS=$(SRCS:.c=.o)
 HELPER=helper_functions.o
 
