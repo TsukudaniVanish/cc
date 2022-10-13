@@ -1,10 +1,15 @@
 
 #define Min(a,b) a < b ? a: b
+#define Max(a, b) a < b? b: a
 #include<stdlib.h>
 //#include<ctype.h>
 #include<stdarg.h>
 #include<stdio.h>
 //#include<string.h>
+
+extern void int_to_string(char*, int);
+extern void long_to_string(char*, long);
+// extern void* calloc(unsigned int, unsigned int);
 
 /**
  * @brief vector that contains void*

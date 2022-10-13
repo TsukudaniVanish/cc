@@ -4,11 +4,14 @@
 
 extern unsigned int String_len(char*);
 extern int String_compare(char* ,char* ,unsigned int);
-extern char* new_String(unsigned int);
 extern char* String_add(char*, char*);
+extern char* i2a(int);
+extern char* ui2a(unsigned int);
+extern char* l2a(long);
 long int rsp_counter = 0;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
 int filenumber = 0; // use for operarion flow
 
+extern char* get_label_string_literal(long offset);
 
 typedef enum {
 	RN_RAX,
@@ -44,6 +47,12 @@ char * get_registername(RegisterName name,long int size)
 	case RN_R9:
 	case RN_R11:
 		break;
+	case RN_RSP:
+		return "rsp";
+	case RN_RBP:
+		return "rbp";
+	case RN_RIP:
+		return "rip";
 	default:
 		return NULL;
 	}
@@ -80,15 +89,15 @@ char *get_pointerpref(long int size)
 {
 	if(size < 5 && 1 < size)
 	{
-		return "DWORD PTR";
+		return "DWORD PTR ";
 	}
 	else if(size == 1)
 	{
-		return "BYTE PTR";
+		return "BYTE PTR ";
 	}
 	else
 	{
-		return "QWORD PTR";
+		return "QWORD PTR ";
 	}
 }
 
@@ -135,10 +144,70 @@ char* get_pointer(char* pref, RegisterName name) {
 	return String_add(pref, ptr);
 } 
 
+char* get_label_string_literal(long offset) {
+	return String_add(".LC", l2a(offset)); // LC%ld, offset
+}
+
+/**
+ * @brief Get the data address with rip
+ * 
+ * @param pref 
+ * @param name 
+ * @return char* 
+ */
+char* get_data_address_with_rip(char* pref, char* name) {
+	return String_add(pref, String_add(name, get_pointer("", RN_RIP))); // %s %s[rip], pref, name
+}
+
+/**
+ * @brief move value of src to dst
+ * 
+ * @param dst 
+ * @param src 
+ */
+void move_data(char* dst, char* src) {
+	char* ins = String_add("	mov ", dst);
+	ins = String_add(ins, ", ");
+	ins = String_add(ins, src);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+/**
+ * @brief calculate address of src and store it to dst
+ * 
+ * @param src 
+ * @param dst 
+ */
+void calculate_address(char* dst, char* src) {
+	char* operands = String_add(src, "\n");
+	operands = String_add(", ", operands);
+	operands = String_add(dst, operands);
+	char* ins = String_add("	lea ", operands);
+	// ins = "	lea %s, %s\n", dst, src
+	printf("%s", ins);
+	return;
+}
+
+void addition(char* dst, char* src) {
+	char* ins = String_add("	add ", dst);
+	ins = String_add(ins, ", ");
+	ins = String_add(ins, src);
+	ins = String_add(ins, "\n");
+	printf("%s", ins); 
+}
+
+void substitution(char* dst, char* src) {
+	char* ins = String_add("	sub ", dst);
+	ins = String_add(ins, ", ");
+	ins = String_add(ins, src);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
 
 
 /**
- * @brief rsp の値を引いてrsp の示すアドレスにストア
+ * @brief substitute from rsp and write value to the place pointed by rsp.
  * 
  * @param long_int size
  * @param char* register name
@@ -147,28 +216,28 @@ char* get_pointer(char* pref, RegisterName name) {
 void push_stack(int long size, RegisterName register_name){
 
 	char *name = get_registername(register_name,size);
-
 	if(size < 5 && size > 1)
 	{
-		printf("	sub rsp, %ld\n",size);
-		printf("	mov %s, %s\n", get_pointer(get_pointerpref(size), RN_RSP),name);
+		substitution(get_registername(RN_RSP, 8), l2a(4));
+		move_data(get_pointer(get_pointerpref(4), RN_RSP),name);
 		rsp_counter += 4;
 	}
 	else if(0 < size && size < 2)
 	{
-		printf("	sub rsp, %ld\n",size);
-		printf("	mov %s, %s\n", get_pointer(get_pointerpref(size), RN_RSP),name);
+		substitution(get_registername(RN_RSP, 8), l2a(size));
+		move_data(get_pointer(get_pointerpref(size), RN_RSP),name);
 		rsp_counter += 1;
 	}
 	else
 	{
-		printf("	push %s\n",name);
+		substitution(get_registername(RN_RSP, 8), l2a(8));
+		move_data(get_pointer(get_pointerpref(8), RN_RSP),name);
 		rsp_counter += 8;
 	}
 }
 
 /**
- * @brief rsp の値を足してrspの示すアドレスからロード
+ * @brief load from the place pointed by rsp and add size to rsp
  * 
  * @param long_int size
  * @param char* register name
@@ -180,35 +249,45 @@ void pop_stack(int long size,RegisterName register_name){
 
 	if(size < 5 && size > 1)
 	{
-		printf("	mov %s, %s\n",name, get_pointer(get_pointerpref(size), RN_RSP));
-		printf("	add rsp, 4\n");
+		move_data(name, get_pointer(get_pointerpref(4), RN_RSP));
+		addition(get_registername(RN_RSP, 8), l2a(4));
 		rsp_counter -= 4;
 	}
 	else if(0 < size && size < 2)
 	{
-		printf("	movsx %s, %s\n",get_registername(register_name,4), get_pointer(get_pointerpref(size), RN_RSP));
-		printf("	add rsp, 1\n");
+		move_data(name, get_pointer(get_pointerpref(1), RN_RSP));
+		addition(get_registername(RN_RSP, 8), l2a(1));
 		rsp_counter -= 1;
 	}
 	else
 	{
-		printf("	pop %s\n",name);
+		move_data(name, get_pointer(get_pointerpref(8), RN_RSP));
+		addition(get_registername(RN_RSP, 8), l2a(8));
 		rsp_counter -= 8;
 	}
 }
 
-//set value of register to stack
+/**
+ * @brief Set the register value to stack
+ * 
+ * @param offset 
+ * @param size 
+ * @param reg 
+ */
+
 void set_register_to_stack(long int offset,long int size,RegisterName reg)
 {
-	printf("	mov r11,rbp\n");
-	printf("	sub r11, %ld\n",offset);
-	printf("	mov %s, %s\n",get_pointer(get_pointerpref(size), RN_R11),get_registername(reg,size));
-
+	move_data(get_registername(RN_R11, 8), get_registername(RN_RBP, 8));
+	substitution(get_registername(RN_R11, 8), l2a(offset));
+	move_data(get_pointer(get_pointerpref(size), RN_R11),get_registername(reg,size));
 }
 
 
 
-
+/**
+ * @brief Set the stringiter object
+ * 
+ */
 void set_stringiter()
 {
 	printf("	.section	.rodata\n");
@@ -228,13 +307,13 @@ long gen_lval(Node_t *node){
 		char* pref = get_pointerpref(node -> tp -> size);
 		if(node -> tp -> Type_label == TP_ARRAY)
 		{
-			printf("	lea rax, %s %s[rip]\n", pref, node -> name);
+			calculate_address(get_registername(RN_RAX, 8), get_data_address_with_rip(pref, node -> name));
 			push_stack(8,RN_RAX);
 			return node -> tp -> size;
 		}
-		printf("	lea rax, %s %s[rip]\n", pref, node -> name);
-		printf("	push rax\n");
-		rsp_counter += 8;
+		calculate_address(get_registername(RN_RAX, 8), get_data_address_with_rip(pref, node -> name));
+		push_stack(8, RN_RAX);
+		rsp_counter = rsp_counter + 8;
 		return node -> tp -> size;
 	}
 	if(node -> kind == ND_DEREF)
@@ -247,15 +326,16 @@ long gen_lval(Node_t *node){
 		gen_lval(node -> left);
 		pop_stack(8, RN_RAX);// get top address of struct
 
-		printf("	add rax, %d\n", node -> right -> offset);
+		addition(get_registername(RN_RAX, 8), ui2a(node -> right -> offset));
 
 		push_stack(8, RN_RAX);
 		return node -> tp -> size;
 	
 	}
-	printf("	mov rax, rbp\n");
-	printf("	sub rax, %d\n",  node -> offset);
-	printf("	push rax\n");
+	move_data(get_registername(RN_RAX, 8), get_registername(RN_RBP, 8));
+	substitution(get_registername(RN_RAX, 8), ui2a(node -> offset));
+
+	push_stack(8, RN_RAX);
 	rsp_counter += 8;
 	return node -> tp -> size;
 	
@@ -289,16 +369,15 @@ void gen_function_call(Node_t *node){
 	gen_arg_entry(node -> left);
 
 	if(rsp_counter%16 !=0)
-	{//rsp を調整
-
-		printf("	sub rsp , %ld\n", 16 - rsp_counter % 16);
+	{// modify rsp place
+		substitution(get_registername(RN_RSP, 8), i2a(16 - rsp_counter % 16));
 	}
 
 	printf("	call %s\n",node -> name);
 	
 	if(rsp_counter%16 !=0)
 	{
-		printf("	add rsp, %ld\n", 16 - rsp_counter %16);
+		addition(get_registername(RN_RSP, 8), l2a(16 - rsp_counter %16));
 	}
 
 
@@ -329,47 +408,43 @@ void gen_function_def(Node_t *node){
 	int return_rsp_number = rsp_counter;
 
 	//prologue=======================================
-	printf("	push rbp\n");
-	rsp_counter+= 8;
-	printf("	mov rbp ,rsp\n");
+	push_stack(8, RN_RBP);
+	move_data(get_registername(RN_RBP, 8), get_registername(RN_RSP, 8));
 
+	// allocate memory on stack for arguments
 	if(nametable){
-
-
-		printf("	sub rsp, %d\n",nametable -> offset);
+		substitution(get_registername(RN_RSP, 8), i2a(nametable -> offset));
 		rsp_counter += nametable ->offset;
 	}//=======================================
 
 	Node_t *arg = node -> left;
-	long int size[node -> val];
-	long int offset[node -> val];
+	long int size[7];
+	long int offset[7];
 	for(int i = 0 ;arg -> kind != ND_BLOCKEND; i++,arg = arg -> right)
 	{	
 		size[i] = arg -> left -> tp -> size;
 		if(i > 0)
 		{
 			offset[i] = size[i] + offset[i-1];
-			
 		}
 		else
 		{
 			offset[i] = size[i];
 		}
 	}
-	//引数代入
-	for (size_t i = node -> val; i > 0; i--)
+	// set arguments
+	for (long i = node -> val; i > 0; i--)
 	{
 		argment_set(i,offset[i-1],size[i-1]);
 	}
 	
 
-	generate(node -> right, 0, 0);//定義本文をコンパイル
+	generate(node -> right, 0, 0);
 
-	//epilogue return に書く
+	//epilogue return
 	pop_stack(node -> tp -> size,RN_RAX);
-	printf("	mov rsp, rbp\n");
-	printf("	pop rbp\n");
-	rsp_counter -= 8;
+	move_data(get_registername(RN_RSP, 8), get_registername(RN_RBP, 8));
+	pop_stack(8, RN_RBP);
 	printf("	ret\n");
 
 	// function footer
@@ -378,6 +453,8 @@ void gen_function_def(Node_t *node){
 
 	return;
 }
+
+// TODO: use move_data, addition, substitution
 
 int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, RegisterName name_register1, RegisterName name_register2, char** pref) {
 	*size = node -> tp -> size;
@@ -404,8 +481,7 @@ void gen_inc_dec(Node_t *node) {
 		instruction = "sub";
 		break;
 	default:
-		fprintf(stderr,"compile error\n	unexpected node at increment, decrement");
-		exit(1);
+		return;
 	}
 	long size;
 	char* rax;
@@ -531,7 +607,7 @@ void gen_number(int val) {
 }
 
 void gen_string_literal(long offset) {
-	printf("	lea rax, .LC%ld [rip]\n", offset);
+	calculate_address(get_registername(RN_RAX, 8), get_data_address_with_rip(get_label_string_literal(offset), " "));
 	push_stack(8, RN_RAX);
 	return;
 }
@@ -781,8 +857,8 @@ void gen_for(Node_t* node) {
 
 	if(!node -> left )
 	{//loop will go on
-		fprintf(stderr,"for(;;)は無効です");
-		exit(1);
+		// don't accept infinite loop
+		return;
 	}
 	else
 	{

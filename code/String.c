@@ -51,3 +51,36 @@ char* String_add(char* s1, char* s2) {
 	Memory_copy(s +len1,s2,len2);
 	return s;
 }
+
+char* i2a(int d) {
+	// check size 
+	unsigned int b = Max(b, -b);
+	unsigned int q = 0;
+	while (b > 0)
+	{
+		b = b / 10;
+		q++;
+	}
+	char* s = new_String(q + 1);
+	int_to_string(s, d);
+	return s;
+}
+
+char* l2a(long d) {
+	unsigned int b = Max(b, -b);
+	unsigned int q = 0;
+	while (b > 0)
+	{
+		b = b / 10;
+		q++;
+	}
+	char* s = new_String(q + 1);
+	long_to_string(s, d);
+	return s;
+}
+
+
+char* ui2a(unsigned int d) {
+	long ld = d;
+	return l2a(d);
+}
