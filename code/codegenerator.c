@@ -159,6 +159,20 @@ char* get_data_address_with_rip(char* pref, char* name) {
 	return String_add(pref, String_add(name, get_pointer("", RN_RIP))); // %s %s[rip], pref, name
 }
 
+void sign_extension(long size) {
+	char* ins;
+	if(0 < size && size < 5) {
+		ins = "    cdq";
+		printf("%s\n", ins);
+		return;
+	}
+	if(5 <size && size < 9) {
+		ins = "    cqo";
+		printf("%s\n", ins);
+		return;
+	}
+}
+
 /**
  * @brief move value of src to dst
  * 
@@ -223,6 +237,18 @@ void multiplication(char* dst, char* src) {
 	char* ins = String_add("	imul ", dst);
 	ins = String_add(ins, ", ");
 	ins = String_add(ins, src);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+
+/**
+ * @brief divide register value with arg. see x86 manual(MASM)
+ * 
+ * @param arg 
+ */
+void division(char* arg) {
+	char* ins = String_add("	idiv ", arg);
 	ins = String_add(ins, "\n");
 	printf("%s", ins);
 }
@@ -595,41 +621,20 @@ void gen_compare(Node_t* node) {
 	return;
 }
 
-char* get_arithmetic_instruction(int kind) {
-	switch(kind)
-	{
-		case ND_ADD : return "add";
-		case ND_SUB : return "sub";
-		case ND_MUL : return "imul";
-		case ND_DIV : return "idiv";
-	}
-}
-
-//sign extension rax and store to rdx:rax
-char* get_sign_extension(long size) {
-	if(0 < size && size < 5)
-		return "cdq";
-	if(5 <size && size < 9)
-		return "cqo";
-	return NULL;
-}
-
 void gen_arithmetic_instruction(Node_t *node) {
 	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
 	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
 	long size = size_r > size_l? size_r: size_l;
 	char* rax = get_registername(RN_RAX,size);
 	char* rdi = get_registername(RN_RDI,size);
-	char* arithmetic_instruction = get_arithmetic_instruction(node -> kind);
 
 	pop_stack(size_r, RN_RDI);
 	pop_stack(size_l, RN_RAX);
 
 	if(node -> kind == ND_DIV)
 	{
-		char* singExtension = get_sign_extension(size);
-		printf("	%s\n", singExtension);
-		printf("	%s %s\n", arithmetic_instruction, rdi);
+		sign_extension(size);
+		division(rdi);
 		push_stack(size, RN_RAX);
 		return;
 	}
