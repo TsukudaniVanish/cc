@@ -997,13 +997,6 @@ void argment_set(int,long int,long int);
 //関数定義をコンパイル
 void gen_function_def(Node_t *node);
 
-/**
- * @brief Get the register name
- * 
- * @param int 
- * @return char* 
- */
-char *get_registername(char *,long int);
 
 /**
  * @brief Get the pointer prefix
@@ -1014,33 +1007,16 @@ char *get_registername(char *,long int);
 char *get_pointerpref(long int size);
 
 /**
- * @brief rsp の値を引いてrsp の示すアドレスにストア
- * 
- * @param long_int size
- * @param char* register name
- * @return void
- */
-void push_stack(int long size,char *);
-
-/**
- * @brief rsp の値を足してrspの示すアドレスからロード
- * 
- * @param long_int size
- * @param char* register name
- * @return void 
- */
-void pop_stack(long int size,char *);
-/**
- * @brief 文字列イテラルをセットする
+ * @brief set string literal to data section.
  * 
  */
 void set_stringiter();
 // generate global var declaring code
 void gen_glob_declare(Node_t*);
-//式をコンパイル
+// compile arithmetic formula
 void gen_formula(Node_t*);
 
 
-//抽象構文木からアセンブリコードを生成する
+// generate assembly code from ast.
 void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd);
 //=====================================================

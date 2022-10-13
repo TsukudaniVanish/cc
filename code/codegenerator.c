@@ -2,47 +2,73 @@
 //#include<stdio.h>
 //#include<stdlib.h>
 
-extern unsigned int String_len(char* );
+extern unsigned int String_len(char*);
 extern int String_compare(char* ,char* ,unsigned int);
+extern char* new_String(unsigned int);
+extern char* String_add(char*, char*);
 long int rsp_counter = 0;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
 int filenumber = 0; // use for operarion flow
 
 
+typedef enum {
+	RN_RAX,
+	RN_RDI,
+	RN_RSI,
+	RN_RDX,
+	RN_RCX,
+	RN_R8,
+	RN_R9,
+	RN_R11,
+	RN_RSP, // this register points the head of current stack. 
+	RN_RBP, // this register points the base of current stack.
+	RN_RIP, // this register points data section.
+}RegisterName;
 
 
-char * get_registername(char *register_name,long int size)
+/**
+ * @brief Get the register name
+ * 
+ * @param int 
+ * @return char* 
+ */
+char * get_registername(RegisterName name,long int size)
 {
-	//register names
-	char *register_rax[] = {"al","ax","eax","rax"};
-	char *register_rdi[] = {"dil","di","edi","rdi"};
-	char *register_rsi[] = {"sil","si","esi","rsi"};
-	char *register_rdx[] = {"dl","dx","edx","rdx"};
-	char *register_rcx[] = {"cl","cx","ecx","rcx"};
-	char *register_r8[] = {"r8b","r8w","r8d","r8"};
-	char *register_r9[] = {"r9b","r9w","r9d","r9"};
-	char* register_r11[] = {"r11b","r11w","r11d","r11"};
-	char **arg_register[] = {register_rax,register_rdi , register_rsi , register_rdx , register_rcx , register_r8 , register_r9,register_r11,NULL};
-	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9","r11",NULL};
-
-	//name search
-	for(char ** name = registers; *name ; name++)
+	switch (name)
 	{
-		if(String_len(*name) <= String_len(register_name) && String_compare(register_name,*name,String_len(*name)))
-		{
-			int i = name - registers;
-			if( size < 5 && size > 1)
-			{
-				return arg_register[i][2];
-			}
-			else if(0 < size && size < 2)
-			{
-				return arg_register[i][0];
-			}
-			else
-			{
-				return arg_register[i][3];
-			}
-		}
+	case RN_RAX:
+	case RN_RDI:
+	case RN_RSI:
+	case RN_RDX:
+	case RN_RCX:
+	case RN_R8:
+	case RN_R9:
+	case RN_R11:
+		break;
+	default:
+		return NULL;
+	}
+	//register names
+	char *register_rax[4] = {"al","ax","eax","rax"};
+	char *register_rdi[4] = {"dil","di","edi","rdi"};
+	char *register_rsi[4] = {"sil","si","esi","rsi"};
+	char *register_rdx[4] = {"dl","dx","edx","rdx"};
+	char *register_rcx[4] = {"cl","cx","ecx","rcx"};
+	char *register_r8[4] = {"r8b","r8w","r8d","r8"};
+	char *register_r9[4] = {"r9b","r9w","r9d","r9"};
+	char* register_r11[4] = {"r11b","r11w","r11d","r11"};
+	char **arg_register[9] = {register_rax,register_rdi , register_rsi , register_rdx , register_rcx , register_r8 , register_r9,register_r11,NULL};
+
+	if( size < 5 && size > 1)
+	{
+		return arg_register[name][2];
+	}
+	else if(0 < size && size < 2)
+	{
+		return arg_register[name][0];
+	}
+	else
+	{
+		return arg_register[name][3];
 	}
 	return NULL;
 }
@@ -66,23 +92,72 @@ char *get_pointerpref(long int size)
 	}
 }
 
+char* get_pointer(char* pref, RegisterName name) {
+	char* ptr;
+	switch (name)
+	{
+	case RN_RAX:
+		ptr = "[rax]";
+		break;
+	case RN_RDI:
+		ptr = "[rdi]";
+		break;
+	case RN_RSI:
+		ptr = "[rsi]";
+		break;
+	case RN_RDX:
+		ptr = "[rdx]";
+		break;
+	case RN_RCX:
+		ptr = "[rcx]";
+		break;
+	case RN_R8:
+		ptr = "[r8]";
+		break;
+	case RN_R9:
+		ptr = "[r9]";
+		break;
+	case RN_R11:
+		ptr = "[r11]";
+		break;
+	case RN_RSP:
+		ptr = "[rsp]";
+		break;
+	case RN_RBP:
+		ptr = "[rbp]";
+		break;
+	case RN_RIP:
+		ptr = "[rip]";
+		break;
+	default:
+		return NULL;
+	}
+	return String_add(pref, ptr);
+} 
 
 
 
-void push_stack(int long size, char * register_name){
+/**
+ * @brief rsp の値を引いてrsp の示すアドレスにストア
+ * 
+ * @param long_int size
+ * @param char* register name
+ * @return void
+ */
+void push_stack(int long size, RegisterName register_name){
 
 	char *name = get_registername(register_name,size);
 
 	if(size < 5 && size > 1)
 	{
 		printf("	sub rsp, %ld\n",size);
-		printf("	mov DWORD PTR [rsp], %s\n",name);
+		printf("	mov %s, %s\n", get_pointer(get_pointerpref(size), RN_RSP),name);
 		rsp_counter += 4;
 	}
 	else if(0 < size && size < 2)
 	{
 		printf("	sub rsp, %ld\n",size);
-		printf("	mov BYTE PTR [rsp], %s\n",name);
+		printf("	mov %s, %s\n", get_pointer(get_pointerpref(size), RN_RSP),name);
 		rsp_counter += 1;
 	}
 	else
@@ -92,7 +167,14 @@ void push_stack(int long size, char * register_name){
 	}
 }
 
-void pop_stack(int long size,char *register_name){
+/**
+ * @brief rsp の値を足してrspの示すアドレスからロード
+ * 
+ * @param long_int size
+ * @param char* register name
+ * @return void 
+ */
+void pop_stack(int long size,RegisterName register_name){
 
 	char *name = get_registername(register_name,size);
 
@@ -116,11 +198,11 @@ void pop_stack(int long size,char *register_name){
 }
 
 //set value of register to stack
-void set_register_to_stack(long int offset,long int size,char* reg)
+void set_register_to_stack(long int offset,long int size,RegisterName reg)
 {
 	printf("	mov r11,rbp\n");
 	printf("	sub r11, %ld\n",offset);
-	printf("	mov %s[r11], %s\n",get_pointerpref(size),get_registername(reg,size));
+	printf("	mov %s [r11], %s\n",get_pointerpref(size),get_registername(reg,size));
 
 }
 
@@ -153,7 +235,7 @@ long gen_lval(Node_t *node){
 		if(node -> tp -> Type_label == TP_ARRAY)
 		{
 			printf("	lea rax, %s %s[rip]\n", pref, node -> name);
-			push_stack(8,"rax");
+			push_stack(8,RN_RAX);
 			return node -> tp -> size;
 		}
 		printf("	lea rax, %s %s[rip]\n", pref, node -> name);
@@ -169,11 +251,11 @@ long gen_lval(Node_t *node){
 	if(node -> kind == ND_DOT)
 	{
 		gen_lval(node -> left);
-		pop_stack(8, "rax");// get top address of struct
+		pop_stack(8, RN_RAX);// get top address of struct
 
 		printf("	add rax, %d\n", node -> right -> offset);
 
-		push_stack(8, "rax");
+		push_stack(8, RN_RAX);
 		return node -> tp -> size;
 	
 	}
@@ -196,7 +278,7 @@ void gen_arg_entry(Node_t* node){
 	int len = Vector_get_length(arg_types);
 
 	Type* arg_type;
-	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9",NULL};
+	RegisterName registers [7] = {RN_RAX,RN_RDI,RN_RSI,RN_RDX,RN_RCX,RN_R8,RN_R9};
 	for (int i = len; i >0 ; i--)
 	{
 		arg_type = Vector_pop(arg_types);
@@ -226,16 +308,16 @@ void gen_function_call(Node_t *node){
 	}
 
 
-	push_stack(node -> tp -> size,"rax");
+	push_stack(node -> tp -> size,RN_RAX);
 	
 	return;
 }
 
 void argment_set(int arg_index , long int offset , long int size){
 
-	char *registers [] = {"rax","rdi","rsi","rdx","rcx","r8","r9",NULL};
+	RegisterName registers [7] = {RN_RAX,RN_RDI,RN_RSI,RN_RDX,RN_RCX,RN_R8,RN_R9};
 	//use register set 
-	char *use = registers[arg_index];
+	RegisterName use = registers[arg_index];
 	set_register_to_stack(offset,size,use);
 	return;
 }
@@ -290,7 +372,7 @@ void gen_function_def(Node_t *node){
 	generate(node -> right, 0, 0);//定義本文をコンパイル
 
 	//epilogue return に書く
-	pop_stack(node -> tp -> size,"rax");
+	pop_stack(node -> tp -> size,RN_RAX);
 	printf("	mov rsp, rbp\n");
 	printf("	pop rbp\n");
 	rsp_counter -= 8;
@@ -303,7 +385,7 @@ void gen_function_def(Node_t *node){
 	return;
 }
 
-int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, char* name_register1, char* name_register2, char** pref) {
+int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, RegisterName name_register1, RegisterName name_register2, char** pref) {
 	*size = node -> tp -> size;
 	*register1 = get_registername(name_register1, *size);
 	*register2 = get_registername(name_register2, *size);
@@ -338,15 +420,15 @@ void gen_inc_dec(Node_t *node) {
 	if(node -> left == NULL && node -> right != NULL)
 	{// postfix
 		
-		int operand = get_inc_dec_registers(node -> right, &size, &rax, &rdi, "rax", "rdi", &pref);
+		int operand = get_inc_dec_registers(node -> right, &size, &rax, &rdi, RN_RAX, RN_RDI, &pref);
 		
 		gen_lval(node -> right);// result of node -> right is stored in rax
 		
-		pop_stack(8,"rax");
+		pop_stack(8,RN_RAX);
 		printf("	mov rcx, rax\n");
 		printf("	mov %s, %s[rax]\n", rax,pref);
 
-		push_stack(size, "rax");
+		push_stack(size, RN_RAX);
 		
 		printf("	mov %s, %s[rcx]\n", rdi, pref);
 		printf("	%s %s, %d\n",instruction, rdi, operand);
@@ -356,16 +438,16 @@ void gen_inc_dec(Node_t *node) {
 	}
 	if(node -> right == NULL && node -> left != NULL)
 	{// prefix
-		int operand = get_inc_dec_registers(node -> left, &size, &rax, &rdi, "rax", "rdi", &pref);	
+		int operand = get_inc_dec_registers(node -> left, &size, &rax, &rdi, RN_RAX, RN_RDI, &pref);	
 		gen_lval(node -> left);
 		
-		pop_stack(8, "rax");
+		pop_stack(8, RN_RAX);
 		printf("	mov rcx, rax\n");
 		printf("	mov %s, %s[rax]\n", rax, pref);
 
 		printf("	%s %s, %d\n", instruction, rax, operand);
 		
-		push_stack(size, "rax");
+		push_stack(size, RN_RAX);
 
 		printf("	mov %s[rcx], %s\n", pref, rax);
 		return;
@@ -388,20 +470,20 @@ void gen_compare(Node_t* node) {
 	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
 	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
 	long size = size_r > size_l? size_r: size_l;
-	char* rax = get_registername("rax", size);
-	char* rdi = get_registername("rdi", size);
+	char* rax = get_registername(RN_RAX, size);
+	char* rdi = get_registername(RN_RDI, size);
 	char* set = get_cmpInstruction(node -> kind);
 
-	pop_stack(size_r, "rdi");
-	pop_stack(size_l, "rax");
+	pop_stack(size_r, RN_RDI);
+	pop_stack(size_l, RN_RAX);
 
 	printf("	cmp %s, %s\n",rax,rdi);
 	printf("	%s al\n", set);
 	if(size_l > 1)
-		printf("	movzb %s, al\n",get_registername("rax", size_l));
+		printf("	movzb %s, al\n",get_registername(RN_RAX, size_l));
 	else
 		printf("	movzb rax, al\n");
-	push_stack(size_l, "rax");
+	push_stack(size_l, RN_RAX);
 	return;
 }
 
@@ -428,35 +510,35 @@ void gen_arithmetic_instruction(Node_t *node) {
 	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
 	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
 	long size = size_r > size_l? size_r: size_l;
-	char* rax = get_registername("rax",size);
-	char* rdi = get_registername("rdi",size);
+	char* rax = get_registername(RN_RAX,size);
+	char* rdi = get_registername(RN_RDI,size);
 	char* arithmetic_instruction = get_arithmetic_instruction(node -> kind);
 
-	pop_stack(size_r, "rdi");
-	pop_stack(size_l, "rax");
+	pop_stack(size_r, RN_RDI);
+	pop_stack(size_l, RN_RAX);
 
 	if(node -> kind == ND_DIV)
 	{
 		char* singExtension = get_sign_extension(size);
 		printf("	%s\n", singExtension);
 		printf("	%s %s\n", arithmetic_instruction, rdi);
-		push_stack(size, "rax");
+		push_stack(size, RN_RAX);
 		return;
 	}
 
 	printf("	%s %s, %s\n",arithmetic_instruction, rax, rdi);
-	push_stack(size_l, "rax");
+	push_stack(size_l, RN_RAX);
 }
 
 void gen_number(int val) {
 	printf("	mov eax, %d\n", val);
-	push_stack(4, "rax");
+	push_stack(4, RN_RAX);
 	return;
 }
 
 void gen_string_literal(long offset) {
 	printf("	lea rax, .LC%ld [rip]\n", offset);
-	push_stack(8, "rax");
+	push_stack(8, RN_RAX);
 	return;
 }
 
@@ -465,15 +547,15 @@ void gen_assign(Node_t* node) {
 	size[0] = gen_lval(node -> left);// generate left node as left value
 
 	size[1] = node -> right -> tp -> size;
-	char *rdi = get_registername("rdi",size[0]);
+	char *rdi = get_registername(RN_RDI,size[0]);
 	char* pref = get_pointerpref(size[0]);
 	generate(node -> right, 0, 0);
 
-	pop_stack(size[1],"rdi");// right
-	pop_stack(8, "rax");// left
+	pop_stack(size[1],RN_RDI);// right
+	pop_stack(8, RN_RAX);// left
 
 	printf("	mov %s [rax], %s\n", pref,rdi);//代入
-	push_stack(size[1], "rdi");
+	push_stack(size[1], RN_RDI);
 	return;
 }
 
@@ -481,13 +563,13 @@ void gen_deref(Node_t *node) {
 		
 	generate(node -> left, 0, 0);
 	
-	char* rax = get_registername("rax",node -> tp -> size);
-	char* rcx = get_registername("rcx", node -> tp -> size); 
+	char* rax = get_registername(RN_RAX,node -> tp -> size);
+	char* rcx = get_registername(RN_RCX, node -> tp -> size); 
 	char * pointer_pref = get_pointerpref(node -> tp -> size);
 	
-	pop_stack(8,"rax");
+	pop_stack(8,RN_RAX);
 	printf("	mov %s, %s [rax]\n",rcx,pointer_pref);	
-	push_stack(node -> tp -> size,"rcx");
+	push_stack(node -> tp -> size,RN_RCX);
 	return;
 }
 
@@ -498,36 +580,36 @@ void gen_right_lval(Node_t* node) {
 	}
 	
 	gen_lval(node);
-	char * register_name = get_registername("rax",node -> tp -> size);
+	char * register_name = get_registername(RN_RAX,node -> tp -> size);
 	char * pointer_pref = get_pointerpref(node -> tp -> size);
 	
 	
 	if(node -> tp -> Type_label == TP_ARRAY) return;
-	pop_stack(8, "rax");
+	pop_stack(8, RN_RAX);
 
 	printf("	mov %s, %s [rax]\n",register_name,pointer_pref);
-	push_stack(node -> tp -> size,"rax");
+	push_stack(node -> tp -> size,RN_RAX);
 	return;
 }
 
 void gen_globvar(Node_t* node){
 	long size = node -> tp -> size;
-	char* rax = get_registername("rax", size);
+	char* rax = get_registername(RN_RAX, size);
 	char* pref = get_pointerpref(size);
 
 	gen_lval(node);
 	if(node -> tp -> Type_label == TP_ARRAY) return;
 
-	pop_stack(8, "rax");
+	pop_stack(8, RN_RAX);
 	printf("	mov %s, %s [rax]\n", rax, pref);
-	push_stack(size, "rax");
+	push_stack(size, RN_RAX);
 	return;
 }
 
 void gen_return(Node_t* node) {
 	generate(node, 0, 0);
 	if(node != NULL)// is "return;"?
-		pop_stack(node -> tp -> size, "rax");
+		pop_stack(node -> tp -> size, RN_RAX);
 	
 	printf("	mov rsp, rbp\n");
 	printf("	pop rbp\n");
@@ -621,8 +703,8 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 
 		size = node -> left -> tp -> size;	
 		generate(node -> left, labelLoopBegin, labelLoopEnd); // condition 
-		pop_stack(size, "rax");
-		printf("	cmp %s, 0\n", get_registername("rax", size));
+		pop_stack(size, RN_RAX);
+		printf("	cmp %s, 0\n", get_registername(RN_RAX, size));
 		printf("	je  .Lend%d\n",endNumberIf);
 		generate(node -> right, labelLoopBegin, labelLoopEnd); // if body 
 	
@@ -644,9 +726,9 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 	case ND_IFE:
 		size = node -> left -> tp -> size;
 		generate(node -> left, labelLoopBegin, labelLoopEnd);
-		pop_stack(size,"rax");
+		pop_stack(size,RN_RAX);
 		
-		printf("	cmp %s, 0\n", get_registername("rax", size));
+		printf("	cmp %s, 0\n", get_registername(RN_RAX, size));
 		printf("	je  .Lelse%d\n",filenumber);
 		elseNumber = filenumber;
 		filenumber++;
@@ -670,9 +752,9 @@ void gen_while(Node_t* node) {
 	generate(node -> left, beginNumberWhile, endNumberWhile);
 	
 	int size_l = node -> left -> tp -> size;
-	pop_stack(size_l, "rax");
+	pop_stack(size_l, RN_RAX);
 	
-	printf("	cmp %s, 0\n", get_registername("rax", size_l));
+	printf("	cmp %s, 0\n", get_registername(RN_RAX, size_l));
 	printf("	je	.Lend%d\n",endNumberWhile);
 	
 
@@ -692,9 +774,9 @@ void gen_do_while(Node_t* node) {
 	
 	generate(node -> left, beginNumber, endNumber);
 	int size_l = node -> left -> tp -> size;
-	pop_stack(size_l, "rax");
+	pop_stack(size_l, RN_RAX);
 	
-	printf("	cmp %s, 0\n", get_registername("rax", size_l));
+	printf("	cmp %s, 0\n", get_registername(RN_RAX, size_l));
 	printf("	je	.Lend%d\n", endNumber);
 	printf("	jmp .Lbegin%d\n", beginNumber);
 	printf(".Lend%d:\n", endNumber);
@@ -733,9 +815,9 @@ void gen_for(Node_t* node) {
 		{
 			size = 0;
 		}
-		pop_stack(size, "rax");
+		pop_stack(size, RN_RAX);
 		
-		printf("	cmp %s, 0\n", get_registername("rax", size));
+		printf("	cmp %s, 0\n", get_registername(RN_RAX, size));
 		printf("	je .Lend%d\n", endNumberFor);
 
 		generate(node -> right, beginNumberFor, endNumberFor);
@@ -756,9 +838,9 @@ void gen_switch(Node_t* node) {
 	int endLable = filenumber++;
 	unsigned int size = node -> left -> tp -> size;
 	char* prefix = get_pointerpref(size);
-	char* rcx = get_registername("rcx", size);
-	char* rdi = get_registername("rdi", size);
-	char* rax = get_registername("rax", size);
+	char* rcx = get_registername(RN_RCX, size);
+	char* rdi = get_registername(RN_RDI, size);
+	char* rax = get_registername(RN_RAX, size);
 	// get value 
 	generate(node -> left, 0, endLable);
 
@@ -774,16 +856,16 @@ void gen_switch(Node_t* node) {
 		} else {
 			// get case label 
 			generate(caseBranch ->left, 0, endLable);
-			pop_stack(caseBranch -> left -> tp -> size, "rdi");
+			pop_stack(caseBranch -> left -> tp -> size, RN_RDI);
 
 			//get value
-			pop_stack(size, "rcx");
+			pop_stack(size, RN_RCX);
 			printf("	mov %s, %s\n", rax, rcx);
 
 			//compare to case value 
 			printf("	cmp %s, %s\n", rax, rdi);
 			printf("	je .Lcase%d\n", i + endLable);
-			push_stack(size, "rcx");
+			push_stack(size, RN_RCX);
 
 			caseBranch = caseBranch -> right;
 			continue;
@@ -826,11 +908,11 @@ void gen_switch(Node_t* node) {
 void gen_log_and_or(Node_t* node) {
 	long size_l = node -> left -> tp -> size;
 	long size_r = node -> right -> tp -> size;
-	char* rax_l = get_registername("rax", size_l);
-	char* rax_r = get_registername("rax", size_r);
+	char* rax_l = get_registername(RN_RAX, size_l);
+	char* rax_r = get_registername(RN_RAX, size_r);
 
 	generate(node -> left, 0, 0);
-	pop_stack(size_l, "rax");
+	pop_stack(size_l, RN_RAX);
 
 	printf("	cmp %s, 0\n", rax_l);
 	if(node -> kind == ND_LOGAND)
@@ -838,13 +920,13 @@ void gen_log_and_or(Node_t* node) {
 	else
 		printf("	jne .Lend%d\n", filenumber);
 	generate(node -> right, 0, 0);
-	pop_stack(size_r, "rax");
+	pop_stack(size_r, RN_RAX);
 
 	printf("	cmp %s, 0\n", rax_r);
 	printf(".Lend%d:", filenumber++);
 	printf("	setne al\n");
-	printf("	movzb %s, al\n", get_registername("rax", 4));
-	push_stack(4, "rax");
+	printf("	movzb %s, al\n", get_registername(RN_RAX, 4));
+	push_stack(4, RN_RAX);
 	return;
 
 }
@@ -866,7 +948,7 @@ void gen_list_init(Node_t* node) {
 	unsigned offsetTop = node -> left -> offset;
 	printf("	mov rax, rbp\n");
 	printf("	sub rax, %d\n", offsetTop);
-	push_stack(8, "rax");
+	push_stack(8, RN_RAX);
 
 	Node_t* initBranch = node -> right;
 	if(node -> left -> tp -> Type_label == TP_ARRAY)
@@ -876,12 +958,12 @@ void gen_list_init(Node_t* node) {
 		while(initBranch -> kind == ND_BLOCK)
 		{
 			generate(initBranch -> left, 0, 0);
-			pop_stack(initBranch -> left -> tp -> size, "rdi");
+			pop_stack(initBranch -> left -> tp -> size, RN_RDI);
 
-			pop_stack(8, "rax");
-			printf("	mov %s[rax], %s\n", prefix, get_registername("rdi", initBranch -> left -> tp -> size));
+			pop_stack(8, RN_RAX);
+			printf("	mov %s[rax], %s\n", prefix, get_registername(RN_RDI, initBranch -> left -> tp -> size));
 			printf("	add rax, %d\n", size);
-			push_stack(8, "rax");
+			push_stack(8, RN_RAX);
 			
 			initBranch = initBranch -> right;
 		}
@@ -904,10 +986,10 @@ void gen_list_init(Node_t* node) {
 	while(initBranch -> kind == ND_BLOCK)
 	{
 			generate(initBranch -> left, 0, 0);
-			pop_stack(initBranch -> left -> tp -> size, "rdi");
+			pop_stack(initBranch -> left -> tp -> size, RN_RDI);
 
-			pop_stack(8, "rax");
-			printf("	mov %s [rax], %s\n", prefix, get_registername("rdi", initBranch -> left -> tp -> size));
+			pop_stack(8, RN_RAX);
+			printf("	mov %s [rax], %s\n", prefix, get_registername(RN_RDI, initBranch -> left -> tp -> size));
 		
 			i++;
 			char* memberName = Vector_at(memberNames, i);
@@ -920,7 +1002,7 @@ void gen_list_init(Node_t* node) {
 			printf("	mov rax, rbp\n");
 			printf("	sub rax, %d\n", offsetTop);
 			printf("	add rax, %d\n", member -> offset);
-			push_stack(8, "rax");
+			push_stack(8, RN_RAX);
 
 			initBranch = initBranch -> right;
 	}
@@ -928,19 +1010,19 @@ void gen_list_init(Node_t* node) {
 
 void gen_dot(Node_t* node) {
 	gen_lval(node);
-	pop_stack(8, "rax");
-	printf("	mov %s, %s [rax]\n", get_registername("rax", node -> tp -> size),get_pointerpref(node -> tp -> size));
-	push_stack(node -> tp -> size, "rax");
+	pop_stack(8, RN_RAX);
+	printf("	mov %s, %s [rax]\n", get_registername(RN_RAX, node -> tp -> size),get_pointerpref(node -> tp -> size));
+	push_stack(node -> tp -> size, RN_RAX);
 	return;
 }
 
 void gen_log_not(Node_t* node) {
 	generate(node -> left, 0, 0);
-	pop_stack(node -> left -> tp -> size, "rax");
-	printf("	cmp %s, 0\n", get_registername("rax", node -> left -> tp -> size));
+	pop_stack(node -> left -> tp -> size, RN_RAX);
+	printf("	cmp %s, 0\n", get_registername(RN_RAX, node -> left -> tp -> size));
 	printf("	sete al\n");
 	printf("	movzb eax, al\n");
-	push_stack(4, "rax");
+	push_stack(4, RN_RAX);
 }
 
 void gen_continue(int beginLabel) {
@@ -961,8 +1043,8 @@ void gen_conditional_operator(Node_t* node) {
 	int second_expr = filenumber++;
 
 	generate(node -> left, 0, 0);
-	pop_stack(condition_size, "rax");
-	printf("	cmp %s, 0\n", get_registername("rax", condition_size));
+	pop_stack(condition_size, RN_RAX);
+	printf("	cmp %s, 0\n", get_registername(RN_RAX, condition_size));
 	printf("	je .Lbegin%d\n", second_expr);
 	printf("	jmp .Lbegin%d\n", first_expr);
 
