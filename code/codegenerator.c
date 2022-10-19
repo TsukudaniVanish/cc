@@ -148,6 +148,89 @@ char* get_label_string_literal(long offset) {
 	return String_add(".LC", l2a(offset)); // LC%ld, offset
 }
 
+char* get_label_file_scope(char* name) {
+	return String_add(".L", name);
+}
+
+void label(char* label) {
+	char* s = String_add(label, ":\n");
+	printf("%s", s);
+}
+
+void section_text() {
+	char* l = "	.text\n";
+	printf("%s", l);
+}
+
+void section_read_only() {
+	char* l = ".section    .rodata\n";
+	printf("%s", l);
+} 
+
+void section_global(char* name) {
+	char* l = String_add(".global ", name);
+	l = String_add(l, "\n");
+	printf("%s", l);
+}
+
+void section_local(char* name) {
+	char* l = String_add(".local ", name);
+	l = String_add(l, "\n");
+	printf("%s", l);
+}
+
+void section_type(char* name, char* at) {
+	char* l = String_add("	.type ", name);
+	l = String_add(l, ", ");
+	l = String_add(l, at);
+	l = String_add(l, "\n");
+	printf("%s", l);
+}
+
+void section_size(char* name, char* size) {
+	char* l = String_add("	.size ", name);
+	l = String_add(l, ", ");
+	l = String_add(l, size);
+	l = String_add(l , "\n");
+	printf("%s", l);
+}
+
+void section_zero(long size) {
+	char* l = String_add("	.zero ", l2a(size));
+	l = String_add(l, "\n");
+	printf("%s", l);
+}
+
+void section_long(long size) {
+	char* l = String_add("	.long ", l2a(size));
+	l = String_add(l, "\n");
+	printf("%s", l);
+}
+
+void section_quad(char* arg) {
+	char* l = String_add("	.quad ", arg);
+	l = String_add(l, "\n");
+	printf("%s", l);
+}
+
+void section_string(char* name) {
+	char* string = String_add("    .string \"", name);
+	string = String_add(string, "\"\n");
+	printf("%s",string);
+}
+
+/**
+ * @brief set string literal at label .LC(offset)
+ * 
+ * @param offset 
+ * @param name 
+ */
+void string_literal(long offset, char* name) {
+	label(get_label_string_literal(offset));
+
+	section_string(name);
+}
+
 /**
  * @brief Get the data address with rip
  * 
@@ -162,13 +245,13 @@ char* get_data_address_with_rip(char* pref, char* name) {
 void sign_extension(long size) {
 	char* ins;
 	if(0 < size && size < 5) {
-		ins = "    cdq";
-		printf("%s\n", ins);
+		ins = "    cdq\n";
+		printf("%s", ins);
 		return;
 	}
 	if(5 <size && size < 9) {
-		ins = "    cqo";
-		printf("%s\n", ins);
+		ins = "    cqo\n";
+		printf("%s", ins);
 		return;
 	}
 }
@@ -253,6 +336,77 @@ void division(char* arg) {
 	printf("%s", ins);
 }
 
+void compare_value(char* dst, char* src) {
+	char* ins = String_add("	cmp ", dst);
+	ins = String_add(ins, ", ");
+	ins = String_add(ins, src);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+/**
+ * @brief Set 1 to arg( byte size register) if equal
+ *  @param arg
+ */
+void set_equal(char* arg) {
+	char* ins = String_add("	sete ", arg);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+/**
+ * @brief Set 1 to arg( byte size register) if not equal
+ *  @param arg
+ */
+void set_not_equal(char* arg) {
+	char* ins = String_add("	setne ", arg);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+/**
+ * @brief Set 1 to arg( byte size register) if > holds.
+ *  @param arg
+ */
+void set_l(char* arg) {
+	char* ins = String_add("	setl ", arg);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+/**
+ * @brief Set 1 to arg( byte size register) if >= holds.
+ *  @param arg
+ */
+void set_le(char* arg) {
+	char* ins = String_add("	setle ", arg);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+/**
+ * @brief jump to the label
+ * 
+ * @param label 
+ */
+void jump(char* label) {
+	char* ins = String_add("	jmp ", label);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+void jump_equal(char* label) {
+	char* ins = String_add("	je ", label);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+void jump_not_equal(char* label) {
+	char* ins = String_add("	jne ", label);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
 
 /**
  * @brief substitute from rsp and write value to the place pointed by rsp.
@@ -268,19 +422,19 @@ void push_stack(int long size, RegisterName register_name){
 	{
 		substitution(get_registername(RN_RSP, 8), l2a(4));
 		move_data(get_pointer(get_pointerpref(4), RN_RSP),name);
-		rsp_counter += 4;
+		rsp_counter = rsp_counter + 4;
 	}
 	else if(0 < size && size < 2)
 	{
 		substitution(get_registername(RN_RSP, 8), l2a(size));
 		move_data(get_pointer(get_pointerpref(size), RN_RSP),name);
-		rsp_counter += 1;
+		rsp_counter = rsp_counter + 1;
 	}
 	else
 	{
 		substitution(get_registername(RN_RSP, 8), l2a(8));
 		move_data(get_pointer(get_pointerpref(8), RN_RSP),name);
-		rsp_counter += 8;
+		rsp_counter = rsp_counter + 8;
 	}
 }
 
@@ -299,20 +453,31 @@ void pop_stack(int long size,RegisterName register_name){
 	{
 		move_data(name, get_pointer(get_pointerpref(4), RN_RSP));
 		addition(get_registername(RN_RSP, 8), l2a(4));
-		rsp_counter -= 4;
+		rsp_counter = rsp_counter - 4;
 	}
 	else if(0 < size && size < 2)
 	{
 		move_data(name, get_pointer(get_pointerpref(1), RN_RSP));
 		addition(get_registername(RN_RSP, 8), l2a(1));
-		rsp_counter -= 1;
+		rsp_counter = rsp_counter - 1;
 	}
 	else
 	{
 		move_data(name, get_pointer(get_pointerpref(8), RN_RSP));
 		addition(get_registername(RN_RSP, 8), l2a(8));
-		rsp_counter -= 8;
+		rsp_counter = rsp_counter + 8;
 	}
+}
+
+void call(char* name) {
+	char* ins = String_add("	call ", name);
+	ins = String_add(ins, "\n");
+	printf("%s", ins);
+}
+
+void ret() {
+	char* ins = "	ret\n";
+	printf("%s", ins);
 }
 
 /**
@@ -322,7 +487,6 @@ void pop_stack(int long size,RegisterName register_name){
  * @param size 
  * @param reg 
  */
-
 void set_register_to_stack(long int offset,long int size,RegisterName reg)
 {
 	move_data(get_registername(RN_R11, 8), get_registername(RN_RBP, 8));
@@ -338,12 +502,12 @@ void set_register_to_stack(long int offset,long int size,RegisterName reg)
  */
 void set_stringiter()
 {
-	printf("	.section	.rodata\n");
+	section_read_only();
+
 	Lvar *iter = string_iter;
 	while (iter)
 	{
-		printf(".LC%d:\n",iter -> offset);
-		printf("	.string \"%s\"\n",iter -> name);
+		string_literal(iter -> offset, iter -> name);
 		iter = iter -> next;
 	}
 	
@@ -361,7 +525,6 @@ long gen_lval(Node_t *node){
 		}
 		calculate_address(get_registername(RN_RAX, 8), get_data_address_with_rip(pref, node -> name));
 		push_stack(8, RN_RAX);
-		rsp_counter = rsp_counter + 8;
 		return node -> tp -> size;
 	}
 	if(node -> kind == ND_DEREF)
@@ -375,7 +538,6 @@ long gen_lval(Node_t *node){
 		pop_stack(8, RN_RAX);// get top address of struct
 
 		addition(get_registername(RN_RAX, 8), ui2a(node -> right -> offset));
-
 		push_stack(8, RN_RAX);
 		return node -> tp -> size;
 	
@@ -384,7 +546,6 @@ long gen_lval(Node_t *node){
 	substitution(get_registername(RN_RAX, 8), ui2a(node -> offset));
 
 	push_stack(8, RN_RAX);
-	rsp_counter += 8;
 	return node -> tp -> size;
 	
 }
@@ -421,7 +582,7 @@ void gen_function_call(Node_t *node){
 		substitution(get_registername(RN_RSP, 8), i2a(16 - rsp_counter % 16));
 	}
 
-	printf("	call %s\n",node -> name);
+	call(node -> name);
 	
 	if(rsp_counter%16 !=0)
 	{
@@ -443,16 +604,44 @@ void argment_set(int arg_index , long int offset , long int size){
 	return;
 }
 
+char* function_header(char* name, StorageClass class) {
+	
+	if(class == SC_STATIC) {
+		section_local(name);
+	} else {
+		// .globl %s\n, name
+		section_global(name);
+	}
+	
+	
+	// .type %s, @function\n, name
+	section_type(name, "@function");
+
+	// .text\n
+	section_text();
+
+	// %s:\n, name
+	label(name);
+}
+
+char* function_footer(char* name) {
+	char* end_label = get_label_file_scope(String_add("End_", name));
+	
+	// .LEnd_%s:\n, name
+	label(end_label);
+
+	//     .size %s, .LEnd_$s - %s\n, name, name, name
+	char* size_info = String_add(end_label, " - ");
+	size_info = String_add(size_info, name);
+	section_size(name, size_info);
+}
+
 void gen_function_def(Node_t *node){
 
 	Lvar* nametable = *rootBlock;
 
 	// function header
-	printf(".globl %s\n", node -> name);
-	printf("	.type %s, @function\n", node -> name);
-	printf("	.text\n");
-
-	printf("%s:\n",node -> name);
+	function_header(node -> name, node -> storage_class);
 	int return_rsp_number = rsp_counter;
 
 	//prologue=======================================
@@ -493,11 +682,10 @@ void gen_function_def(Node_t *node){
 	pop_stack(node -> tp -> size,RN_RAX);
 	move_data(get_registername(RN_RSP, 8), get_registername(RN_RBP, 8));
 	pop_stack(8, RN_RBP);
-	printf("	ret\n");
+	ret();
 
 	// function footer
-	printf(".LEnd_%s:\n", node -> name);
-	printf("	.size %s, .LEnd_%s - %s\n", node -> name, node -> name, node -> name);
+	function_footer(node -> name);
 
 	return;
 }
@@ -588,15 +776,22 @@ void gen_inc_dec(Node_t *node) {
 	}
 }
 
-
-char* get_cmpInstruction(Node_kind kind) {
+void set_instruction(char* arg, Node_kind kind) {
 	switch(kind) {
-	case ND_EQL : return "sete";
-	case ND_NEQ : return "setne";
-	case ND_LES : return "setl";
-	case ND_LEQ : return "setle";
+	case ND_EQL :
+		set_equal(arg); 
+		return;
+	case ND_NEQ : 
+		set_not_equal(arg);
+		return;
+	case ND_LES :
+		set_l(arg);
+		return;
+	case ND_LEQ :
+		set_le(arg);
+		return;
 	default:
-		return NULL;
+		return;
 	}
 }
 
@@ -606,17 +801,18 @@ void gen_compare(Node_t* node) {
 	long size = size_r > size_l? size_r: size_l;
 	char* rax = get_registername(RN_RAX, size);
 	char* rdi = get_registername(RN_RDI, size);
-	char* set = get_cmpInstruction(node -> kind);
 
 	pop_stack(size_r, RN_RDI);
 	pop_stack(size_l, RN_RAX);
 
-	printf("	cmp %s, %s\n",rax,rdi);
-	printf("	%s al\n", set);
-	if(size_l > 1)
+	compare_value(rax, rdi);
+	set_instruction(get_registername(RN_RAX, 1), node -> kind);
+	if(size_l > 1) {
 		move_data_zero_extension(get_registername(RN_RAX, size_l), get_registername(RN_RAX, 1));
-	else
+	}
+	else {
 		move_data_zero_extension(get_registername(RN_RAX, 8), get_registername(RN_RAX, 1));
+	}
 	push_stack(size_l, RN_RAX);
 	return;
 }
@@ -739,7 +935,7 @@ void gen_return(Node_t* node) {
 	
 	move_data(get_registername(RN_RSP, 8), get_registername(RN_RBP, 8));
 	pop_stack(8, RN_RBP);
-	printf("	ret\n");
+	ret();
 	return;
 }
 
@@ -748,32 +944,33 @@ void gen_initialize_glob_variable(Node_t* node) {
 	{
 		if(node -> val == 0)
 		{
-			printf("	.zero %d\n",node -> tp -> size);
-		
+			section_zero(node -> tp -> size);
 		}
 		else
 		{
-			printf("	.long %d\n",node -> val);
+			section_long(node -> val);
 		}
 	}
 	else if(node -> kind == ND_STRINGLITERAL)
 	{
-		printf("	.quad .LC%d\n", node -> offset);
+		section_quad(get_label_string_literal(node -> offset));
 	}
-	
 }
 void gen_glob_declare(Node_t* node) {
 	char* name = node -> kind != ND_INITLIST? node -> name: node -> left -> name;
 	Type* type = node -> kind != ND_INITLIST? node -> tp: node -> left -> tp;
 	int storage_class = node -> kind != ND_INITLIST? node -> storage_class: node -> left -> storage_class;
 	// register symbol
-	if(storage_class != SC_STATIC)
-		printf(".global %s\n", name);
-	else
-		printf(".local %s\n", name);
-	printf("	.type %s, @object\n", name);
-	printf("	.size %s, %d\n", name, type -> size);
-	printf("%s:\n", name);
+	if(storage_class != SC_STATIC) {
+		section_global(name);
+	} 	
+	else {
+		section_local(name);
+	}
+	section_type(name, "@object");
+	section_size(name, ui2a(type -> size));
+	label(name);
+
 	if(node -> kind == ND_INITLIST)
 	{
 		Node_t* init_branch = node -> right;
@@ -788,12 +985,11 @@ void gen_glob_declare(Node_t* node) {
 	{
 		if(node -> val == 0)
 		{
-			printf("	.zero %d\n",node -> tp -> size);
-		
+			section_zero(node -> tp -> size);
 		}
 		else
 		{
-			printf("	.long %d\n",node -> val);
+			section_long(node -> val);
 		}
 	}
 	else if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
@@ -802,7 +998,7 @@ void gen_glob_declare(Node_t* node) {
 	}
 	else
 	{
-		printf("	.zero %d\n",node -> tp -> size);
+		section_zero(node -> tp -> size);
 	}
 	return;
 }
@@ -815,54 +1011,76 @@ void gen_block(Node_t* node, int beginLabel, int endLabel) {
 	}
 	return;
 }
-
+/**
+ * @brief generate if and if else
+ * we assume a parameter node has following tree structure
+ * if: ND_IF ---(Left) condition part
+ *            |-(Right) body part
+ *
+ * if else: ND_Else ---(Left) ND_IFE ---(Left) condition part
+ *                   |                |-(Right) if body part
+ *                   |-(Right) else body part
+ * 
+ * @param node 
+ * @param labelLoopBegin 
+ * @param labelLoopEnd 
+ */
 void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 
 	long size;		
-	int endNumberIf;
-	int endNumberElse;
-	int elseNumber;
+	int end_number_if;
+	int end_number_else;
+	int else_number;
+	char* end_label;
 	switch(node -> kind) {
 	case ND_IF:
-		endNumberIf = filenumber++;
+		end_number_if = filenumber++;
+		end_label = get_label_file_scope(String_add("end", i2a(end_number_if)));
 
 		size = node -> left -> tp -> size;	
 		generate(node -> left, labelLoopBegin, labelLoopEnd); // condition 
 		pop_stack(size, RN_RAX);
-		printf("	cmp %s, 0\n", get_registername(RN_RAX, size));
-		printf("	je  .Lend%d\n",endNumberIf);
+		compare_value(get_registername(RN_RAX, size), i2a(0));
+		jump_equal(end_label);
 		generate(node -> right, labelLoopBegin, labelLoopEnd); // if body 
 	
-		printf(".Lend%d:\n",endNumberIf);
+		label(end_label);
 		
 		return;
 	case ND_ELSE:
 		if( node -> left && node -> left -> kind == ND_IFE)
 		{
-			generate(node -> left, labelLoopBegin, labelLoopEnd); // condition and true part 
-			endNumberElse = filenumber++;
+			generate(node -> left, labelLoopBegin, labelLoopEnd); // condition and if body 
+			end_number_else = filenumber++;
+			end_label = get_label_file_scope(String_add("end", i2a(end_number_else))); // .Lend%d, end_number_else
+
+			generate(node -> right, labelLoopBegin, labelLoopEnd); // else body 
 			
-			generate(node -> right, labelLoopBegin, labelLoopEnd); // false part 
-			
-			printf(".Lend%d:\n",endNumberElse);
+			label(end_label);
 			return;
 		}
 		
 	case ND_IFE:
 		size = node -> left -> tp -> size;
-		generate(node -> left, labelLoopBegin, labelLoopEnd);
+		generate(node -> left, labelLoopBegin, labelLoopEnd); // condition
 		pop_stack(size,RN_RAX);
 		
-		printf("	cmp %s, 0\n", get_registername(RN_RAX, size));
-		printf("	je  .Lelse%d\n",filenumber);
-		elseNumber = filenumber;
-		filenumber++;
-
-		generate(node -> right, labelLoopBegin, labelLoopEnd);
+		else_number = filenumber++;
+		char* else_label = get_label_file_scope(String_add("else", i2a(else_number)));
+		compare_value(get_registername(RN_RAX, size), i2a(0));
+		jump_equal(else_label);
 		
-		printf("	jmp .Lend%d\n",filenumber);
 
-		printf(".Lelse%d:\n",elseNumber);
+		generate(node -> right, labelLoopBegin, labelLoopEnd); // if body 
+		
+		// After this function called then else body part will generate.
+		// Same file number is used for end_number_else;
+		// so I don't increment filenumber at this time.
+		end_number_else = filenumber;
+		end_label = get_label_file_scope(String_add("end", i2a(end_number_else)));
+		jump(end_label);
+
+		label(else_label);
 		return;
 	}
 	return;
@@ -870,71 +1088,78 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 
 void gen_while(Node_t* node) {
 
-	int beginNumberWhile = filenumber++;
-	int endNumberWhile = filenumber++;
+	int begin_number_while = filenumber++;
+	char* begin_label = get_label_file_scope(String_add("begin", i2a(begin_number_while)));
+	int end_number_while = filenumber++;
+	char* end_label = get_label_file_scope(String_add("end", i2a(end_number_while)));
 	
-	printf(".Lbegin%d:\n",beginNumberWhile);
-	generate(node -> left, beginNumberWhile, endNumberWhile);
+	label(begin_label);
+	generate(node -> left, begin_number_while, end_number_while);
 	
 	int size_l = node -> left -> tp -> size;
 	pop_stack(size_l, RN_RAX);
 	
-	printf("	cmp %s, 0\n", get_registername(RN_RAX, size_l));
-	printf("	je	.Lend%d\n",endNumberWhile);
+	compare_value(get_registername(RN_RAX, size_l), i2a(0));
+	jump_equal(end_label);
 	
 
-	generate(node -> right, beginNumberWhile, endNumberWhile);
+	generate(node -> right, begin_number_while, end_number_while);
 	
-	printf("	jmp .Lbegin%d\n", beginNumberWhile);
-	printf(".Lend%d:\n", endNumberWhile);
+	jump(begin_label);
+	label(end_label);
 	return;
 }
 
 void gen_do_while(Node_t* node) {
-	int beginNumber = filenumber++;
-	int endNumber = filenumber++;
+	int begin_number = filenumber++;
+	char* begin_label = get_label_file_scope(String_add("begin", i2a(begin_number)));
+	int end_number = filenumber++;
+	char* end_label = get_label_file_scope(String_add("end", i2a(end_number)));
 
-	printf(".Lbegin%d:\n", beginNumber);
-	generate(node -> right, beginNumber, endNumber);
+	label(begin_label);
+	generate(node -> right, begin_number, end_number);
 	
-	generate(node -> left, beginNumber, endNumber);
+	generate(node -> left, begin_number, end_number);
 	int size_l = node -> left -> tp -> size;
 	pop_stack(size_l, RN_RAX);
 	
-	printf("	cmp %s, 0\n", get_registername(RN_RAX, size_l));
-	printf("	je	.Lend%d\n", endNumber);
-	printf("	jmp .Lbegin%d\n", beginNumber);
-	printf(".Lend%d:\n", endNumber);
+	compare_value(get_registername(RN_RAX, size_l), i2a(0));
+	jump_equal(end_label);
+
+	jump(begin_label);
+	label(end_label);
 	return;
 }
 
 void gen_for(Node_t* node) {
 
-	if(!node -> left )
+	if(node -> left == 0)
 	{//loop will go on
 		// don't accept infinite loop
 		return;
 	}
 	else
 	{
-		int beginNumberFor = filenumber++;
-		int endNumberFor = filenumber++;
+		int begin_number_for = filenumber++;
+		char* begin_label = get_label_file_scope(String_add("begin", i2a(begin_number_for)));
+		int end_number_for = filenumber++;
+		char* end_label = get_label_file_scope(String_add("end", i2a(end_number_for)));
 
 		Node_t *conditions = node -> left;
-		Node_t *initCondition = conditions -> left;
+		Node_t *init_condition = conditions -> left;
 		Node_t *update = conditions -> right;
 
-		generate(initCondition -> left, beginNumberFor, endNumberFor);
+		generate(init_condition -> left, begin_number_for, end_number_for);
 
-		printf(".Lbegin%d:\n",beginNumberFor);
+		label(begin_label);
 		
 		
-		generate(initCondition -> right, beginNumberFor, endNumberFor);
+		generate(init_condition -> right, begin_number_for, end_number_for);
 
-		int size;
-		if(initCondition -> right -> tp)
+		int size; // memory size of a iterator
+		if(init_condition -> right -> tp)
 		{
-			size = initCondition -> right -> tp -> size;
+			size = init_condition -> right -> tp -> size;
 		}
 		else
 		{
@@ -942,32 +1167,30 @@ void gen_for(Node_t* node) {
 		}
 		pop_stack(size, RN_RAX);
 		
-		printf("	cmp %s, 0\n", get_registername(RN_RAX, size));
-		printf("	je .Lend%d\n", endNumberFor);
+		compare_value(get_registername(RN_RAX, size), i2a(0));
+		jump_equal(end_label);
 
-		generate(node -> right, beginNumberFor, endNumberFor);
+		generate(node -> right, begin_number_for, end_number_for);
 
-		generate(update, beginNumberFor, endNumberFor);
+		generate(update, begin_number_for, end_number_for);
 
-		printf("	jmp .Lbegin%d\n", beginNumberFor);
-		printf(".Lend%d:\n", endNumberFor);
-
-		filenumber++;
-
+		jump(begin_label);
+		label(end_label);
 	}
 	return;
 }
 
 // store value at rcx. to compare case label with value, we copy value to rax
 void gen_switch(Node_t* node) {
-	int endLable = filenumber++;
+	int end_number = filenumber++;
 	unsigned int size = node -> left -> tp -> size;
 	char* prefix = get_pointerpref(size);
 	char* rcx = get_registername(RN_RCX, size);
 	char* rdi = get_registername(RN_RDI, size);
 	char* rax = get_registername(RN_RAX, size);
-	// get value 
-	generate(node -> left, 0, endLable);
+	// get  a value 
+	// value is in the head of the current stack
+	generate(node -> left, 0, end_number);
 
 	int depth = node -> val;
 	Node_t* branch = node -> right;
@@ -979,43 +1202,47 @@ void gen_switch(Node_t* node) {
 		{
 			break;
 		} else {
-			// get case label 
-			generate(caseBranch ->left, 0, endLable);
+			// get a case label 
+			generate(caseBranch ->left, 0, end_number);
 			pop_stack(caseBranch -> left -> tp -> size, RN_RDI);
 
-			//get value
+			//get a value
 			pop_stack(size, RN_RCX);
 			move_data( rax,  rcx);
 
 			//compare to case value 
-			printf("	cmp %s, %s\n", rax, rdi);
-			printf("	je .Lcase%d\n", i + endLable);
+			// For a next loop, 
+			// I push the rcx value at the end of evaluation.
+			compare_value(rax, rdi);
+			jump_equal(get_label_file_scope(String_add("case", i2a(i + end_number))));
 			push_stack(size, RN_RCX);
 
 			caseBranch = caseBranch -> right;
 			continue;
 		}
 	}
-	printf("	jmp .Lend%d\n", endLable);
+	// jump to default
+	jump(get_label_file_scope(String_add("end", i2a(end_number))));
+	
 	// body code generation 
 	for(int j = 0; j < depth; j++) {
 		if(bodyBranch -> kind == ND_DEFAULT) {
-			printf(".Lend%d:\n", endLable);
+			label(get_label_file_scope(String_add("end", i2a(end_number))));
 
 			Node_t* statement = bodyBranch -> left;
 			while (statement -> kind != ND_BLOCKEND)
 			{
-				generate(statement -> left, 0, endLable);
+				generate(statement -> left, 0, end_number);
 				statement = statement -> right;
 			}
 			break;
 		} else {
-			printf(".Lcase%d:\n", j + endLable);
+			label(get_label_file_scope(String_add("case", i2a(j + end_number))));
 
 			Node_t* statement = bodyBranch -> left;
 			while (statement -> kind != ND_BLOCKEND)
 			{
-				generate(statement -> left, 0, endLable);
+				generate(statement -> left, 0, end_number);
 				statement = statement -> right;
 			}
 
@@ -1025,7 +1252,7 @@ void gen_switch(Node_t* node) {
 	}
 	if(bodyBranch -> kind == ND_BLOCKEND)
 	{
-		printf(".Lend%d:\n", endLable);
+		label(get_label_file_scope(String_add("end", i2a(end_number))));
 	}
 	filenumber += depth;
 }
@@ -1035,21 +1262,27 @@ void gen_log_and_or(Node_t* node) {
 	long size_r = node -> right -> tp -> size;
 	char* rax_l = get_registername(RN_RAX, size_l);
 	char* rax_r = get_registername(RN_RAX, size_r);
+	int end_number = filenumber++;
+	char* end_label = get_label_file_scope(String_add("end", i2a(end_number)));
 
 	generate(node -> left, 0, 0);
 	pop_stack(size_l, RN_RAX);
 
-	printf("	cmp %s, 0\n", rax_l);
-	if(node -> kind == ND_LOGAND)
-		printf("	je .Lend%d\n", filenumber);
-	else
-		printf("	jne .Lend%d\n", filenumber);
+	// lazy evaluation 
+	compare_value(rax_l, i2a(0));
+	if(node -> kind == ND_LOGAND) {
+		jump_equal(end_label);
+	}
+	else {
+		jump_not_equal(end_label);
+	}
 	generate(node -> right, 0, 0);
 	pop_stack(size_r, RN_RAX);
 
-	printf("	cmp %s, 0\n", rax_r);
-	printf(".Lend%d:", filenumber++);
-	printf("	setne al\n");
+	compare_value(rax_r, i2a(0));
+	label(end_label);
+	set_not_equal(get_registername(RN_RAX, 1));
+
 	move_data_zero_extension(get_registername(RN_RAX, 4), get_registername(RN_RAX, 1));
 	push_stack(4, RN_RAX);
 	return;
@@ -1101,6 +1334,7 @@ void gen_list_init(Node_t* node) {
 	if(data == NULL)
 	{
 		error_at(user_input, "fail to find struct or union data");
+		return;
 	}
 	Vector* memberNames = data -> memberNames;
 	Map* container = data -> memberContainer;
@@ -1145,43 +1379,46 @@ void gen_dot(Node_t* node) {
 void gen_log_not(Node_t* node) {
 	generate(node -> left, 0, 0);
 	pop_stack(node -> left -> tp -> size, RN_RAX);
-	printf("	cmp %s, 0\n", get_registername(RN_RAX, node -> left -> tp -> size));
-	printf("	sete al\n");
+
+	compare_value(get_registername(RN_RAX, node -> left -> tp -> size), i2a(0));
+	set_equal(get_registername(RN_RAX, 1));
 	move_data_zero_extension(get_registername(RN_RAX, 4), get_registername(RN_RAX, 1));
 	push_stack(4, RN_RAX);
 }
 
 void gen_continue(int beginLabel) {
-	
-	printf("	jmp .Lbegin%d\n", beginLabel);
-	
+	jump(get_label_file_scope(String_add("begin", i2a(beginLabel))));
 }
 
 void gen_break(int endLabel) {
-	
-	printf("	jmp .Lend%d\n", endLabel);
-
+	jump(get_label_file_scope(String_add("end", i2a(endLabel))));
 }
 
 void gen_conditional_operator(Node_t* node) {
 	long condition_size = node -> left -> tp -> size;
 	int first_expr = filenumber++;
+	char* begin_label1 = get_label_file_scope(String_add("begin", i2a(first_expr)));
 	int second_expr = filenumber++;
+	char* begin_label2 = get_label_file_scope(String_add("begin", i2a(second_expr)));
+	char* end_label2 = get_label_file_scope(String_add("end", i2a(second_expr)));
+	Node_t* r = node -> right;
+
 
 	generate(node -> left, 0, 0);
 	pop_stack(condition_size, RN_RAX);
-	printf("	cmp %s, 0\n", get_registername(RN_RAX, condition_size));
-	printf("	je .Lbegin%d\n", second_expr);
-	printf("	jmp .Lbegin%d\n", first_expr);
-
 	
-	Node_t* r = node -> right;
-	printf(".Lbegin%d:\n", first_expr);
+	compare_value(get_registername(RN_RAX, condition_size), i2a(0));
+	jump_equal(begin_label2);
+	jump(begin_label1);
+	
+	label(begin_label1);
 	generate(r -> left, 0, 0);
-	printf("	jmp .Lend%d\n", second_expr);
-	printf(".Lbegin%d:\n", second_expr);
+	jump(end_label2);
+
+	label(begin_label2);
 	generate(r -> right, 0, 0);
-	printf(".Lend%d:\n", second_expr);
+
+	label(end_label2);
 	return;
 }
 

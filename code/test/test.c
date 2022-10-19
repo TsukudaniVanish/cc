@@ -186,9 +186,12 @@ void test_decrement_postfix() {
 	char * test = "decrement test";
 	int x = 2;
 	x--;
-	if(x != 1)
+	if(x++ != 1)
 	{
 		error_template_int(test, 1, x);
+	}
+	if( x != 2) {
+		error_template_int(test, 2, x);
 	}
 	int a[2];
 	a[0] = 22;
@@ -210,11 +213,10 @@ void test_inc_dec_prefix() {
 	{
 		error_template_int(test, 101, x);
 	}
-	x = 100;
-	--x;
-	if(x != 99)
+	x = --x;
+	if(x != 100)
 	{
-		error_template_int(test, 99, x);
+		error_template_int(test, 100, x);
 	}
 	test_passed(test);
 }
