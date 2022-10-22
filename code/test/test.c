@@ -5,11 +5,6 @@ void test_print_int(int p)
     printf_h("%d",p);
 }
 
-void test_print(char *p)
-{
-    printf_h("%s",p);
-}
-
 void test_error()
 {
     exit_h(1);
@@ -35,31 +30,31 @@ int String_compare(char* s1, char* s2, unsigned int size) {
 }
 
 void error_template(char* test, char *tmp) {
-	test_print("error at");
-	test_print(test);
-	test_print("\n");
-	test_print(tmp);
-	test_print("\n");
+	printf_h("error at");
+	printf_h(test);
+	printf_h("\n");
+	printf_h(tmp);
+	printf_h("\n");
 	test_error();
 }
 
 void error_template_int(char *test_name,int expect , int a)
 {
-    test_print("\x1b[31merror\x1b[m at ");
-    test_print(test_name);
-    test_print("\n");
+    printf_h("\x1b[31merror\x1b[m at ");
+    printf_h(test_name);
+    printf_h("\n");
     test_print_int(expect);
-    test_print(" was expected but got: \x1b[31m");
+    printf_h(" was expected but got: \x1b[31m");
     test_print_int(a);
-    test_print("\x1b[m\n");
+    printf_h("\x1b[m\n");
     test_error();
 }
 void test_passed(char *p)
 {
-    test_print("\x1b[32m");
-    test_print(p);
-    test_print(" passed!!");
-    test_print("\x1b[m\n");
+    printf_h("\x1b[32m");
+    printf_h(p);
+    printf_h(" passed!!");
+    printf_h("\x1b[m\n");
 }
 
 void test_add_sub() {
@@ -103,7 +98,7 @@ void test_arithmetic() {
 	test_bracket();
 	test_unit_pm();
 	test_passed("	arithmetic test");
-	test_print("\n");
+	printf_h("\n");
 }
 
 void test_ref_deref() {
@@ -151,7 +146,7 @@ void test_pointer_array_access() {
 	test_arraycast();
 	test_array_access();
 	test_passed("	pointer array access test");
-	test_print("\n");
+	printf_h("\n");
 }
 
 void test_increment_postfix() {
@@ -188,9 +183,9 @@ void test_increment_postfix() {
 	ww = a[1]++;
 	if(a[1] != 3)
 	{
-		test_print("value of ww is ");
+		printf_h("value of ww is ");
 		test_print_int(ww);
-		test_print("\n");
+		printf_h("\n");
 		error_template_int(test, 3, a[1]);
 	}
 	test_passed(test);
@@ -249,20 +244,20 @@ void test_logic() {
 	else
 	{
 		test_print_int(i);
-		test_print("\n");
-		test_print("error in:");
-		test_print(test);
-		test_print("\n");
+		printf_h("\n");
+		printf_h("error in:");
+		printf_h(test);
+		printf_h("\n");
 		test_error();
 	}
 	i = 1;
 	if(x && z)
 	{
 		test_print_int(i);
-		test_print("\n");
-		test_print("error in:");
-		test_print(test);
-		test_print("\n");
+		printf_h("\n");
+		printf_h("error in:");
+		printf_h(test);
+		printf_h("\n");
 		test_error();
 	}
 	i = 2;
@@ -270,10 +265,10 @@ void test_logic() {
 	if(z && *p)
 	{
 		test_print_int(i);
-		test_print("\n");
-		test_print("error in:");
-		test_print(test);
-		test_print("\n");
+		printf_h("\n");
+		printf_h("error in:");
+		printf_h(test);
+		printf_h("\n");
 		test_error();
 	}
 	i = 3;
@@ -284,10 +279,10 @@ void test_logic() {
 	else
 	{
 		test_print_int(i);
-		test_print("\n");
-		test_print("error in:");
-		test_print(test);
-		test_print("\n");
+		printf_h("\n");
+		printf_h("error in:");
+		printf_h(test);
+		printf_h("\n");
 		test_error();	
 	}
 	i = 4;
@@ -298,10 +293,10 @@ void test_logic() {
 	else
 	{
 		test_print_int(i);
-		test_print("\n");
-		test_print("error in:");
-		test_print(test);
-		test_print("\n");
+		printf_h("\n");
+		printf_h("error in:");
+		printf_h(test);
+		printf_h("\n");
 		test_error();
 	}
 	test_passed(test);
@@ -327,7 +322,7 @@ void test_struct() {
 	char* d = "Hi";
 	if(Character_compare(*a.c, *d) == 0)
 	{
-		test_print("error at struct test");
+		printf_h("error at struct test");
 		test_error();
 	}
 	struct Hi* b = &a;
@@ -337,17 +332,17 @@ void test_struct() {
 	}
 	if(String_len(b -> c) != 2 || String_compare(a.c, b -> c, 2) == 0)
 	{
-		test_print("error at struct test\n");
+		printf_h("error at struct test\n");
 		test_error();
 	}
 
 	test_passed(test);
 	/*
 	{
-		test_print("error at");
-		test_print(test);
-		test_print("\n");
-		test_print(a.c);
+		printf_h("error at");
+		printf_h(test);
+		printf_h("\n");
+		printf_h(a.c);
 		test_error();
 	}*/
 }
@@ -483,35 +478,35 @@ void test_continue() {
 
 void test_preprocess() {
 	if(TEST_DEFINE == 100)
-		test_print("\x1b[32m	macro TEST_DEFINE complied successfully! \x1b[m\n");
+		printf_h("\x1b[32m	macro TEST_DEFINE complied successfully! \x1b[m\n");
 	int g = 10;
 	if(timesTen(g) == 100)
-		test_print("\x1b[32m 	macro timesTen complied successfully!\x1b[m\n");
+		printf_h("\x1b[32m 	macro timesTen complied successfully!\x1b[m\n");
 	else
 	{
-		test_print("failed to compile timesTen: got ");
+		printf_h("failed to compile timesTen: got ");
 		test_print_int(timesTen(g));
-		test_print("\n");
+		printf_h("\n");
 	}
 	if(macro_in_macro(g) == 1000)
 	{
-		test_print("\x1b[32m 	macro in macro complied successfully!\x1b[m\n");
+		printf_h("\x1b[32m 	macro in macro complied successfully!\x1b[m\n");
 	}
 	else
 	{
-		test_print("failed to compile macro in macro: got ");
+		printf_h("failed to compile macro in macro: got ");
 		test_print_int(macro_in_macro(g));
-		test_print("\n");
+		printf_h("\n");
 	}
 	if(DEFINEOK != 20)
 	{
-		test_print("failed to compile macro in macro: got ");
+		printf_h("failed to compile macro in macro: got ");
 		test_print_int(DEFINEOK);
-		test_print("\n");
+		printf_h("\n");
 	}
 	else
 	{
-		test_print("\x1b[32m 	conditional preprocess complied successfully!\x1b[m\n");
+		printf_h("\x1b[32m 	conditional preprocess complied successfully!\x1b[m\n");
 	}
 	return;
 }
@@ -521,27 +516,27 @@ void test_switch() {
 	int x = 10;
 	switch(x) {
 		case 11:
-			test_print("failed to compile!");
+			printf_h("failed to compile!");
 			error_template_int(test, 11, x);
 		case 12:
-			test_print("failed to compile!");
+			printf_h("failed to compile!");
 			error_template_int(test, 12, x);
 		case 10:
-			test_print("\x1b[32mOK!\x1b[m\n");
+			printf_h("\x1b[32mOK!\x1b[m\n");
 		default:
 			x ++;
 	}
 	if(x != 11) {
-		test_print("Oh , default was not compiled?");
+		printf_h("Oh , default was not compiled?");
 		error_template_int(test, 11, x);
 	}
 
 	switch(x) {
 		case 20:
-			test_print("failed to compile!");
+			printf_h("failed to compile!");
 			error_template_int(test, 20, x);
 		case 21:
-			test_print("failed to compile!");
+			printf_h("failed to compile!");
 			error_template_int(test, 20, x);
 	}
 
@@ -657,6 +652,19 @@ void test_long_long_int() {
 	test_passed(test);
 }
 
+void test_type_cast() {
+	char* test = "type cast test";
+	int a = 100;
+	long b = 100;
+	if(sizeof((long) a) != sizeof b) {
+		error_template_int(test, sizeof b, sizeof((long) a));
+	}
+	if(sizeof(char) != 1){
+		error_template_int(test, 1, sizeof(char));
+	}
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -664,7 +672,7 @@ void test_long_long_int() {
 	#define DEFINEOK 20
 #endif
 int main(){// line comment 
-    test_print("\x1b[32mHello\x1b[m\n"); /* display test */
+    printf_h("\x1b[32mHello\x1b[m\n"); /* display test */
 	test_arithmetic();
 	test_pointer_array_access();
 	test_increment_postfix();
@@ -685,6 +693,7 @@ int main(){// line comment
 	test_include();
 	test_conditional_operator();
 	test_long_long_int();
+	test_type_cast();
 	
 	test_global();
 	test_preprocess();

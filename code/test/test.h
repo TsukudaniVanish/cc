@@ -6,3 +6,8 @@ int inc_test(int x) {
 }
 
 #endif 
+
+typedef struct {
+    int a;
+    int b;
+}TestStruct;
