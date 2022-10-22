@@ -689,69 +689,6 @@ void gen_function_def(Node_t *node){
 	return;
 }
 
-// assume rdi has char* value 
-void gen_printf_h() {
-	char* name = "printf_h";
-	int return_size = SIZEOF_INT;
-	function_header(name, SC_EXTERN);
-	push_stack( RN_RBP, SIZEOF_POINTER);
-	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
-
-	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("printf@plt");
-	push_stack(RN_RAX, return_size);
-
-
-	pop_stack( RN_RAX, return_size);
-	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
-	pop_stack( RN_RBP, SIZEOF_POINTER);
-	ret();
-
-	function_footer(name);
-}
-
-// rdi has number of elements, rsi has size 
-void gen_calloc_h() {
-	char* name = "calloc_h";
-	int return_size = SIZEOF_POINTER;
-	function_header(name, SC_EXTERN);
-	push_stack( RN_RBP, SIZEOF_POINTER);
-	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
-
-	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
-	call("calloc@plt");
-	push_stack(RN_RAX, return_size);
-
-
-	pop_stack( RN_RAX, return_size);
-	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
-	pop_stack( RN_RBP, SIZEOF_POINTER);
-	ret();
-
-	function_footer(name);
-}
-
-// assume edi has int value 
-void gen_exit_h() {
-	char* name = "exit_h";
-	int return_size = SIZEOF_INT;
-	function_header(name, SC_EXTERN);
-	push_stack( RN_RBP, SIZEOF_POINTER);
-	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
-
-	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
-	call("exit@plt");
-	push_stack(RN_RAX, return_size);
-
-
-	pop_stack( RN_RAX, return_size);
-	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
-	pop_stack( RN_RBP, SIZEOF_POINTER);
-	ret();
-
-	function_footer(name);
-}
-
 int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, RegisterName name_register1, RegisterName name_register2, char** pref) {
 	*size = node -> tp -> size;
 	*register1 = get_registername(name_register1, *size);
@@ -1581,4 +1518,94 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 		return;
 	}
 
+}
+
+
+/**
+ * @brief implementation of wrappers of glibc. 
+ * 
+ */
+
+// assume rdi has char* value 
+void gen_printf_h() {
+	char* name = "printf_h";
+	int return_size = SIZEOF_INT;
+	function_header(name, SC_EXTERN);
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
+	call("printf@plt");
+	push_stack(RN_RAX, return_size);
+
+
+	pop_stack( RN_RAX, return_size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
+	ret();
+
+	function_footer(name);
+}
+
+// assume rdi has char* value and rsi has char* value, ...  
+void gen_sprintf_h() {
+	char* name = "sprintf_h";
+	int return_size = SIZEOF_INT;
+	function_header(name, SC_EXTERN);
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	call("sprintf@plt");
+	push_stack(RN_RAX, return_size);
+
+
+	pop_stack( RN_RAX, return_size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
+	ret();
+
+	function_footer(name);
+}
+
+// rdi has number of elements, rsi has size 
+void gen_calloc_h() {
+	char* name = "calloc_h";
+	int return_size = SIZEOF_POINTER;
+	function_header(name, SC_EXTERN);
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	call("calloc@plt");
+	push_stack(RN_RAX, return_size);
+
+
+	pop_stack( RN_RAX, return_size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
+	ret();
+
+	function_footer(name);
+}
+
+// assume edi has int value 
+void gen_exit_h() {
+	char* name = "exit_h";
+	int return_size = SIZEOF_INT;
+	function_header(name, SC_EXTERN);
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	call("exit@plt");
+	push_stack(RN_RAX, return_size);
+
+
+	pop_stack( RN_RAX, return_size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
+	ret();
+
+	function_footer(name);
 }

@@ -1,7 +1,5 @@
 CFLAGS=-std=c11 -g -static
-SRC=$(wildcard *.c)
-SRCSS=$(filter-out test.c, $(SRC))
-SRCS=$(filter-out test_2.c, $(SRCSS))
+SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 HELPER=helper_functions.o
 
@@ -10,16 +8,16 @@ cc: $(OBJS)
 
 $(OBJS): cc.h
 
-test: cc $(HELPER)
+test: cc
 	./cc -f ./test/test.c > tmp.s
-	cc -g -o tmp tmp.s $(HELPER)
+	cc -g -o tmp tmp.s
 	./tmp
-utest: cc $(HELPER)
+utest: cc
 	./cc -f ./test/test_2.c > tmp.s
-	cc -g -o tmp tmp.s $(HELPER)
+	cc -g -o tmp tmp.s
 	./tmp
 
-etest: cc $(HELPER)
+etest: cc
 	./test/test.sh
 
 clean:

@@ -1,4 +1,5 @@
 #include "cc.h"
+extern void sprintf_h(char*, char*, long);
 int Character_compare(char c, char d) {
 	if(c == d) return 1;
 	return 0;
@@ -62,7 +63,7 @@ char* i2a(int d) {
 		q++;
 	}
 	char* s = new_String(q + 1);
-	int_to_string(s, d);
+	sprintf_h(s, "%d", d);
 	return s;
 }
 
@@ -75,7 +76,7 @@ char* l2a(long d) {
 		q++;
 	}
 	char* s = new_String(q + 1);
-	long_to_string(s, d);
+	sprintf_h(s, "%ld", d);
 	return s;
 }
 

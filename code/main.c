@@ -8,9 +8,9 @@ extern unsigned int String_len(char*);
 extern int String_compare(char*, char*,unsigned int);
 
 extern void gen_printf_h();
+extern void gen_sprintf_h();
 extern void gen_calloc_h();
 extern void gen_exit_h();
-
 
 int main(int argc, char **argv){
 	
@@ -43,25 +43,15 @@ int main(int argc, char **argv){
 	ordinaryNameSpace = make_Map();
 
 	// helper functions
-	char *test_print = "test_print";
-	NameData* _test_print = new_NameData(TAG_FUNCTION);
-	_test_print -> tp = new_tp(TP_VOID, NULL, 0);
-	Map_add(ordinaryNameSpace, test_print, _test_print);
-
-	char *test_print_int = "test_print_int";
-	NameData* _test_print_int = new_NameData(TAG_FUNCTION);
-	_test_print_int -> tp = new_tp(TP_VOID, NULL, 0);
-	Map_add(ordinaryNameSpace, test_print_int, _test_print_int);
-
-	char *test_error = "test_error";
-	NameData* _test_error = new_NameData(TAG_FUNCTION);
-	_test_error -> tp = new_tp(TP_VOID, NULL, 0);
-	Map_add(ordinaryNameSpace, test_error, _test_error);
-
 	char* _printf_h = "printf_h";
 	NameData* __printf_h = new_NameData(TAG_FUNCTION);
 	__printf_h -> tp = new_tp(TP_VOID, NULL, 0);
 	Map_add(ordinaryNameSpace, _printf_h, __printf_h);
+
+	char* _sprintf_h = "sprintf_h";
+	NameData* __sprintf_h = new_NameData(TAG_FUNCTION);
+	__sprintf_h -> tp = new_tp(TP_INT, NULL, SIZEOF_POINTER);
+	Map_add(ordinaryNameSpace, _sprintf_h, __sprintf_h);
 
 	char* _calloc_h = "calloc_h";
 	NameData* __calloc_h = new_NameData(TAG_FUNCTION);
@@ -101,6 +91,7 @@ int main(int argc, char **argv){
 
 	// add pre-implemented functions 
 	gen_printf_h();
+	gen_sprintf_h();
 	gen_calloc_h();
 	gen_exit_h();
 
