@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2021
  * 
  */
-#define VEC_MIN_SIZE 8
+#define VEC_MIN_SIZE SIZEOF_POINTER
 #include "cc.h"
 extern void Memory_copy(void*,void*,unsigned int);
 

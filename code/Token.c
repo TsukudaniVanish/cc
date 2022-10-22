@@ -23,12 +23,12 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str) {
 
 unsigned int get_type_size(int kind) {
 	switch(kind) {
-		case TP_VOID: return 0;
-		case TP_INT: return 4;
-		case TP_LONG: return 8;
-		case TP_CHAR: return 1;
+		case TP_VOID: return SIZEOF_VOID;
+		case TP_INT: return SIZEOF_INT;
+		case TP_LONG: return SIZEOF_LONG;
+		case TP_CHAR: return SIZEOF_CHAR;
 		default:
-			return 0;
+			return SIZEOF_VOID;
 	}	
 }
 

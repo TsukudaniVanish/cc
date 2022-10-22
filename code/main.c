@@ -7,6 +7,10 @@ extern int unit_test();
 extern unsigned int String_len(char*);
 extern int String_compare(char*, char*,unsigned int);
 
+extern void gen_printf_h();
+extern void gen_calloc_h();
+extern void gen_exit_h();
+
 
 int main(int argc, char **argv){
 	
@@ -37,7 +41,8 @@ int main(int argc, char **argv){
 	}
 	controller = ScopeController_init();
 	ordinaryNameSpace = make_Map();
-	//helper function input
+
+	// helper functions
 	char *test_print = "test_print";
 	NameData* _test_print = new_NameData(TAG_FUNCTION);
 	_test_print -> tp = new_tp(TP_VOID, NULL, 0);
@@ -52,6 +57,21 @@ int main(int argc, char **argv){
 	NameData* _test_error = new_NameData(TAG_FUNCTION);
 	_test_error -> tp = new_tp(TP_VOID, NULL, 0);
 	Map_add(ordinaryNameSpace, test_error, _test_error);
+
+	char* _printf_h = "printf_h";
+	NameData* __printf_h = new_NameData(TAG_FUNCTION);
+	__printf_h -> tp = new_tp(TP_VOID, NULL, 0);
+	Map_add(ordinaryNameSpace, _printf_h, __printf_h);
+
+	char* _calloc_h = "calloc_h";
+	NameData* __calloc_h = new_NameData(TAG_FUNCTION);
+	__calloc_h -> tp = new_tp(TP_POINTER, new_tp(TP_VOID, NULL, 0), SIZEOF_POINTER);
+	Map_add(ordinaryNameSpace, _calloc_h, __calloc_h);
+
+	char* _exit_h = "exit_h";
+	NameData* __exit_h = new_NameData(TAG_FUNCTION);
+	__exit_h -> tp  = new_tp(TP_VOID, NULL, 0);
+	Map_add(ordinaryNameSpace, _exit_h, __exit_h);
 	
 	
 	//convert an input to a token list
@@ -63,7 +83,7 @@ int main(int argc, char **argv){
 	program(&token, codes);
 	rootBlock = nameTable -> container;
 
-//アセンブリ前半を出力
+// print heder of assembly 
 	printf(".intel_syntax noprefix\n");
 	if(string_iter)
 		set_stringiter();
@@ -79,9 +99,12 @@ int main(int argc, char **argv){
 		}
 	}
 
-	//先頭の式からコード生成
-	//抽象構文木を降りてコード生成
-	//スタックトップには式の結果が入っている
+	// add pre-implemented functions 
+	gen_printf_h();
+	gen_calloc_h();
+	gen_exit_h();
+
+	// recursive code generation 
 	for(int i = 0;i < len;i++){
 		Node_t* code = Vector_at(codes, i);
 		if(code -> kind == ND_FUNCTIONDEF )

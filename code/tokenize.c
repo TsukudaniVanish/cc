@@ -14,7 +14,7 @@ int sizeof_token(int kind) {
 		return 0;
 	case TK_TypeINT:
 		
-		return 4;
+		return SIZEOF_INT;
 	
 	case TK_TypeCHAR:
 

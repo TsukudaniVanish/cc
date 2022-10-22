@@ -1,5 +1,20 @@
 #include "./test/test.h"
 
+void test_print_int(int p)
+{
+    printf_h("%d",p);
+}
+
+void test_print(char *p)
+{
+    printf_h("%s",p);
+}
+
+void test_error()
+{
+    exit_h(1);
+}
+
 int Character_compare(char c, char d) {
 	if(c == d) return 1;
 	return 0;

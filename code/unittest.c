@@ -209,7 +209,7 @@ void unit_test_Vector()
 	assert_int(test,3,*x);
 
 	Vector_pop(v);
-	assert_int(test,4,Vector_get_length(v));
+	assert_int(test,SIZEOF_INT,Vector_get_length(v));
 	
 	test_passed(test);
 }
@@ -497,7 +497,7 @@ void unit_test_parse_union() {
 		NODE_ERR_PRASE_FAILED(node);
 	if(node -> tp == NULL || node -> tp -> Type_label != TP_UNION)
 		NODE_ERR_PRASE_FAILED(node);
-	if(node -> tp -> size != 8)
+	if(node -> tp -> size != SIZEOF_POINTER)
 		NODE_ERR_PRASE_FAILED(node);
 	test_passed(test);
 }
@@ -519,7 +519,7 @@ void unit_test_parse_enum() {
 		NODE_ERR_PRASE_FAILED(node);
 	if(node -> tp == NULL || node -> tp -> Type_label != TP_ENUM)
 		NODE_ERR_PRASE_FAILED(node);
-	if(node -> tp -> size != 4)
+	if(node -> tp -> size != SIZEOF_INT)
 		NODE_ERR_PRASE_FAILED(node);
 
 	//test_passed("enum declare");

@@ -173,6 +173,14 @@ struct type{
 
 };
 
+typedef enum {
+	SIZEOF_VOID = 0,
+	SIZEOF_CHAR = 1,
+	SIZEOF_INT = 4,
+	SIZEOF_LONG = 8,
+	SIZEOF_POINTER = 8,
+}SIZEOF_BASE_TYPE;
+
 
 /* scope infomation*/
 typedef struct {

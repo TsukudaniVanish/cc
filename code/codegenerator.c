@@ -415,26 +415,26 @@ void jump_not_equal(char* label) {
  * @param char* register name
  * @return void
  */
-void push_stack(int long size, RegisterName register_name){
+void push_stack( RegisterName register_name, int long size){
 
 	char *name = get_registername(register_name,size);
 	if(size < 5 && size > 1)
 	{
-		substitution(get_registername(RN_RSP, 8), l2a(4));
-		move_data(get_pointer(get_pointerpref(4), RN_RSP),name);
-		rsp_counter = rsp_counter + 4;
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_INT));
+		move_data(get_pointer(get_pointerpref(SIZEOF_INT), RN_RSP),name);
+		rsp_counter = rsp_counter + SIZEOF_INT;
 	}
 	else if(0 < size && size < 2)
 	{
-		substitution(get_registername(RN_RSP, 8), l2a(size));
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(size));
 		move_data(get_pointer(get_pointerpref(size), RN_RSP),name);
 		rsp_counter = rsp_counter + 1;
 	}
 	else
 	{
-		substitution(get_registername(RN_RSP, 8), l2a(8));
-		move_data(get_pointer(get_pointerpref(8), RN_RSP),name);
-		rsp_counter = rsp_counter + 8;
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_POINTER));
+		move_data(get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP),name);
+		rsp_counter = rsp_counter + SIZEOF_POINTER;
 	}
 }
 
@@ -445,27 +445,27 @@ void push_stack(int long size, RegisterName register_name){
  * @param char* register name
  * @return void 
  */
-void pop_stack(int long size,RegisterName register_name){
+void pop_stack(RegisterName register_name, int long size){
 
 	char *name = get_registername(register_name,size);
 
 	if(size < 5 && size > 1)
 	{
-		move_data(name, get_pointer(get_pointerpref(4), RN_RSP));
-		addition(get_registername(RN_RSP, 8), l2a(4));
-		rsp_counter = rsp_counter - 4;
+		move_data(name, get_pointer(get_pointerpref(SIZEOF_INT), RN_RSP));
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_INT));
+		rsp_counter = rsp_counter - SIZEOF_INT;
 	}
 	else if(0 < size && size < 2)
 	{
 		move_data(name, get_pointer(get_pointerpref(1), RN_RSP));
-		addition(get_registername(RN_RSP, 8), l2a(1));
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(1));
 		rsp_counter = rsp_counter - 1;
 	}
 	else
 	{
-		move_data(name, get_pointer(get_pointerpref(8), RN_RSP));
-		addition(get_registername(RN_RSP, 8), l2a(8));
-		rsp_counter = rsp_counter + 8;
+		move_data(name, get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP));
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_POINTER));
+		rsp_counter = rsp_counter + SIZEOF_POINTER;
 	}
 }
 
@@ -489,8 +489,8 @@ void ret() {
  */
 void set_register_to_stack(long int offset,long int size,RegisterName reg)
 {
-	move_data(get_registername(RN_R11, 8), get_registername(RN_RBP, 8));
-	substitution(get_registername(RN_R11, 8), l2a(offset));
+	move_data(get_registername(RN_R11, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	substitution(get_registername(RN_R11, SIZEOF_POINTER), l2a(offset));
 	move_data(get_pointer(get_pointerpref(size), RN_R11),get_registername(reg,size));
 }
 
@@ -519,12 +519,12 @@ long gen_lval(Node_t *node){
 		char* pref = get_pointerpref(node -> tp -> size);
 		if(node -> tp -> Type_label == TP_ARRAY)
 		{
-			calculate_address(get_registername(RN_RAX, 8), get_data_address_with_rip(pref, node -> name));
-			push_stack(8,RN_RAX);
+			calculate_address(get_registername(RN_RAX, SIZEOF_POINTER), get_data_address_with_rip(pref, node -> name));
+			push_stack(RN_RAX, SIZEOF_POINTER);
 			return node -> tp -> size;
 		}
-		calculate_address(get_registername(RN_RAX, 8), get_data_address_with_rip(pref, node -> name));
-		push_stack(8, RN_RAX);
+		calculate_address(get_registername(RN_RAX, SIZEOF_POINTER), get_data_address_with_rip(pref, node -> name));
+		push_stack( RN_RAX, SIZEOF_POINTER);
 		return node -> tp -> size;
 	}
 	if(node -> kind == ND_DEREF)
@@ -535,17 +535,17 @@ long gen_lval(Node_t *node){
 	if(node -> kind == ND_DOT)
 	{
 		gen_lval(node -> left);
-		pop_stack(8, RN_RAX);// get top address of struct
+		pop_stack( RN_RAX, SIZEOF_POINTER);// get top address of struct
 
-		addition(get_registername(RN_RAX, 8), ui2a(node -> right -> offset));
-		push_stack(8, RN_RAX);
+		addition(get_registername(RN_RAX, SIZEOF_POINTER), ui2a(node -> right -> offset));
+		push_stack( RN_RAX, SIZEOF_POINTER);
 		return node -> tp -> size;
 	
 	}
-	move_data(get_registername(RN_RAX, 8), get_registername(RN_RBP, 8));
-	substitution(get_registername(RN_RAX, 8), ui2a(node -> offset));
+	move_data(get_registername(RN_RAX, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	substitution(get_registername(RN_RAX, SIZEOF_POINTER), ui2a(node -> offset));
 
-	push_stack(8, RN_RAX);
+	push_stack( RN_RAX, SIZEOF_POINTER);
 	return node -> tp -> size;
 	
 }
@@ -565,12 +565,11 @@ void gen_arg_entry(Node_t* node){
 	for (int i = len; i >0 ; i--)
 	{
 		arg_type = Vector_pop(arg_types);
-		pop_stack(arg_type -> size,registers[i]);
+		pop_stack(registers[i], arg_type -> size);
 	}
 	
 	return;
 }
-
 
 
 void gen_function_call(Node_t *node){
@@ -579,18 +578,18 @@ void gen_function_call(Node_t *node){
 
 	if(rsp_counter%16 !=0)
 	{// modify rsp place
-		substitution(get_registername(RN_RSP, 8), i2a(16 - rsp_counter % 16));
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
 	}
 
 	call(node -> name);
 	
 	if(rsp_counter%16 !=0)
 	{
-		addition(get_registername(RN_RSP, 8), l2a(16 - rsp_counter %16));
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
 	}
 
 
-	push_stack(node -> tp -> size,RN_RAX);
+	push_stack(RN_RAX, node -> tp -> size);
 	
 	return;
 }
@@ -645,12 +644,12 @@ void gen_function_def(Node_t *node){
 	int return_rsp_number = rsp_counter;
 
 	//prologue=======================================
-	push_stack(8, RN_RBP);
-	move_data(get_registername(RN_RBP, 8), get_registername(RN_RSP, 8));
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
 	// allocate memory on stack for arguments
 	if(nametable){
-		substitution(get_registername(RN_RSP, 8), i2a(nametable -> offset));
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(nametable -> offset));
 		rsp_counter += nametable ->offset;
 	}//=======================================
 
@@ -679,9 +678,9 @@ void gen_function_def(Node_t *node){
 	generate(node -> right, 0, 0);
 
 	//epilogue return
-	pop_stack(node -> tp -> size,RN_RAX);
-	move_data(get_registername(RN_RSP, 8), get_registername(RN_RBP, 8));
-	pop_stack(8, RN_RBP);
+	pop_stack(RN_RAX, node -> tp -> size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
 	ret();
 
 	// function footer
@@ -690,6 +689,68 @@ void gen_function_def(Node_t *node){
 	return;
 }
 
+// assume rdi has char* value 
+void gen_printf_h() {
+	char* name = "printf_h";
+	int return_size = SIZEOF_INT;
+	function_header(name, SC_EXTERN);
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
+	call("printf@plt");
+	push_stack(RN_RAX, return_size);
+
+
+	pop_stack( RN_RAX, return_size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
+	ret();
+
+	function_footer(name);
+}
+
+// rdi has number of elements, rsi has size 
+void gen_calloc_h() {
+	char* name = "calloc_h";
+	int return_size = SIZEOF_POINTER;
+	function_header(name, SC_EXTERN);
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	call("calloc@plt");
+	push_stack(RN_RAX, return_size);
+
+
+	pop_stack( RN_RAX, return_size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
+	ret();
+
+	function_footer(name);
+}
+
+// assume edi has int value 
+void gen_exit_h() {
+	char* name = "exit_h";
+	int return_size = SIZEOF_INT;
+	function_header(name, SC_EXTERN);
+	push_stack( RN_RBP, SIZEOF_POINTER);
+	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	call("exit@plt");
+	push_stack(RN_RAX, return_size);
+
+
+	pop_stack( RN_RAX, return_size);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
+	ret();
+
+	function_footer(name);
+}
 
 int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, RegisterName name_register1, RegisterName name_register2, char** pref) {
 	*size = node -> tp -> size;
@@ -729,11 +790,11 @@ void gen_inc_dec(Node_t *node) {
 		
 		gen_lval(node -> right);// result of node -> right is stored in the head of current stack
 		
-		pop_stack(8,RN_RAX);
-		move_data(get_registername(RN_RCX, 8), get_registername(RN_RAX, 8));
+		pop_stack(RN_RAX, SIZEOF_POINTER);
+		move_data(get_registername(RN_RCX, SIZEOF_POINTER), get_registername(RN_RAX, SIZEOF_POINTER));
 		move_data(rax, get_pointer(pref, RN_RAX));
 
-		push_stack(size, RN_RAX);
+		push_stack( RN_RAX, size);
 		
 		move_data(rdi, get_pointer(pref, RN_RCX));
 
@@ -755,8 +816,8 @@ void gen_inc_dec(Node_t *node) {
 		int operand = get_inc_dec_registers(node -> left, &size, &rax, &rdi, RN_RAX, RN_RDI, &pref);	
 		gen_lval(node -> left);
 		
-		pop_stack(8, RN_RAX);
-		move_data(get_registername(RN_RCX, 8), get_registername(RN_RAX, 8));
+		pop_stack( RN_RAX, SIZEOF_POINTER);
+		move_data(get_registername(RN_RCX, SIZEOF_POINTER), get_registername(RN_RAX, SIZEOF_POINTER));
 		move_data( rax, get_pointer(pref,  RN_RAX));
 
 		switch (instruction)
@@ -769,7 +830,7 @@ void gen_inc_dec(Node_t *node) {
 			break;
 		}
 
-		push_stack(size, RN_RAX);
+		push_stack( RN_RAX, size);
 
 		move_data( get_pointer(pref, RN_RCX),  rax);
 		return;
@@ -796,14 +857,14 @@ void set_instruction(char* arg, Node_kind kind) {
 }
 
 void gen_compare(Node_t* node) {
-	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
-	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
+	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? SIZEOF_POINTER: node -> left -> tp -> size;
+	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? SIZEOF_POINTER: node -> right -> tp -> size;
 	long size = size_r > size_l? size_r: size_l;
 	char* rax = get_registername(RN_RAX, size);
 	char* rdi = get_registername(RN_RDI, size);
 
-	pop_stack(size_r, RN_RDI);
-	pop_stack(size_l, RN_RAX);
+	pop_stack( RN_RDI, size_r);
+	pop_stack( RN_RAX, size_l);
 
 	compare_value(rax, rdi);
 	set_instruction(get_registername(RN_RAX, 1), node -> kind);
@@ -811,27 +872,27 @@ void gen_compare(Node_t* node) {
 		move_data_zero_extension(get_registername(RN_RAX, size_l), get_registername(RN_RAX, 1));
 	}
 	else {
-		move_data_zero_extension(get_registername(RN_RAX, 8), get_registername(RN_RAX, 1));
+		move_data_zero_extension(get_registername(RN_RAX, SIZEOF_POINTER), get_registername(RN_RAX, 1));
 	}
-	push_stack(size_l, RN_RAX);
+	push_stack( RN_RAX, size_l);
 	return;
 }
 
 void gen_arithmetic_instruction(Node_t *node) {
-	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? 8: node -> left -> tp -> size;
-	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? 8: node -> right -> tp -> size;
+	long size_l = node -> left -> tp -> Type_label == TP_ARRAY? SIZEOF_POINTER: node -> left -> tp -> size;
+	long size_r = node -> right -> tp -> Type_label == TP_ARRAY? SIZEOF_POINTER: node -> right -> tp -> size;
 	long size = size_r > size_l? size_r: size_l;
 	char* rax = get_registername(RN_RAX,size);
 	char* rdi = get_registername(RN_RDI,size);
 
-	pop_stack(size_r, RN_RDI);
-	pop_stack(size_l, RN_RAX);
+	pop_stack( RN_RDI, size_r);
+	pop_stack( RN_RAX, size_l);
 
 	if(node -> kind == ND_DIV)
 	{
 		sign_extension(size);
 		division(rdi);
-		push_stack(size, RN_RAX);
+		push_stack( RN_RAX, size);
 		return;
 	}
 
@@ -849,18 +910,18 @@ void gen_arithmetic_instruction(Node_t *node) {
 	default:
 		break;
 	}
-	push_stack(size_l, RN_RAX);
+	push_stack( RN_RAX, size_l);
 }
 
 void gen_number(int val) {
-	move_data(get_registername(RN_RAX, 4), i2a(val));
-	push_stack(4, RN_RAX);
+	move_data(get_registername(RN_RAX, SIZEOF_INT), i2a(val));
+	push_stack( RN_RAX, SIZEOF_INT);
 	return;
 }
 
 void gen_string_literal(long offset) {
-	calculate_address(get_registername(RN_RAX, 8), get_data_address_with_rip(get_label_string_literal(offset), " "));
-	push_stack(8, RN_RAX);
+	calculate_address(get_registername(RN_RAX, SIZEOF_POINTER), get_data_address_with_rip(get_label_string_literal(offset), " "));
+	push_stack( RN_RAX, SIZEOF_POINTER);
 	return;
 }
 
@@ -873,11 +934,11 @@ void gen_assign(Node_t* node) {
 	char* pref = get_pointerpref(size[0]);
 	generate(node -> right, 0, 0);
 
-	pop_stack(size[1],RN_RDI);// right
-	pop_stack(8, RN_RAX);// left
+	pop_stack(RN_RDI, size[1]);// right
+	pop_stack( RN_RAX, SIZEOF_POINTER);// left
 
 	move_data( get_pointer(pref, RN_RAX), rdi);//代入
-	push_stack(size[1], RN_RDI);
+	push_stack( RN_RDI, size[1]);
 	return;
 }
 
@@ -889,9 +950,9 @@ void gen_deref(Node_t *node) {
 	char* rcx = get_registername(RN_RCX, node -> tp -> size); 
 	char * pointer_pref = get_pointerpref(node -> tp -> size);
 	
-	pop_stack(8,RN_RAX);
+	pop_stack(RN_RAX, SIZEOF_POINTER);
 	move_data(rcx,get_pointer(pointer_pref,  RN_RAX));	
-	push_stack(node -> tp -> size,RN_RCX);
+	push_stack(RN_RCX, node -> tp -> size);
 	return;
 }
 
@@ -907,10 +968,10 @@ void gen_right_lval(Node_t* node) {
 	
 	
 	if(node -> tp -> Type_label == TP_ARRAY) return;
-	pop_stack(8, RN_RAX);
+	pop_stack( RN_RAX, SIZEOF_POINTER);
 
 	move_data(register_name, get_pointer(pointer_pref,  RN_RAX));
-	push_stack(node -> tp -> size,RN_RAX);
+	push_stack(RN_RAX, node -> tp -> size);
 	return;
 }
 
@@ -922,19 +983,19 @@ void gen_globvar(Node_t* node){
 	gen_lval(node);
 	if(node -> tp -> Type_label == TP_ARRAY) return;
 
-	pop_stack(8, RN_RAX);
+	pop_stack( RN_RAX, SIZEOF_POINTER);
 	move_data( rax, get_pointer(pref,  RN_RAX));
-	push_stack(size, RN_RAX);
+	push_stack( RN_RAX, size);
 	return;
 }
 
 void gen_return(Node_t* node) {
 	generate(node, 0, 0);
 	if(node != NULL)// is "return;"?
-		pop_stack(node -> tp -> size, RN_RAX);
+		pop_stack( RN_RAX, node -> tp -> size);
 	
-	move_data(get_registername(RN_RSP, 8), get_registername(RN_RBP, 8));
-	pop_stack(8, RN_RBP);
+	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	pop_stack( RN_RBP, SIZEOF_POINTER);
 	ret();
 	return;
 }
@@ -1039,7 +1100,7 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 
 		size = node -> left -> tp -> size;	
 		generate(node -> left, labelLoopBegin, labelLoopEnd); // condition 
-		pop_stack(size, RN_RAX);
+		pop_stack( RN_RAX, size);
 		compare_value(get_registername(RN_RAX, size), i2a(0));
 		jump_equal(end_label);
 		generate(node -> right, labelLoopBegin, labelLoopEnd); // if body 
@@ -1063,7 +1124,7 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 	case ND_IFE:
 		size = node -> left -> tp -> size;
 		generate(node -> left, labelLoopBegin, labelLoopEnd); // condition
-		pop_stack(size,RN_RAX);
+		pop_stack(RN_RAX, size);
 		
 		else_number = filenumber++;
 		char* else_label = get_label_file_scope(String_add("else", i2a(else_number)));
@@ -1097,7 +1158,7 @@ void gen_while(Node_t* node) {
 	generate(node -> left, begin_number_while, end_number_while);
 	
 	int size_l = node -> left -> tp -> size;
-	pop_stack(size_l, RN_RAX);
+	pop_stack( RN_RAX, size_l);
 	
 	compare_value(get_registername(RN_RAX, size_l), i2a(0));
 	jump_equal(end_label);
@@ -1121,7 +1182,7 @@ void gen_do_while(Node_t* node) {
 	
 	generate(node -> left, begin_number, end_number);
 	int size_l = node -> left -> tp -> size;
-	pop_stack(size_l, RN_RAX);
+	pop_stack( RN_RAX, size_l);
 	
 	compare_value(get_registername(RN_RAX, size_l), i2a(0));
 	jump_equal(end_label);
@@ -1165,7 +1226,7 @@ void gen_for(Node_t* node) {
 		{
 			size = 0;
 		}
-		pop_stack(size, RN_RAX);
+		pop_stack( RN_RAX, size);
 		
 		compare_value(get_registername(RN_RAX, size), i2a(0));
 		jump_equal(end_label);
@@ -1204,10 +1265,10 @@ void gen_switch(Node_t* node) {
 		} else {
 			// get a case label 
 			generate(caseBranch ->left, 0, end_number);
-			pop_stack(caseBranch -> left -> tp -> size, RN_RDI);
+			pop_stack( RN_RDI, caseBranch -> left -> tp -> size);
 
 			//get a value
-			pop_stack(size, RN_RCX);
+			pop_stack( RN_RCX, size);
 			move_data( rax,  rcx);
 
 			//compare to case value 
@@ -1215,7 +1276,7 @@ void gen_switch(Node_t* node) {
 			// I push the rcx value at the end of evaluation.
 			compare_value(rax, rdi);
 			jump_equal(get_label_file_scope(String_add("case", i2a(i + end_number))));
-			push_stack(size, RN_RCX);
+			push_stack( RN_RCX, size);
 
 			caseBranch = caseBranch -> right;
 			continue;
@@ -1266,7 +1327,7 @@ void gen_log_and_or(Node_t* node) {
 	char* end_label = get_label_file_scope(String_add("end", i2a(end_number)));
 
 	generate(node -> left, 0, 0);
-	pop_stack(size_l, RN_RAX);
+	pop_stack( RN_RAX, size_l);
 
 	// lazy evaluation 
 	compare_value(rax_l, i2a(0));
@@ -1277,14 +1338,14 @@ void gen_log_and_or(Node_t* node) {
 		jump_not_equal(end_label);
 	}
 	generate(node -> right, 0, 0);
-	pop_stack(size_r, RN_RAX);
+	pop_stack( RN_RAX, size_r);
 
 	compare_value(rax_r, i2a(0));
 	label(end_label);
 	set_not_equal(get_registername(RN_RAX, 1));
 
-	move_data_zero_extension(get_registername(RN_RAX, 4), get_registername(RN_RAX, 1));
-	push_stack(4, RN_RAX);
+	move_data_zero_extension(get_registername(RN_RAX, SIZEOF_INT), get_registername(RN_RAX, 1));
+	push_stack( RN_RAX, SIZEOF_INT);
 	return;
 
 }
@@ -1304,9 +1365,9 @@ StructData* get_struct_union_data(int tag, ScopeInfo* scope, char* name) {
 
 void gen_list_init(Node_t* node) {
 	unsigned offsetTop = node -> left -> offset;
-	move_data(get_registername(RN_RAX, 8), get_registername(RN_RBP, 8));
-	substitution(get_registername(RN_RAX, 8), ui2a(offsetTop));
-	push_stack(8, RN_RAX);
+	move_data(get_registername(RN_RAX, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+	substitution(get_registername(RN_RAX, SIZEOF_POINTER), ui2a(offsetTop));
+	push_stack( RN_RAX, SIZEOF_POINTER);
 
 	Node_t* initBranch = node -> right;
 	if(node -> left -> tp -> Type_label == TP_ARRAY)
@@ -1316,13 +1377,13 @@ void gen_list_init(Node_t* node) {
 		while(initBranch -> kind == ND_BLOCK)
 		{
 			generate(initBranch -> left, 0, 0);
-			pop_stack(initBranch -> left -> tp -> size, RN_RDI);
+			pop_stack( RN_RDI, initBranch -> left -> tp -> size);
 
 			// assign value
-			pop_stack(8, RN_RAX);
+			pop_stack( RN_RAX, SIZEOF_POINTER);
 			move_data(get_pointer( prefix, RN_RAX), get_registername(RN_RDI,  size));
-			addition(get_registername(RN_RAX, 8), i2a(size));
-			push_stack(8, RN_RAX);
+			addition(get_registername(RN_RAX, SIZEOF_POINTER), i2a(size));
+			push_stack( RN_RAX, SIZEOF_POINTER);
 			
 			initBranch = initBranch -> right;
 		}
@@ -1346,9 +1407,9 @@ void gen_list_init(Node_t* node) {
 	while(initBranch -> kind == ND_BLOCK)
 	{
 			generate(initBranch -> left, 0, 0);
-			pop_stack(initBranch -> left -> tp -> size, RN_RDI);
+			pop_stack( RN_RDI, initBranch -> left -> tp -> size);
 
-			pop_stack(8, RN_RAX);
+			pop_stack( RN_RAX, SIZEOF_POINTER);
 			move_data( get_pointer(prefix, RN_RAX), get_registername(RN_RDI,  initBranch -> left -> tp -> size));
 		
 			i++;
@@ -1359,10 +1420,10 @@ void gen_list_init(Node_t* node) {
 				prefix = get_pointerpref(member -> tp -> size);
 			}
 			// calculate next address
-			move_data(get_registername(RN_RAX, 8), get_registername(RN_RBP, 8));
-			substitution(get_registername(RN_RAX, 8), ui2a(offsetTop));
-			addition(get_registername(RN_RAX, 8), ui2a(member -> offset));
-			push_stack(8, RN_RAX);
+			move_data(get_registername(RN_RAX, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
+			substitution(get_registername(RN_RAX, SIZEOF_POINTER), ui2a(offsetTop));
+			addition(get_registername(RN_RAX, SIZEOF_POINTER), ui2a(member -> offset));
+			push_stack( RN_RAX, SIZEOF_POINTER);
 
 			initBranch = initBranch -> right;
 	}
@@ -1370,20 +1431,20 @@ void gen_list_init(Node_t* node) {
 
 void gen_dot(Node_t* node) {
 	gen_lval(node);
-	pop_stack(8, RN_RAX);
+	pop_stack( RN_RAX, SIZEOF_POINTER);
 	move_data( get_registername(RN_RAX, node -> tp -> size), get_pointer(get_pointerpref(node -> tp -> size),  RN_RAX));
-	push_stack(node -> tp -> size, RN_RAX);
+	push_stack( RN_RAX, node -> tp -> size);
 	return;
 }
 
 void gen_log_not(Node_t* node) {
 	generate(node -> left, 0, 0);
-	pop_stack(node -> left -> tp -> size, RN_RAX);
+	pop_stack( RN_RAX, node -> left -> tp -> size);
 
 	compare_value(get_registername(RN_RAX, node -> left -> tp -> size), i2a(0));
 	set_equal(get_registername(RN_RAX, 1));
-	move_data_zero_extension(get_registername(RN_RAX, 4), get_registername(RN_RAX, 1));
-	push_stack(4, RN_RAX);
+	move_data_zero_extension(get_registername(RN_RAX, SIZEOF_INT), get_registername(RN_RAX, 1));
+	push_stack( RN_RAX, SIZEOF_INT);
 }
 
 void gen_continue(int beginLabel) {
@@ -1405,7 +1466,7 @@ void gen_conditional_operator(Node_t* node) {
 
 
 	generate(node -> left, 0, 0);
-	pop_stack(condition_size, RN_RAX);
+	pop_stack( RN_RAX, condition_size);
 	
 	compare_value(get_registername(RN_RAX, condition_size), i2a(0));
 	jump_equal(begin_label2);

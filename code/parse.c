@@ -722,14 +722,14 @@ Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 }
 
 Node_t *new_node_num(int val) {
-	Node_t *node = new_Node_t(ND_NUM,NULL,NULL,val,0,new_tp(TP_INT,NULL,4),NULL);
+	Node_t *node = new_Node_t(ND_NUM,NULL,NULL,val,0,new_tp(TP_INT,NULL,SIZEOF_INT),NULL);
 	return node;
 }
 
 
 
 Node_t *new_node_stringiter(Token_t ** token) {
-	Node_t *node = new_Node_t(ND_STRINGLITERAL,NULL,NULL,0,0,new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),8),NULL);
+	Node_t *node = new_Node_t(ND_STRINGLITERAL,NULL,NULL,0,0,new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),SIZEOF_POINTER),NULL);
 	
 	Lvar *iter = declare_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
 	
@@ -814,7 +814,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 			(*token) = (*token) -> next;
 
 			node = new_Node_t(ND_ADDR,postfix(token), NULL,0,0,NULL,NULL);
-			node -> tp = new_tp(TP_POINTER,node -> left -> tp,8);
+			node -> tp = new_tp(TP_POINTER,node -> left -> tp,SIZEOF_POINTER);
 			return node;
 		}
 	return node;
@@ -1137,7 +1137,7 @@ Node_t *pointer(Token_t** token, Node_t* node) {
 		{
 			if(node -> tp == NULL)
 				return node;
-			Type* tp = new_tp(TP_POINTER, node -> tp, 8);
+			Type* tp = new_tp(TP_POINTER, node -> tp, SIZEOF_POINTER);
 			node -> tp = tp;
 			continue;
 		}
@@ -1157,7 +1157,7 @@ Node_t *type_specify(Token_t** token, Node_t* node) {
 	}
 	if((*token) -> kind == TK_ENUM)
 	{
-		node -> tp = new_tp(TP_ENUM, NULL, 4);
+		node -> tp = new_tp(TP_ENUM, NULL, SIZEOF_INT);
 		consume(token);
 		return enum_specify(token, node);		
 	}
@@ -1269,7 +1269,7 @@ Node_t* struct_declare_inside(Token_t** token, Node_t* node) {
 	if(previousMember != NULL)
 	{// offset calculation when struct
 		Node_t* prev = Map_at(data -> memberContainer, previousMember);
-		unsigned threshold = prev -> offset + prev -> tp -> size + (8 - ((prev -> offset + prev -> tp -> size) % 8));
+		unsigned threshold = prev -> offset + prev -> tp -> size + (SIZEOF_POINTER - ((prev -> offset + prev -> tp -> size) % SIZEOF_POINTER));
 		if(prev -> offset + prev -> tp -> size + member -> tp -> size <= threshold)
 		{
 			member -> offset = prev -> offset + prev -> tp -> size;
@@ -1411,7 +1411,7 @@ Node_t* log_or(Token_t **token) {
 	Node_t *node = log_and(token);
 	if(find(LOG_OR, token))
 	{
-		node = new_Node_t(ND_LOGOR, node, log_or(token), 0, 0, new_tp(TP_INT, NULL, 4), NULL);
+		node = new_Node_t(ND_LOGOR, node, log_or(token), 0, 0, new_tp(TP_INT, NULL, SIZEOF_INT), NULL);
 	}
 	return node;
 }
@@ -1420,7 +1420,7 @@ Node_t* log_and(Token_t **token) {
 	Node_t *node = equality(token);
 	if(find(LOG_AND, token))
 	{
-		node = new_Node_t(ND_LOGAND, node, log_and(token), 0, 0, new_tp(TP_INT, NULL, 4), NULL);
+		node = new_Node_t(ND_LOGAND, node, log_and(token), 0, 0, new_tp(TP_INT, NULL, SIZEOF_INT), NULL);
 	}
 	return node;
 }
@@ -1601,7 +1601,7 @@ Node_t *unitary(Token_t **token) {
 	}
 	else if(find('!', token))
 	{
-		node = new_Node_t(ND_LOGNOT, postfix(token), NULL, 0, 0, new_tp(TP_INT, NULL, 4), NULL);
+		node = new_Node_t(ND_LOGNOT, postfix(token), NULL, 0, 0, new_tp(TP_INT, NULL, SIZEOF_INT), NULL);
 		return node;
 	}
 		

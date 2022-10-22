@@ -17,7 +17,7 @@ char* file_open(char* path)
 {
 	FILE *fp = fopen(path , "r");
 	if(!fp)
-		error("Failed to find file. given pass: %*s",path,strerror(errno));
+		error("Failed to find file. given pass: %s\n error: %s",path,strerror(errno));
 	
 	//check file length
 	if(fseek(fp,0,SEEK_END) == -1)
