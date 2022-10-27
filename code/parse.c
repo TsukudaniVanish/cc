@@ -176,7 +176,7 @@ StructData* make_StructData() {
 // add member to data. update data -> size
 void StructData_add(StructData* data, Node_t* member) {
 	if(data -> tag == TAG_STRUCT) {
-		data -> size = member -> offset +  member -> tp -> size;
+		data -> size +=  member -> tp -> size;
 	}
 	else if(data -> tag == TAG_UNION)
 		data -> size = data -> size < member -> tp -> size? member -> tp -> size: data -> size;
@@ -1280,7 +1280,6 @@ Node_t* struct_declare(Token_t** token, Node_t* node) {
  * @brief Doesn't change node address
  * */
 Node_t* struct_declare_inside(Token_t** token, Node_t* node) {
-	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
 	StructData* data = search_from_tag_namespece(node -> tp -> name, ScopeController_get_current_scope(controller));
 	char* previousMember = Vector_get_tail(data -> memberNames);
 	Node_t* member = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
@@ -1297,7 +1296,6 @@ Node_t* struct_declare_inside(Token_t** token, Node_t* node) {
 
 	if(node -> tp -> Type_label == TP_UNION)
 	{
-		data -> size = node -> tp -> size;
 		StructData_add(data, member);
 		return node;
 	}
