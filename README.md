@@ -79,7 +79,7 @@ a generator function which convert an abstract syntax tree into  assembly codes
 ## todo
 - [ ] refactoring/ remove dependency on standard library
 - [ ] add  a character  literal ''
-- [ ] add type cast 
+- [x] add type cast 
 - [x] add long and long int
 - [x] add ? : 
 - [x]  add typedef 
