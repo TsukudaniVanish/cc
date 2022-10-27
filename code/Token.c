@@ -82,8 +82,8 @@ int is_functioncall(Token_t **token) {
 		consume(&buf);
     if(buf -> kind >= TOKEN_TYPE)
         consume(&buf);
-
-    expect_ident(&buf);
+	if(buf -> kind == TK_IDENT)
+		consume(&buf);
 
     if(find('[',&buf))
     {
@@ -98,6 +98,7 @@ int is_functioncall(Token_t **token) {
     return 0;
 }
 
+// this function does not consume token.
 char* get_ident_name(Token_t** token) {
 	if((*token) -> kind != TK_IDENT)
 	{
@@ -110,7 +111,7 @@ char* get_ident_name(Token_t** token) {
 }
 
 /**
- * @brief check if identifier token is in ordinary name space 
+ * @brief check if identifier token is in ordinary name space. this function does not comsume token.
  * 
  * @param token 
  * @return int 
@@ -129,6 +130,30 @@ int is_type_alias(Token_t** token) {
 		return 0;
 	}
 	return 1;
+}
+
+// this function does not consume token
+/**
+ * @brief check '(' and 'type_specifier' in token
+ * 
+ * @param token 
+ * @return int 
+ */
+int is_cast(Token_t** token) {
+	Token_t* buf = *token;
+
+	if(!find('(', &buf)) {
+		return 0;
+	}
+
+	if(buf -> kind >= TK_TYPESTART && buf -> kind <= TK_DECLARATION_SPECIFIER_END) {
+		return 1;
+	}
+	if(is_type_alias(&buf)) {
+		return 1;
+	}
+	return 0;
+
 }
 
 Token_t* Token_copy(Token_t* token) {

@@ -142,7 +142,7 @@ char* get_pointer(char* pref, RegisterName name) {
 		return NULL;
 	}
 	return String_add(pref, ptr);
-} 
+}
 
 char* get_label_string_literal(long offset) {
 	return String_add(".LC", l2a(offset)); // LC%ld, offset
@@ -1533,11 +1533,21 @@ void gen_printf_h() {
 	function_header(name, SC_EXTERN);
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
+	if(rsp_counter%16 !=0)
+	{// modify rsp place
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
+	}
 
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("printf@plt");
-	push_stack(RN_RAX, return_size);
 
+		
+	if(rsp_counter%16 !=0)
+	{
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
+	}
+
+	push_stack(RN_RAX, return_size);
 
 	pop_stack( RN_RAX, return_size);
 	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
@@ -1555,8 +1565,20 @@ void gen_sprintf_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	if(rsp_counter%16 !=0)
+	{// modify rsp place
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
+	}
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("sprintf@plt");
+
+		
+	if(rsp_counter%16 !=0)
+	{
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
+	}
+
 	push_stack(RN_RAX, return_size);
 
 
@@ -1576,8 +1598,20 @@ void gen_calloc_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	if(rsp_counter%16 !=0)
+	{// modify rsp place
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
+	}
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("calloc@plt");
+
+		
+	if(rsp_counter%16 !=0)
+	{
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
+	}
+
 	push_stack(RN_RAX, return_size);
 
 
@@ -1597,8 +1631,20 @@ void gen_exit_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	move_data(get_registername(RN_RAX, return_size), i2a(0)); // rax will have return value 
+	if(rsp_counter%16 !=0)
+	{// modify rsp place
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
+	}
+
+	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("exit@plt");
+
+		
+	if(rsp_counter%16 !=0)
+	{
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
+	}
+
 	push_stack(RN_RAX, return_size);
 
 

@@ -437,13 +437,20 @@ int find(int ,Token_t **);
 Token_t *consume(Token_t **token);
 
 /**
- * @brief check function call
+ * @brief check function call. this function does not consume token.
  * 
  * @param Token_t**
  * @return int
  * 
  */
 int is_functioncall(Token_t **);
+
+/**
+ * @brief check cast. this function does not consume token.
+ * 
+ * @return int 
+ */
+int is_cast(Token_t**);
 
 /**
  * @brief get ident string from token if kind == TK_IDENT
@@ -932,13 +939,13 @@ Node_t *new_node_ident(Token_t **);
  */
 Node_t *new_node_flow_operation(Token_kind kind,Token_t **token);
 /**
- * @brief 関数定義, グローバル変数の構文木を作成
+ * @brief function def or global variable declaration or type alias
  * @param Token_t**
  */
 Node_t *new_node_glob_ident(Token_t **);
 
 /**
- * @brief block の構文木を作成
+ * @brief make block arguments
  * @param Token_t** token
  * @return Node_t*
  * 
@@ -946,11 +953,13 @@ Node_t *new_node_glob_ident(Token_t **);
 Node_t *new_node_block(Token_t **);
 
 /**
- * @brief '*' または '&'をパースする
+ * @brief parse * or &
  * @param Token_t** token
  * @return Node_t*
  */
 Node_t *new_node_ref_deref(Token_t **);
+
+Node_t* new_node_set_type_alias(Token_t** token, Node_t* node);
 
 /**
  * @brief check the end of token
@@ -993,6 +1002,8 @@ Node_t *equality(Token_t **);
 Node_t *relational(Token_t **);
 Node_t *add(Token_t **);
 Node_t *mul(Token_t **);
+Node_t *cast(Token_t **, Node_t*);
+Node_t *type_name(Token_t **, Node_t*);
 Node_t *postfix(Token_t **);
 Node_t *unitary(Token_t **);
 Node_t *primary(Token_t **);

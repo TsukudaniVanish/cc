@@ -42,7 +42,9 @@
  * equality = relational("==" relational | "!=" relational)*
  * relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
  * add = mul( "+"mul | "-"mul)* 
- * mul = unitary ("*" unitary | "/" unitary )*
+ * mul = cast  | cast ("*" cast | "/" cast )*
+ * cast = unitary | "(" type_name ")" cast 
+ * type_name = type_specify pointer?
  * unitary = postfix
  * 			|"sizeof" unitary
  * 			| ('+' | '-' | '*' | '&' | '!' ) postfix
@@ -64,9 +66,13 @@
 //#include<string.h>
 
 
+extern char* new_String(unsigned int len);
 extern unsigned int String_len(char*);
 extern int String_compare(char*,char*,unsigned int);
+extern char* String_add(char*, char*);
+extern char* i2a(int);
 extern void Memory_copy(void*,void*,unsigned int);
+static int struct_number = 0;
 
 NameData* new_NameData(int tag) {
 	NameData* data = calloc(1, sizeof(NameData));
@@ -108,15 +114,16 @@ ScopeInfo* ScopeInfo_copy(ScopeInfo* info) {
 	return new_ScopeInfo(info ->nested, info ->number);
 }
 int ScopeInfo_equal(ScopeInfo* self, ScopeInfo* other) {
-	if(self ->nested != other ->nested || self ->number != other ->number)
+	if(self ->nested != other ->nested || self -> number != other -> number)
 	{
 		return 0;
 	}
 	return 1;
 }
 int ScopeInfo_in_right(ScopeInfo* info, ScopeInfo* current) {
-	if(current ->nested > info -> nested)
+	if(current -> nested > info -> nested) {
 		return 1;
+	}
 	if(ScopeInfo_equal(current, info))
 	{
 		return 1;
@@ -165,9 +172,11 @@ StructData* make_StructData() {
 	return data;
 }
 
+// add member to data. update data -> size
 void StructData_add(StructData* data, Node_t* member) {
-	if(data -> tag == TAG_STRUCT)
-		data -> size += member -> tp -> size;
+	if(data -> tag == TAG_STRUCT) {
+		data -> size +=  member -> tp -> size;
+	}
 	else if(data -> tag == TAG_UNION)
 		data -> size = data -> size < member -> tp -> size? member -> tp -> size: data -> size;
 	Vector_push(data -> memberNames, member -> name);
@@ -380,6 +389,10 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	Node_t *node = expr(token);
 	expect(']',token);
 	
+	/**
+	 * a[expr] is a syntax sugar of *(a + expr) 
+	 * so "10[a]" for a being some pointer type is ok.
+	 */
 	if(
 		(Is_type_pointer(node -> tp -> Type_label) && (*prev) -> tp -> Type_label == TP_INT) ||
 		(node -> tp -> Type_label == TP_INT && Is_type_pointer((*prev) -> tp -> Type_label))
@@ -748,6 +761,15 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	{
 		return new_node_function_definition(token);
 	}
+
+	if((*token) -> kind == TK_TYPEDEF) {
+		Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+		consume(token);
+		node = new_node_set_type_alias(token, node);
+		expect(';', token);
+		return node;
+	}
+
 	// global variable declaration or struct-union declaration 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declare_specify(token, node, is_type_alias(token));
@@ -820,6 +842,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 	return node;
 }
 
+// assume typedef keyword is consumed.
 Node_t* new_node_set_type_alias(Token_t** token, Node_t* node) {
 	// type qualifier?
 	node = declare_specify(token, node, 0);
@@ -864,7 +887,7 @@ void program(Token_t **token,Vector *codes) {
 Node_t *func(Token_t **token) {
 
 	int is_storage_class = (*token) -> kind == TK_STATIC || (*token) -> kind == TK_EXTERN;
-	if (((*token) -> kind <= TOKEN_TYPE - 1) && !is_storage_class){
+	if (((*token) -> kind <= TOKEN_TYPE - 1) && !is_storage_class && (*token) -> kind != TK_TYPEDEF){
 
 		error_at((*token) -> str , "Expected type specifier");
 
@@ -1089,10 +1112,11 @@ Node_t* ident_specify(Token_t** token, Node_t* node) {
 /*@brief specify declaration type struct static or extern?
  * */
 Node_t* declare_specify(Token_t** token, Node_t* node, int isTypeAlias) {
+	int is_typedef = (*token) -> kind == TK_TYPEDEF? 1: 0;
 	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)
 		return type_specify(token, node);
 		
-	if((*token) -> kind == TK_TYPEDEF) {
+	if((*token) -> kind == TK_TYPEDEF || is_typedef) {
 		consume(token);
 		return new_node_set_type_alias(token, node);
 	}
@@ -1166,6 +1190,16 @@ Node_t *type_specify(Token_t** token, Node_t* node) {
 		node -> tp = consume(token) -> kind == TK_STRUCT? new_tp(TP_STRUCT, NULL, 0): new_tp(TP_UNION, NULL, 0);
 		return struct_union_specify(token, node);
 	}
+	if(is_type_alias(token)) {
+		// check ordinary name space
+		char* name = new_String((*token) -> length);
+		Memory_copy(name, (*token) -> str, (*token) -> length);
+		NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
+		node -> tp = data -> tp;
+		consume(token);
+		return node;
+	}
+
 	error_at((*token) -> str, "Type keyword is expected");
 }
 
@@ -1182,7 +1216,7 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	}
 	else
 	{
-		name = "_";
+		name = String_add("_", i2a(struct_number++));
 	}
 	node -> tp -> name = name;
 	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
@@ -1244,7 +1278,6 @@ Node_t* struct_declare(Token_t** token, Node_t* node) {
  * @brief Doesn't change node address
  * */
 Node_t* struct_declare_inside(Token_t** token, Node_t* node) {
-	int tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
 	StructData* data = search_from_tag_namespece(node -> tp -> name, ScopeController_get_current_scope(controller));
 	char* previousMember = Vector_get_tail(data -> memberNames);
 	Node_t* member = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
@@ -1261,7 +1294,6 @@ Node_t* struct_declare_inside(Token_t** token, Node_t* node) {
 
 	if(node -> tp -> Type_label == TP_UNION)
 	{
-		
 		StructData_add(data, member);
 		return node;
 	}
@@ -1495,17 +1527,17 @@ Node_t *add(Token_t **token) {
 }
 
 Node_t *mul(Token_t **token) {
-	Node_t *node = unitary(token);
+	Node_t *node = cast(token, NULL);
 	for(;;)
 	{
 		parsing_here = (*token) -> str;
 		if(find('*',token))
 		{
-			node = new_node(ND_MUL,node,unitary(token), (*token) -> str);
+			node = new_node(ND_MUL,node,cast(token, NULL), (*token) -> str);
 		}
 		else if(find('/',token))
 		{
-			node = new_node(ND_DIV,node,unitary(token), (*token) -> str);
+			node = new_node(ND_DIV,node,cast(token, NULL), (*token) -> str);
 		}
 		else
 		{
@@ -1514,42 +1546,53 @@ Node_t *mul(Token_t **token) {
 	}
 }
 
+Node_t* cast(Token_t** token, Node_t* node) {
+	if(is_cast(token)) {
+		Node_t* node_tp = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+		expect('(', token); // consume '('
+		node_tp = type_name(token, node_tp);
+		expect(')', token);
+		
+		node = cast(token, node);
+		if(node == NULL) {
+			error_at((*token) -> str, "failed to parse.");
+		}
+		node -> tp = node_tp -> tp;
+		return node;
+	}
+	return unitary(token);
+}
+
+// assume '(' is consumed
+Node_t* type_name (Token_t** token, Node_t* node) {
+	node = type_specify(token, node);
+	node = pointer(token, node);
+	return node;
+}
+
 
 
 Node_t *unitary(Token_t **token) {
 	Node_t *node = NULL;
 	if((*token)-> kind == TK_SIZEOF)
 	{
-		
+		Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL); // for get type
+
 		consume(token);
-		if(find('(', token)) {
-			if(((*token) -> kind > TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)) {
-				node = new_Node_t(ND_NUM, NULL, NULL, 0, 0, NULL, NULL);
-				node = declare_specify(token, node, 0);
-				node = pointer(token, node);
-				expect(')', token);
-			} else {
-				if((*token) -> kind == TK_IDENT) {
-					char* name = get_ident_name(token);
-					NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
-					if(data -> tag == TAG_TYPEDEF) {
-						consume(token);
-						node = new_Node_t(ND_NUM, NULL, NULL, 0, 0, data -> tp, NULL);
-					} else {
-						node = primary(token);
-					}
-					expect(')', token);
-				}
-			}
-		} else {
-			node = unitary(token);
-		}	
-		
-		if(node -> tp -> Type_label == TP_STRUCT)
-		{
-			StructData *data = Map_at(tagNameSpace, node -> tp -> name);
-			return new_node_num(data -> size);
+		if(is_cast(token)) {
+			expect('(', token);
+			node = type_name(token, node);
+			expect(')', token);
 		}
+		else {
+			node = unitary(token);
+		}
+		
+		// if(node -> tp -> Type_label == TP_STRUCT)
+		// {
+		// 	StructData *data = Map_at(tagNameSpace, node -> tp -> name);
+		// 	return new_node_num(data -> size);
+		// }
 		if( node -> val != 0 )
 		{
 			node = new_node_num(node -> val);
