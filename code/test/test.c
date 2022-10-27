@@ -635,6 +635,19 @@ void test_type_cast() {
 	test_passed(test);
 }
 
+void test_character_literal() {
+	char* test = "charater literal test";
+	char a = 'H';
+	if(a != 'H') {
+		error_template_int(test, 'H', a);
+	}
+	a = '\n';
+	if(a != '\n') {
+		error_template_int(test, '\n', a);
+	}
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -664,6 +677,7 @@ int main(){// line comment
 	test_conditional_operator();
 	test_long_long_int();
 	test_type_cast();
+	test_character_literal();
 	
 	test_global();
 	test_preprocess();

@@ -58,6 +58,40 @@ char* skip_in_macro(char* p) {
 	return p;
 }
 
+/**
+ * @brief get value of a control character and add *p to its length
+ * 
+ * @param p 
+ * @return int 
+ */
+int get_control_character(char** pointer) {
+	char* p = *pointer;
+	if(*p != '\\') {
+		return 0;
+	}
+
+	p++;
+	int value = 0;
+	switch (*p) {
+		case '0': value = '\0';
+			break;
+		case 'n': value = '\n';
+			break;
+		case 't': value = '\t';
+			break;
+		case 'v': value = '\v';
+			break;
+		case 'r': value = '\r';
+			break;
+		case 'f': value = '\f';
+			break;
+		default:
+			break;
+	}
+	*pointer = p;
+	return value;
+}
+
 char *get_symbol(int kind) {
 	switch(kind)
 	{
@@ -264,6 +298,7 @@ int is_keyword(char *p) {
 typedef enum {
 	TOKENIZE_ERR,
 	STRINGLITERAL_START,
+	CHARACTER_LITERAL_START,
 	COMMENT_START,
 	MACRO_START,
 	KEYWORD,
@@ -279,6 +314,9 @@ TokenizeMarker tokenize_flow_control(char* p) {
 	
 	if(*p == '"')
 		return STRINGLITERAL_START;
+	
+	if(*p == '\'')
+		return CHARACTER_LITERAL_START;
 	
 	if(is_comment(p))
 		return COMMENT_START;
@@ -304,6 +342,22 @@ TokenizeMarker tokenize_macro_flow_control(char* p) {
 	if(*p == '\n')
 		return END;
 	return tokenize_flow_control(p);
+}
+
+Token_t* tokenize_character_literal(char** p, Token_t* cur) {
+	cur = new_token(TK_CONST, cur, *p);
+	(*p)++;
+	if(**p == '\\') {
+		cur -> val = get_control_character(p);
+	} else {
+		cur -> val = **p;
+	}
+	(*p)++;
+	if(**p != '\'') {
+		error_at(*p, "fail to tokenize: %c", **p);
+	}
+	(*p)++;
+	return cur;
 }
 
 Token_t* tokenize_string_literal(char** p, Token_t* cur) {
@@ -369,49 +423,6 @@ Token_t* tokenize_identifier(char** p, Token_t* cur) {
 	return cur;
 }
 /**
- * @brief read one line and make token list T which cur -> next is head of T. return tail of T
- * 
- * @param pointer 
- * @param cur 
- * @return Token_t* 
- */
-Token_t* tokenize_one_line(char** pointer, Token_t* cur) {
-	char* p = *pointer;
-
-	while(*p != '\0' || *p != '\n')
-	{
-		p = skip_in_macro(p);
-		TokenizeMarker marker = tokenize_flow_control(p);
-		switch (marker)
-		{
-		case END: 
-			break;
-		case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
-			break;
-		case COMMENT_START: comment_skip(&p);
-			break;
-		case MACRO_START: cur = tokenize_macro(&p, cur);
-			break;
-		case KEYWORD: cur = tokenize_keyword(&p, cur);
-			break;
-		case SYMBOL: cur = tokenize_symbol(&p, cur);
-			break;
-		case NUMBER: cur = tokenize_number(&p, cur);
-			break;
-		case IDENTIFIER: cur = tokenize_identifier(&p, cur);
-			break;
-		case TOKENIZE_ERR:
-			error_at(cur -> str,"Failed to tokenize");
-		}
-		continue;	
-	}
-	
-	if(p[0] == '\n')
-		p++;
-	*pointer = p;
-	return cur;
-}
-/**
  * @brief read one line and make token list for MacroData.macroBody
  * 
  * @param pointer 
@@ -431,6 +442,8 @@ Token_t* tokenize_macro_one_line(char** pointer) {
 		case END: 
 			break;
 		case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
+			break;
+		case CHARACTER_LITERAL_START: cur = tokenize_character_literal(&p, cur);
 			break;
 		case COMMENT_START: comment_skip(&p);
 			break;
@@ -468,6 +481,9 @@ Token_t *tokenize(char **pointer, Token_t** lastToken, int tokenizeFlag) {
 		case END: 
 			break;
 		case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
+			break;
+		case CHARACTER_LITERAL_START:
+			cur = tokenize_character_literal(&p, cur);
 			break;
 		case COMMENT_START: comment_skip(&p);
 			break;

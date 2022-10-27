@@ -859,6 +859,30 @@ void unit_test_long_long_int() {
 	test_passed(test);
 }
 
+void unit_test_character_literal() {
+	char* test = "character literal test";
+	char* arg = "char a = '\n'";
+
+	Token_t* token = lexical_analyze(arg);
+	if(token == NULL) {
+		fprintf(stderr, "token == NULL");
+		exit(1);
+	}
+
+	consume(&token);
+	consume(&token);
+	consume(&token);
+	if(token -> kind != TK_CONST) {
+		fprintf(stderr, "token -> kind (%d) != TK_CONST (%d)", token -> kind, TK_CONST);
+		exit(1);
+	}
+	if(token -> val != '\n') {
+		fprintf(stderr, "expect %d but got %d", 'f', token -> val);
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -882,6 +906,7 @@ int unit_test() {
 	unit_test_conditional_operator();
 	uint_test_String_add();
 	unit_test_long_long_int();
+	unit_test_character_literal();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }
