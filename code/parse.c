@@ -763,7 +763,6 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	}
 
 	if((*token) -> kind == TK_TYPEDEF) {
-
 		Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 		consume(token);
 		node = new_node_set_type_alias(token, node);
