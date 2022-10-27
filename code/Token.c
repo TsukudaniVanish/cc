@@ -98,6 +98,7 @@ int is_functioncall(Token_t **token) {
     return 0;
 }
 
+// this function does not consume token.
 char* get_ident_name(Token_t** token) {
 	if((*token) -> kind != TK_IDENT)
 	{
@@ -131,6 +132,13 @@ int is_type_alias(Token_t** token) {
 	return 1;
 }
 
+// this function does not consume token
+/**
+ * @brief check '(' and 'type_specifier' in token
+ * 
+ * @param token 
+ * @return int 
+ */
 int is_cast(Token_t** token) {
 	Token_t* buf = *token;
 
