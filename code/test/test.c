@@ -183,9 +183,7 @@ void test_increment_postfix() {
 	ww = a[1]++;
 	if(a[1] != 3)
 	{
-		printf_h("value of ww is ");
-		test_print_int(ww);
-		printf_h("\n");
+		printf_h("value of ww is %d\n");
 		error_template_int(test, 3, a[1]);
 	}
 	test_passed(test);
@@ -243,32 +241,20 @@ void test_logic() {
 	}
 	else
 	{
-		test_print_int(i);
-		printf_h("\n");
-		printf_h("error in:");
-		printf_h(test);
-		printf_h("\n");
+		printf_h("%d:\nerror in: %s\n", i, test);
 		test_error();
 	}
 	i = 1;
 	if(x && z)
 	{
-		test_print_int(i);
-		printf_h("\n");
-		printf_h("error in:");
-		printf_h(test);
-		printf_h("\n");
+		printf_h("%d:\nerror in: %s\n", i, test);
 		test_error();
 	}
 	i = 2;
 	int* p = 0;
 	if(z && *p)
 	{
-		test_print_int(i);
-		printf_h("\n");
-		printf_h("error in:");
-		printf_h(test);
-		printf_h("\n");
+		printf_h("%d:\nerror in: %s\n", i, test);
 		test_error();
 	}
 	i = 3;
@@ -278,12 +264,8 @@ void test_logic() {
 	}
 	else
 	{
-		test_print_int(i);
-		printf_h("\n");
-		printf_h("error in:");
-		printf_h(test);
-		printf_h("\n");
-		test_error();	
+		printf_h("%d:\nerror in: %s\n", i, test);
+		test_error();
 	}
 	i = 4;
 	if(y || *p)
@@ -292,11 +274,7 @@ void test_logic() {
 	}
 	else
 	{
-		test_print_int(i);
-		printf_h("\n");
-		printf_h("error in:");
-		printf_h(test);
-		printf_h("\n");
+		printf_h("%d:\nerror in: %s\n", i, test);
 		test_error();
 	}
 	test_passed(test);
@@ -337,14 +315,6 @@ void test_struct() {
 	}
 
 	test_passed(test);
-	/*
-	{
-		printf_h("error at");
-		printf_h(test);
-		printf_h("\n");
-		printf_h(a.c);
-		test_error();
-	}*/
 }
 void test_array_init() {
 	char* test = "array init test";
