@@ -1,4 +1,3 @@
-// TODO: bug fix, see make test
 /* bnf 
  * (something)* : something appears at least 0 times.
  * syntax
