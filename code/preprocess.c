@@ -46,7 +46,9 @@ Expr* make_Expr(int kind) {
     return new_Expr(kind, 0, NULL, NULL);
 }
 /**
+ * note: defined is parsed as a operator.
  * 
+ * bnf of macro 
  * expression = logicOr
  * logicOr = logicAnd ( || logicOr)?
  * logicAnd = logicEq (&& logicAnd)?

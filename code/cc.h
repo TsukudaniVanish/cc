@@ -261,6 +261,8 @@ typedef enum keyWords {
 	EXTERN,
 	MACRO_DEFINE,
 	MACRO_IF,
+	MACRO_IFDEF,
+	MACRO_IFNDEF,
 	MACRO_ENDIF,
 	MACRO_INCLUDE,
 	TYPE_START,// following entries are representing type 

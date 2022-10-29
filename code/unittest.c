@@ -883,6 +883,34 @@ void unit_test_character_literal() {
 	test_passed(test);
 }
 
+void unit_test_macro_ifdef_ifndef() {
+	char* test = "ifdef ifndef"
+	char* arg1 = "#define MACRO\n#ifdef MACRO\n int a = 0;\n#endif"
+	char* arg2 = "#define MACRO\n#ifndef MACRO\nint a = 0;\n#endif\nchar b[1] = {60};"
+
+	Token_t* token1 = lexical_analyze(arg1);
+	if(token == NULL) {
+		fprintf(stderr, "token1 == NULL");
+		exit(1);
+	}
+	if(token -> kind != TK_TypeINT) {
+		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeINT, token -> kind);
+		exit(1);
+	}
+
+	Token_t token2 = lexical_analyze(arg);
+	if(token == NULL) {
+		fprintf(stderr, "token2 == NULL");
+		exit(1);
+	}
+	if(token -> kind != TK_TypeCHAR) {
+		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeChar, token -> kind);
+		exit(1);
+	}
+
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();

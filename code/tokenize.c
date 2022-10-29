@@ -223,6 +223,8 @@ char* get_keyword(keyword kind) {
 		case MACRO_DEFINE: return "#define";
 		case MACRO_ENDIF: return "#endif";
 		case MACRO_IF: return "#if";
+		case MACRO_IFDEF: return "#ifdef";
+		case MACRO_IFNDEF: return "#ifndef";
 		case MACRO_INCLUDE: return "#include";
 		case VOID: return "void";
 		case CHAR: return "char";
@@ -612,15 +614,10 @@ char* skip_to_MACRO_ENDIF(char* pointer) {
 	return pointer;
 }
 
-Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
+// this function evaluate macro_token and tokenize if it is true until #end appears.
+Token_t* tokenize_macro_conditional_flow(char** pointer, Token_t* cur, Token_t* macro_token) {
 	char* p = *pointer;
-	p = skip_in_macro(p);
-	// read and eval expression
-	Token_t* token = tokenize_macro_one_line(&p);
-	if(p[0] == '\n')
-		p++;
-
-	Expr* exp = parse_macro_expr(&token);
+	Expr* exp = parse_macro_expr(&macro_token);
 	if(eval_Expr(exp))
 	{
 		*pointer = p;
@@ -635,6 +632,19 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	p = skip_to_MACRO_ENDIF(p);
 	*pointer = p;
 	return cur;
+}
+
+// this function tokenize one line of macro expression and pass it with cur and pointer to tokenize_macro_conditional_flow
+Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
+	char* p = *pointer;
+	p = skip_in_macro(p);
+	// read and eval expression
+	Token_t* token = tokenize_macro_one_line(&p);
+	if(p[0] == '\n')
+		p++;
+	*pointer = p;
+
+	return tokenize_macro_conditional_flow(pointer, cur, token);
 }
 
 Token_t* tokenize_macro_include(char** pointer, Token_t** cur) {
