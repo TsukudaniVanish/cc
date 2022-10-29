@@ -935,6 +935,7 @@ int unit_test() {
 	uint_test_String_add();
 	unit_test_long_long_int();
 	unit_test_character_literal();
+	unit_test_macro_ifdef_ifndef();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

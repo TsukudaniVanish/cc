@@ -78,7 +78,7 @@ a generator function which convert an abstract syntax tree into  assembly codes
 
 ## todo
 - [ ] refactoring/ remove dependency on standard library
-- [ ] add #ifndef, #ifdef
+- [x] add #ifndef, #ifdef
 - [ ] add #elif #else
 - [x] add  a character  literal ''
 - [x] add type cast 

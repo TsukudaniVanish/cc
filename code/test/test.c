@@ -648,6 +648,15 @@ void test_character_literal() {
 	test_passed(test);
 }
 
+void test_ifdef_ifndef() {
+	char* test = "ifdef ifndef";
+	OK_IFDEF ok = {100};
+	if(THIS_WILL_DEFINE != 10) {
+		error_template_int(test, 10, THIS_WILL_DEFINE);
+	}
+	test_passed(test);
+}
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE
@@ -678,10 +687,11 @@ int main(){// line comment
 	test_long_long_int();
 	test_type_cast();
 	test_character_literal();
-	
+	test_ifdef_ifndef();
+
+
 	test_global();
 	test_preprocess();
-	
 		
 	return 0;
 }

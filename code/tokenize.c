@@ -41,7 +41,7 @@ int is_space(char p) {
 	return 0;
 }
 
-
+// skip white space characters
 char *skip(char * p) {
 	while (' ' == *p || '\t' == *p || '\n' == *p || '\r' == *p || '\f' == *p || '\v' == *p)
 	{
@@ -50,6 +50,7 @@ char *skip(char * p) {
 	return p;	
 }
 
+// skip white space characters except new line.
 char* skip_in_macro(char* p) {
 	while(' ' == *p || '\t' == *p || '\r' == *p || '\f' == *p || '\v' == *p)
 	{
@@ -622,10 +623,6 @@ Token_t* tokenize_macro_conditional_flow(char** pointer, Token_t* cur, Token_t* 
 	{
 		*pointer = p;
 		tokenize(pointer, &cur, FLAG_MACRO_IF);
-		if(**pointer == '\0')
-		{
-			error_at(p, "can't find '#endif'");
-		}
 		return cur;
 	}
 	
@@ -634,7 +631,8 @@ Token_t* tokenize_macro_conditional_flow(char** pointer, Token_t* cur, Token_t* 
 	return cur;
 }
 
-// this function tokenize one line of macro expression and pass it with cur and pointer to tokenize_macro_conditional_flow
+// this function tokenize one line of macro expression.
+// After tokenize, it passes tokens with cur and pointer to tokenize_macro_conditional_flow.
 Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	char* p = *pointer;
 	p = skip_in_macro(p);
@@ -642,6 +640,44 @@ Token_t* tokenize_macro_if(char** pointer, Token_t* cur) {
 	Token_t* token = tokenize_macro_one_line(&p);
 	if(p[0] == '\n')
 		p++;
+	*pointer = p;
+
+	return tokenize_macro_conditional_flow(pointer, cur, token);
+}
+
+// this function tokenize one line of macro expression.
+// Then add defined token to its head.
+// After tokenize, it passes tokens with cur and pointer to tokenize_macro_conditional_flow.
+Token_t* tokenize_macro_ifdef(char** pointer, Token_t* cur) {
+	char* p = *pointer;
+	skip_in_macro(p);
+
+	// read expression 
+	Token_t* expression_token = tokenize_macro_one_line(&p);
+	Token_t* token = new_Token_t(TK_OPERATOR, expression_token, 0, 7, "defined", NULL);
+	if(*p == '\n') {
+		p++;
+	}
+	*pointer = p;
+
+	return tokenize_macro_conditional_flow(pointer, cur, token);
+}
+
+
+// this function tokenize one line of macro expression.
+// Then add ! and defined token to its head.
+// After tokenize, it passes tokens with cur and pointer to tokenize_macro_conditional_flow.
+Token_t* tokenize_macro_ifndef(char** pointer, Token_t* cur) {
+	char* p = *pointer;
+	skip_in_macro(p);
+
+	// read expression 
+	Token_t* expression_token = tokenize_macro_one_line(&p);
+	Token_t* token_defined = new_Token_t(TK_OPERATOR, expression_token, 0, 7, "defined", NULL);
+	Token_t* token = new_Token_t(TK_OPERATOR, token_defined, 0, 1, "!", NULL);
+	if(*p == '\n') {
+		p++;
+	}
 	*pointer = p;
 
 	return tokenize_macro_conditional_flow(pointer, cur, token);
@@ -687,6 +723,10 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 		return cur;
 	case MACRO_IF:
 		return tokenize_macro_if(p, cur);
+	case MACRO_IFDEF:
+		return tokenize_macro_ifdef(p, cur);
+	case MACRO_IFNDEF:
+		return tokenize_macro_ifndef(p, cur);
 	case MACRO_INCLUDE:
 		return tokenize_macro_include(p, &cur);
 	default:
