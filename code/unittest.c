@@ -884,27 +884,27 @@ void unit_test_character_literal() {
 }
 
 void unit_test_macro_ifdef_ifndef() {
-	char* test = "ifdef ifndef"
-	char* arg1 = "#define MACRO\n#ifdef MACRO\n int a = 0;\n#endif"
-	char* arg2 = "#define MACRO\n#ifndef MACRO\nint a = 0;\n#endif\nchar b[1] = {60};"
+	char* test = "ifdef ifndef";
+	char* arg1 = "#define MACRO\n#ifdef MACRO\n int a = 0;\n#endif";
+	char* arg2 = "#define MACRO\n#ifndef MACRO\nint a = 0;\n#endif\nchar b[1] = {60};";
 
 	Token_t* token1 = lexical_analyze(arg1);
-	if(token == NULL) {
+	if(token1 == NULL) {
 		fprintf(stderr, "token1 == NULL");
 		exit(1);
 	}
-	if(token -> kind != TK_TypeINT) {
-		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeINT, token -> kind);
+	if(token1 -> kind != TK_TypeINT) {
+		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeINT, token1 -> kind);
 		exit(1);
 	}
 
-	Token_t token2 = lexical_analyze(arg);
-	if(token == NULL) {
+	Token_t* token2 = lexical_analyze(arg2);
+	if(token2 == NULL) {
 		fprintf(stderr, "token2 == NULL");
 		exit(1);
 	}
-	if(token -> kind != TK_TypeCHAR) {
-		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeChar, token -> kind);
+	if(token2 -> kind != TK_TypeCHAR) {
+		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeCHAR, token2 -> kind);
 		exit(1);
 	}
 
