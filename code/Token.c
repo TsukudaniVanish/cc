@@ -199,3 +199,16 @@ Token_t* Token_consume_to_last(Token_t* token) {
 	}
 	return token;
 }
+
+// this function does not consume any token.
+int check_ident_appear_until_punctuator(Token_t** token) {
+	Token_t* buf = *token;
+	while (buf -> kind != TK_PUNCTUATOR || buf -> kind == TK_EOF)
+	{
+		if(buf -> kind == TK_IDENT) {
+			return 1;
+		}
+		consume(&buf);
+	}
+	return 0;
+}

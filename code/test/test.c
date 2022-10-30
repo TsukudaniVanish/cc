@@ -657,6 +657,8 @@ void test_ifdef_ifndef() {
 	test_passed(test);
 }
 
+extern void test_place_holder(int, int, char*, ...);
+
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
 #define macro_in_macro(b) b*TEST_DEFINE

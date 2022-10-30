@@ -96,6 +96,7 @@ int get_control_character(char** pointer) {
 char *get_symbol(int kind) {
 	switch(kind)
 	{
+	case THREE_DOTS: return "...";
 	case EQUAL: return "==";
 	case NEQ: return "!=";
 	case LEQ: return "<=";
@@ -399,6 +400,10 @@ Token_t* tokenize_symbol(char** p, Token_t* cur) {
 	{// punctuator or not
 		cur -> kind = TK_PUNCTUATOR;
 		cur -> length -= 1000;
+	}
+	if(cur -> length == 3) {
+		// place holder ...
+		cur -> kind = TK_PLACE_HOLDER;
 	}
 	*p += cur -> length;
 	return cur;

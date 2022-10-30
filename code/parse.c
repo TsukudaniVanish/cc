@@ -6,8 +6,8 @@
  * 
  * func = declare_specify ident_specify "(" type_parameter_list  ")"  stmt
  * type_parameter_list = parameter_list 
- * parameter_list = parameter_declare ("," parameter_declare)*
- * parameter_declare = declare_specify ident_specify
+ * parameter_list = parameter_declare ("," parameter_declare )*
+ * parameter_declare = declare_specify ident_specify | "..."
  * stmt = expr";"
  * 		| declare ";"
  * 		| "{" stmt* "}"
@@ -774,10 +774,14 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declare_specify(token, node, is_type_alias(token));
 
-	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM)
-			|| (*token) -> kind == TK_IDENT 
-			|| (*token) -> kind == TK_OPERATOR) // identifier parsing
+	if(
+		(node -> tp -> Type_label != TP_STRUCT 
+			&& node -> tp -> Type_label != TP_UNION 
+			&& node -> tp -> Type_label != TP_ENUM
+		)
+	) {// pointer, array and identifier parsing
 		node = ident_specify(token, node);
+	}
 
 	if(// struct , union or enum declaration 
 		(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM)
@@ -906,40 +910,53 @@ int type_parameter_list(Token_t** token, Node_t** parameter_container) {
 	return parameter_list(token, parameter_container);
 }
 
+// parse parameters to tree and count number of parameters for return.
 // after this function being called, parameter_list points head of list of nodes which has parameter info.
 int parameter_list(Token_t** token, Node_t** parameter_container) {
-	int to_return = 0;
-	Node_t* v = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
-	*parameter_container = v;
+	int number_of_parameters = 0;
+	Node_t* param_tree = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
+	*parameter_container = param_tree;
 	while (!find(')',token))
 	{
-		v -> left = parameter_declare(token);
+		param_tree -> left = parameter_declare(token, number_of_parameters);
 		find(',',token);
 
 		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
-		v -> right = next;
-
-		to_return ++;
-
-		v = next;
+		param_tree -> right = next;
+		param_tree = next;
+		if((*token) -> kind == TK_PLACE_HOLDER) {
+			// quit parsing parameters
+			consume(token);
+			expect(')', token);
+			break;
+		}
+		number_of_parameters ++;
 	}
 
-	v -> kind = ND_BLOCKEND;
-	return to_return;
+	param_tree -> kind = ND_BLOCKEND;
+	return number_of_parameters;
 }
 
-Node_t* parameter_declare(Token_t** token) {
+// parse parameter.
+// number_of_parameter is used for unamed parameter
+Node_t* parameter_declare(Token_t** token, int number_of_parameter) {
 	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
 	node = declare_specify(token, node, is_type_alias(token));
-	if((node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION && node -> tp -> Type_label != TP_ENUM) 
-			|| (*token) -> kind == TK_IDENT 
-			|| (*token) -> kind == TK_OPERATOR)
+	if(
+		(node -> tp -> Type_label != TP_STRUCT 
+			&& node -> tp -> Type_label != TP_UNION 
+			&& node -> tp -> Type_label != TP_ENUM
+			&& (*token) -> kind != TK_PUNCTUATOR
+		)
+	)
 	{
 		node = ident_specify(token, node);
 	}
+
+	// parse pointer argment only 
 
 	if((node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM) 
 				&& node -> name == NULL)
@@ -948,7 +965,10 @@ Node_t* parameter_declare(Token_t** token) {
 	}
 
 	// check: scope && name space 
-	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
+	if(node -> name == NULL) {
+		node -> name = String_add("parameter_",i2a(number_of_parameter));
+	}
+	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table); //
 	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
 		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	else
@@ -1093,14 +1113,17 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 	}
 	return NULL;
 }
-/*@brief specify identifier : is it an pointer to something ? identifier name?
- * */
+
+// specify identifier : is it an pointer to something ? identifier name?
+// this function does not guarantee that node -> name != NULL
 Node_t* ident_specify(Token_t** token, Node_t* node) {
 	if((*token) -> kind == TK_OPERATOR)
 	{
 		node = pointer(token, node);
 	}
-	node -> name = expect_ident(token);
+	if((*token) -> kind == TK_IDENT) {
+		node -> name = expect_ident(token);
+	}
 	while(find('[', token))
 	{
 		int array_size = expect_num(token) * (node -> tp -> size);

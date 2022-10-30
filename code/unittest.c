@@ -950,6 +950,28 @@ void unit_test_vector_pop_init() {
 
 }
 
+void unit_test_va_arg() {
+	char* arg ="int f(int a, ...)";
+	Token_t* token = lexical_analyze(arg);
+
+	if(token == NULL) {
+		fprintf(stderr, "token == NULL");
+		exit(1);
+	}
+	for(int i = 0; i < 6; i++) {
+		consume(&token);
+	}
+	if(token == NULL) {
+		fprintf(stderr, "token == NULL at ...");
+		exit(1);
+	}
+	if(token -> kind != TK_PLACE_HOLDER) {
+		fprintf(stderr, " token -> kind != TK_PLACE_HOLDER");
+		exit(1);
+	}
+	test_passed("va_arg");
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -976,6 +998,7 @@ int unit_test() {
 	unit_test_character_literal();
 	unit_test_macro_ifdef_ifndef();
 	unit_test_vector_pop_init();
+	unit_test_va_arg();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

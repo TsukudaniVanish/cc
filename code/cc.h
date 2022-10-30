@@ -296,6 +296,7 @@ typedef enum symbols {
 	LOG_AND,// &&
 	LOG_OR,// ||
 	ARROW,// ->
+	THREE_DOTS, // ...
 	END_OF_MULTI_OPERATOR,
 	UNIT_SYMBOL_START = 0,
 	LE, // = '<',
@@ -359,6 +360,7 @@ typedef enum tokenKind{
 	TK_OPERATOR=2, // operator
 	TK_PUNCTUATOR=3,// punctuator
 	TK_STRINGLITERAL,//string
+	TK_PLACE_HOLDER, // <-> ...
 	// token flow operation keyword =====================================================
 	TK_IF= TOKEN_FLOW_OPERATION_START,//flow operation
 	TK_ELSE,
@@ -489,6 +491,9 @@ void Token_splice(Token_t*, Token_t*, Token_t*);
 Token_t* Token_tailHead(Token_t* newToken, Token_t* old);
 
 Token_t* Token_consume_to_last(Token_t* token);
+
+// this function does not consume any token.
+int check_ident_appear_until_punctuator(Token_t** token);
 //====================================================
 
 
@@ -986,7 +991,7 @@ void program(Token_t **,Vector*);
 Node_t *func(Token_t**);
 int type_parameter_list(Token_t**, Node_t**);
 int parameter_list(Token_t**, Node_t**);
-Node_t *parameter_declare(Token_t**);
+Node_t *parameter_declare(Token_t**, int);
 Node_t *stmt(Token_t**);
 Node_t *declare(Token_t**);
 Node_t *init(Token_t**, Node_t*);
