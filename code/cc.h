@@ -75,6 +75,12 @@ void Vector_push(Vector *vec, void* x);
 void* Vector_pop(Vector* vec);
 
 /**
+ * @brief pop the initial element from vec 
+ * 
+ */
+void* Vector_pop_init(Vector* vec);
+
+/**
  * @brief replace element of vec at index by assigned pointer.
  * 
  * @param Vector* vec

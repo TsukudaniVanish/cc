@@ -911,6 +911,45 @@ void unit_test_macro_ifdef_ifndef() {
 	test_passed(test);
 }
 
+void unit_test_vector_pop_init() {
+	Vector* v = make_vector();
+	Vector_push(v, "Hi");
+	Vector_push(v, "There");
+
+	char* hi = Vector_pop_init(v);
+	if(v -> length != 1) {
+		fprintf(stderr, "expect %d but got %d", 1, v -> length);
+		exit(1);
+	}
+	if(!String_compare(hi, "Hi", 2)) {
+		fprintf(stderr, "expect Hi but got %s", hi);
+		exit(1);
+	}
+	char* There = Vector_at(v, 0);
+	if(!String_compare(There, "There", 5)) {
+		fprintf(stderr, "init element: expect There but got %s", There);
+		exit(1);
+	}
+
+	hi = Vector_pop_init(v);
+	if(v -> length != 0) {
+		fprintf(stderr, "expect %d but got %d", 0, v -> length);
+		exit(1);
+	}
+	if(!String_compare(hi, "There", 5)) {
+		fprintf(stderr, "second pop init:expect There but got %s", hi);
+		exit(1);
+	}
+
+	hi = Vector_pop_init(v);
+	if(hi != NULL) {
+		fprintf(stderr, "hi != NULL");
+		exit(1);
+	}
+	test_passed("pop init");
+
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -936,6 +975,7 @@ int unit_test() {
 	unit_test_long_long_int();
 	unit_test_character_literal();
 	unit_test_macro_ifdef_ifndef();
+	unit_test_vector_pop_init();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

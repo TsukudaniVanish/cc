@@ -37,7 +37,7 @@ void _maybe_realloc(Vector* vec)
 {
     if(_is_acceptable(vec,1) == 0)
         return;
-    void* new_container = malloc(vec -> length * 2 * sizeof(void*));
+    void* new_container = calloc(1, vec -> length * 2 * sizeof(void*));
     Memory_copy(new_container,vec -> container,vec -> length * sizeof(void *));
 
     vec -> container = new_container;
@@ -51,6 +51,7 @@ int Vector_get_length(Vector* vec)
     return -1;
 }
 
+// push x to the tail of vec
 void Vector_push(Vector* vec,void* x)
 {
     _maybe_realloc(vec);
@@ -58,6 +59,7 @@ void Vector_push(Vector* vec,void* x)
     vec -> length ++;
 }
 
+// pop the last element from vec
 void* Vector_pop(Vector *vec)
 {
     vec -> length --;
@@ -67,6 +69,21 @@ void* Vector_pop(Vector *vec)
     {
     	return NULL;
     }
+}
+
+// pop the initial element from vec 
+void* Vector_pop_init(Vector* v) {
+    v -> length --;
+    if(v -> length < 0) {
+        return NULL;
+    }
+
+    void* head = v -> container[0];
+    // shift elements
+    v -> allocsize = (v -> allocsize) - 1;
+    v -> container = (v -> container) + 1;
+    _maybe_realloc(v);
+    return head;
 }
 
 void Vector_replace(Vector* vec, size_t index,void * p)

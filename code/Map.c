@@ -91,6 +91,7 @@ void* Map_delete(Map* m, char* key) {
 	{
 		if(String_len(p -> key) == len && String_compare(p -> key, key, String_len(key))) 
 		{
+			// pop out p from chain.
 			if(p -> prev != NULL)
 			{
 				p -> prev -> next = p -> next;
