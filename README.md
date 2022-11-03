@@ -81,7 +81,7 @@ a generator function which convert an abstract syntax tree into  assembly codes
 - [x] add va-arg function declaration 
 - [ ] add include file path find algorithm 
 - [x] add #ifndef, #ifdef
-- [ ] add #elif #else
+- [x] add #elif #else
 - [x] add  a character  literal ''
 - [x] add type cast 
 - [x] add long and long int

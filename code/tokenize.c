@@ -8,6 +8,8 @@ extern unsigned int String_len(char*);
 extern int String_compare(char* ,char*, unsigned int);
 extern void Memory_copy(void* dst, void* src, unsigned length);
 
+Token_t* tokenize_macro_if(char** pointer, Token_t* cur);
+
 int sizeof_token(int kind) {
 	switch (kind)
 	{
@@ -243,6 +245,8 @@ char* get_keyword(keyword kind) {
 		case MACRO_IFDEF: return "#ifdef";
 		case MACRO_IFNDEF: return "#ifndef";
 		case MACRO_INCLUDE: return "#include";
+		case MACRO_ELIF: return "#elif";
+		case MACRO_ELSE: return "#else";
 		case VOID: return "void";
 		case CHAR: return "char";
 		case INT: return "int";
@@ -626,24 +630,31 @@ char* tokenize_macro_define(char* p) {
 	return p;
 }
 
-char* skip_to_MACRO_ENDIF(char* p) {
-	char* _endif = "#endif";
-	while(*p != '\0')
+/**
+ * @brief This function calculates an address of the next of the last character of next keyword(until). 
+ * assume 0 < len(until) < len(p). 
+ * 
+ * @param p 
+ * @param until -- keyword
+ * @return char* 
+ */
+char* skip_to(char* p, char* until) {
+	unsigned int l = String_len(until);
+	while (*p != '\0')
 	{
-		if(*p == '#')
-		{
-			if(String_compare(p, _endif, 6)) {
-				p = p + 6;
+		if(*p == *until) {
+			if(String_compare(p, until, l)) {
+				p = p + l;
 				return p;
-			}	
-		}
-		p ++;
+			}
+		}	
+		p++;
 	}
 	return p;
 }
 
 // This function finds the next marker(#else, #elif, #end)
-char* get_next_flow_marker(char* p) {
+keyword get_next_flow_marker(char* p) {
 	char* _else = "#else";
 	int l_else = String_len(_else);
 	
@@ -658,38 +669,50 @@ char* get_next_flow_marker(char* p) {
 	while(*p != '\0') {
 		if(*p == '#') {
 			if(String_compare(p, _else, l_else)){
-				return _else;
+				return MACRO_ELSE;
 			}
 			if(String_compare(p, _elif, l_elif)) {
-				return _elif;
+				return MACRO_ELIF;
 			}
 			if(String_compare(p, _end, l_end)) {
-				return _end;
+				return MACRO_ENDIF;
 			}
 		}
 		p++;
 	}
-	return marker;
+	return KEYWORD_END;
 }
 
 // this function evaluate macro_token and tokenize if it is true until #end appears.
 Token_t* tokenize_macro_conditional_flow(char** pointer, Token_t* cur, Token_t* macro_token) {
-	char* p = *pointer;
+	keyword next_flow_marker = get_next_flow_marker(*pointer);
+	if(next_flow_marker == KEYWORD_END) {
+		error_at(*pointer, "can't find #else #elif #endif");
+	}
+	
+	char* until = get_keyword(next_flow_marker);
 	Expr* exp = parse_macro_expr(&macro_token);
-	if(eval_Expr(exp))
+	if(eval_Expr(exp)) // true case 
 	{
-		*pointer = p;
-		char* until = get_next_flow_marker(p);
-
 		Token_t* token = tokenize_until(pointer, until);
 		
-		*pointer = skip_to_MACRO_ENDIF(*pointer);
+		*pointer = skip_to(*pointer, "#endif");
 		cur -> next = token;
 		return Token_consume_to_last(cur);
 	}
-	
-	p = skip_to_MACRO_ENDIF(p);
-	*pointer = p;
+	if(next_flow_marker == MACRO_ELIF) {
+		*pointer = skip_to(*pointer, until);
+		return tokenize_macro_if(pointer, cur);
+	}
+	if(next_flow_marker == MACRO_ELSE) {
+		*pointer = skip_to(*pointer, until);
+		Token_t* token = tokenize_until(pointer, until);
+
+		*pointer = skip_to(*pointer, "#endif");
+		cur -> next = token;
+		return Token_consume_to_last(cur);
+	}
+	*pointer = skip_to(*pointer, "#endif");
 	return cur;
 }
 

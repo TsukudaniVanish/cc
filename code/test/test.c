@@ -651,8 +651,8 @@ void test_character_literal() {
 void test_ifdef_ifndef() {
 	char* test = "ifdef ifndef";
 	OK_IFDEF ok = {100};
-	if(THIS_WILL_DEFINE != 10) {
-		error_template_int(test, 10, THIS_WILL_DEFINE);
+	if(THIS_WILL_BE_DEFINED != 10) {
+		error_template_int(test, 10, THIS_WILL_BE_DEFINED);
 	}
 	test_passed(test);
 }
@@ -665,6 +665,9 @@ extern void test_place_holder(int, int, char*, ...);
 #if defined TEST_DEFINE
 	#define DEFINEOK 20
 #endif
+#ifndef ELIF_OK
+	fail to compile 
+#endif 
 int main(){// line comment 
     printf_h("\x1b[32mHello\x1b[m\n"); /* display test */
 	test_arithmetic();
