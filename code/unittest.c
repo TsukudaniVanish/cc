@@ -972,6 +972,23 @@ void unit_test_va_arg() {
 	test_passed("va_arg");
 }
 
+extern Token_t* tokenize_until(char**, char*);
+void unit_test_tokenize_until () {
+	char* test = "tokenize_until";
+	char* arg = "#if defined HI\nint a = 0;\n#endif\nint c = 0;\n#else\nchar* b";
+	Token_t* token = tokenize_until(&arg, "#else");
+	if(token == NULL) {
+		fprintf(stderr, "token == NULL");
+		exit(1);
+	}
+	token = Token_consume_to_last(token);
+	if(token -> kind != TK_PUNCTUATOR) {
+		fprintf(stderr, "token -> kind: %d is expected but got %d", TK_PUNCTUATOR, token -> kind);
+		exit(1);
+	}
+	test_passed(test);
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -999,6 +1016,7 @@ int unit_test() {
 	unit_test_macro_ifdef_ifndef();
 	unit_test_vector_pop_init();
 	unit_test_va_arg();
+	unit_test_tokenize_until();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }

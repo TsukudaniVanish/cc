@@ -41,6 +41,21 @@ int is_space(char p) {
 	return 0;
 }
 
+// This function assume input and word is not NULL.
+int find_word(char* input, char* word) {
+	if(*input != *word) {
+		return 0;
+	}
+	int l = String_len(word);
+	for(int i = 0; i < l; i ++) {
+		if(input[i] == '\0') {
+			return 0;
+		}
+	}
+
+	return String_compare(input, word, l);
+}
+
 // skip white space characters
 char *skip(char * p) {
 	while (' ' == *p || '\t' == *p || '\n' == *p || '\r' == *p || '\f' == *p || '\v' == *p)
@@ -174,8 +189,6 @@ int is_comment(char *p) {
 	}
 	return 0;
 }
-
-
 
 
 void comment_skip(char **p) {
@@ -430,6 +443,57 @@ Token_t* tokenize_identifier(char** p, Token_t* cur) {
 	}
 	return cur;
 }
+
+/**
+ * @brief tokenize until keyword appears.
+ * After this function called, The pointer points a pointer pointing a character just before keyword.
+ * This function does not add TK_EOF
+ * 
+ * @param pointer 
+ * @param until keyword
+ * @return Token_t* 
+ */
+Token_t* tokenize_until(char** pointer, char* until) {
+	char* p = *pointer;
+	Token_t head;
+	head.next = NULL;
+	Token_t* cur = &head;
+
+	// To ensure p[0:len(until)] is not until, we skip p first.
+	p = skip(p);
+	while(find_word(p, until) == 0 && *p != '\0') {
+		TokenizeMarker marker = tokenize_flow_control(p);
+		switch(marker) {
+			case END: 
+				break;
+			case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
+				break;
+			case CHARACTER_LITERAL_START:
+				cur = tokenize_character_literal(&p, cur);
+				break;
+			case COMMENT_START: comment_skip(&p);
+				break;
+			case MACRO_START: cur = tokenize_macro(&p, cur);
+				break;
+			case KEYWORD: cur = tokenize_keyword(&p, cur);
+				break;
+			case SYMBOL: cur = tokenize_symbol(&p, cur);
+				break;
+			case NUMBER: cur = tokenize_number(&p, cur);
+				break;
+			case IDENTIFIER: cur = tokenize_identifier(&p, cur);
+				break;
+			case TOKENIZE_ERR:
+				error_at(cur -> str,"Failed to tokenize");
+		}
+
+		p = skip(p);
+		continue;
+	}
+	*pointer = p;
+	return head.next;
+}
+
 /**
  * @brief read one line and make token list for MacroData.macroBody
  * 
@@ -447,7 +511,7 @@ Token_t* tokenize_macro_one_line(char** pointer) {
 		TokenizeMarker marker = tokenize_macro_flow_control(p);
 		switch (marker)
 		{
-		case END: 
+		case END:
 			break;
 		case STRINGLITERAL_START: cur = tokenize_string_literal(&p, cur);
 			break;
@@ -473,8 +537,7 @@ Token_t* tokenize_macro_one_line(char** pointer) {
 	return head.next;
 }
 
-#define FLAG_MACRO_IF 1
-Token_t *tokenize(char **pointer, Token_t** lastToken, int tokenizeFlag) {
+Token_t *tokenize(char **pointer) {
 	char* p = *pointer;
 	Token_t head;
 	head.next = NULL;
@@ -495,39 +558,8 @@ Token_t *tokenize(char **pointer, Token_t** lastToken, int tokenizeFlag) {
 			break;
 		case COMMENT_START: comment_skip(&p);
 			break;
-		case MACRO_START: 
-			{
-				keyword keyWord = is_keyword(p);
-				if(keyWord == MACRO_ENDIF)
-				{
-					char* endif = get_keyword(keyWord);
-					if(endif == NULL)
-					{
-						error_at("", "compiler was panicked! macro_endif");
-					}
-					p = p + String_len(endif);
-					if(tokenizeFlag != FLAG_MACRO_IF)
-					{
-						error_at(p, "can't find '#if ...'");
-					}
-
-					if(lastToken != NULL && head.next != NULL)
-					{
-						(*lastToken) -> next = head.next;
-						*lastToken = cur;
-						*pointer = p;
-						return head.next;
-					}
-					else 
-					{ // tokenize doesn't generate token list 
-						*pointer = p;
-						return *lastToken; 
-					}
-					
-				}
-				cur = tokenize_macro(&p, cur);
-				break;
-			}
+		case MACRO_START: cur = tokenize_macro(&p, cur);
+			break;
 		case KEYWORD: cur = tokenize_keyword(&p, cur);
 			break;
 		case SYMBOL: cur = tokenize_symbol(&p, cur);
@@ -540,11 +572,6 @@ Token_t *tokenize(char **pointer, Token_t** lastToken, int tokenizeFlag) {
 			error_at(cur -> str,"Failed to tokenize");
 		}
 		continue;	
-	}
-	if(lastToken != NULL)
-	{
-		(*lastToken) -> next = head.next;
-		*lastToken = cur;
 	}
 	new_token(TK_EOF, cur, p);
 	*pointer = p;
@@ -606,7 +633,7 @@ char* skip_to_MACRO_ENDIF(char* pointer) {
 			char* keyWordString = get_keyword(keyWord);
 			if(keyWordString == NULL)
 			{
-				error_at("", "compiler was panicked. keyword is found but there is no string correspond it");
+				error_at("", "compiler was panicked. keyword(%s) is found but there is no string correspond it", keyWordString);
 			}
 			pointer = pointer + String_len(keyWordString);
 			if(keyWord == MACRO_ENDIF)
@@ -627,8 +654,12 @@ Token_t* tokenize_macro_conditional_flow(char** pointer, Token_t* cur, Token_t* 
 	if(eval_Expr(exp))
 	{
 		*pointer = p;
-		tokenize(pointer, &cur, FLAG_MACRO_IF);
-		return cur;
+		char* until = "#endif";
+
+		Token_t* token = tokenize_until(pointer, until);
+		*pointer += String_len(until);
+		cur -> next = token;
+		return Token_consume_to_last(cur);
 	}
 	
 	p = skip_to_MACRO_ENDIF(p);
@@ -688,6 +719,8 @@ Token_t* tokenize_macro_ifndef(char** pointer, Token_t* cur) {
 	return tokenize_macro_conditional_flow(pointer, cur, token);
 }
 
+// tokenize header file and connect a head of resulting tokens to cur -> next
+// return a last token of resulting tokens
 Token_t* tokenize_macro_include(char** pointer, Token_t** cur) {
 	char* p = *pointer;
 	p = skip_in_macro(p);
@@ -704,7 +737,7 @@ Token_t* tokenize_macro_include(char** pointer, Token_t** cur) {
 		char* fileName = calloc(len, sizeof(char));
 		Memory_copy(fileName, p,len);
 		char* includeBuf = file_open(fileName);
-		Token_t* token = tokenize(&includeBuf, NULL, 0); // cur points end of include file
+		Token_t* token = tokenize(&includeBuf); // cur points end of include file
 		*pointer = q + 1;
 		if(token -> kind != TK_EOF)
 			return Token_tailHead(token, *cur);
@@ -741,7 +774,5 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 }
 
 Token_t* lexical_analyze(char *p) {
-	Token_t** noMeaningHere = NULL;
-	int noFlag = 0;
-	return tokenize(&p, noMeaningHere, noFlag);
+	return tokenize(&p);
 }
