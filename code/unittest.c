@@ -328,7 +328,7 @@ void unit_test_parse_struct() {
 		exit(1);
 	}
 
-	if(node -> kind != ND_GLOBVALDEF)
+	if(node -> kind != ND_LVAL)
 	{
 		Node_show_all(node, 0);
 		exit(1);
