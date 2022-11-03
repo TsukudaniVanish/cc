@@ -773,21 +773,14 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	// global variable declaration or struct-union declaration 
 	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declare_specify(token, node, is_type_alias(token));
-
-	if(
-		(node -> tp -> Type_label != TP_STRUCT 
-			&& node -> tp -> Type_label != TP_UNION 
-			&& node -> tp -> Type_label != TP_ENUM
-		)
-	) {// pointer, array and identifier parsing
-		node = ident_specify(token, node);
-	}
+	node = ident_specify(token, node);
 
 	if(// struct , union or enum declaration 
 		(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_UNION || node -> tp -> Type_label == TP_ENUM)
 		&& node -> name == NULL
 	) { 
 		expect(';', token);
+		node -> kind = ND_LVAL;
 		return node;
 	}
 
@@ -945,16 +938,8 @@ Node_t* parameter_declare(Token_t** token, int number_of_parameter) {
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
 	node = declare_specify(token, node, is_type_alias(token));
-	if(
-		(node -> tp -> Type_label != TP_STRUCT 
-			&& node -> tp -> Type_label != TP_UNION 
-			&& node -> tp -> Type_label != TP_ENUM
-			&& (*token) -> kind != TK_PUNCTUATOR
-		)
-	)
-	{
-		node = ident_specify(token, node);
-	}
+	node = ident_specify(token, node);
+	
 
 	// parse pointer argment only 
 
