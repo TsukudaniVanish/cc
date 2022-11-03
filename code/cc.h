@@ -270,6 +270,8 @@ typedef enum keyWords {
 	MACRO_IFDEF,
 	MACRO_IFNDEF,
 	MACRO_ENDIF,
+	MACRO_ELSE,
+	MACRO_ELIF,
 	MACRO_INCLUDE,
 	TYPE_START,// following entries are representing type 
 	VOID,

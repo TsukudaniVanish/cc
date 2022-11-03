@@ -14,15 +14,28 @@ unsigned int String_len(char* s) {
 	return res;
 }
 
+// 
+/**
+ * @brief This fuction compares s1 and s2 in the length of size.
+ * s1 and s2 is assumed length <= size.
+ * if s1 or s2 has length > size then return false(0).
+ * 
+ * @param s1 
+ * @param s2 
+ * @param size 
+ * @return int 
+ */
 int String_compare(char* s1, char* s2, unsigned int size) {
-	int res = 1;
 	for(int i = 0; i < size; i++) {
-		if(s1[i] && s2[i])
-			res = res && Character_compare(s1[i], s2[i]);
-		else
-			return 0;
+		if(s1[i] && s2[i]){
+			if(s1[i] != s2[i]) {
+				return 0;
+			}
+			continue;
+		}
+		return  0;
 	}
-	return res;
+	return 1;
 }
 
 void Memory_copy(void* dest,void* source, unsigned int size) {

@@ -1,3 +1,4 @@
+// TODO: tokenize #elif #else 
 #include "cc.h"
 //#include<string.h>
 //#include<stdbool.h>
@@ -46,14 +47,15 @@ int find_word(char* input, char* word) {
 	if(*input != *word) {
 		return 0;
 	}
-	int l = String_len(word);
-	for(int i = 0; i < l; i ++) {
+	for(int i = 0; word[i] != '\0'; i ++) {
 		if(input[i] == '\0') {
 			return 0;
 		}
+		if(input[i] != word[i]) {
+			return 0;
+		}
 	}
-
-	return String_compare(input, word, l);
+	return 1;
 }
 
 // skip white space characters
@@ -624,27 +626,50 @@ char* tokenize_macro_define(char* p) {
 	return p;
 }
 
-char* skip_to_MACRO_ENDIF(char* pointer) {
-	while(*pointer != '\0')
+char* skip_to_MACRO_ENDIF(char* p) {
+	char* _endif = "#endif";
+	while(*p != '\0')
 	{
-		if(pointer[0] == '#')
+		if(*p == '#')
 		{
-			keyword keyWord = is_keyword(pointer);
-			char* keyWordString = get_keyword(keyWord);
-			if(keyWordString == NULL)
-			{
-				error_at("", "compiler was panicked. keyword(%s) is found but there is no string correspond it", keyWordString);
-			}
-			pointer = pointer + String_len(keyWordString);
-			if(keyWord == MACRO_ENDIF)
-			{
-				return pointer;
-			}
-			continue;
+			if(String_compare(p, _endif, 6)) {
+				p = p + 6;
+				return p;
+			}	
 		}
-		pointer ++;
+		p ++;
 	}
-	return pointer;
+	return p;
+}
+
+// This function finds the next marker(#else, #elif, #end)
+char* get_next_flow_marker(char* p) {
+	char* _else = "#else";
+	int l_else = String_len(_else);
+	
+	char* _elif = "#elif";
+	int l_elif = String_len(_elif);
+	
+	char* _end = "#endif";
+	int l_end = String_len(_end);
+
+
+	char* marker = NULL;
+	while(*p != '\0') {
+		if(*p == '#') {
+			if(String_compare(p, _else, l_else)){
+				return _else;
+			}
+			if(String_compare(p, _elif, l_elif)) {
+				return _elif;
+			}
+			if(String_compare(p, _end, l_end)) {
+				return _end;
+			}
+		}
+		p++;
+	}
+	return marker;
 }
 
 // this function evaluate macro_token and tokenize if it is true until #end appears.
@@ -654,10 +679,11 @@ Token_t* tokenize_macro_conditional_flow(char** pointer, Token_t* cur, Token_t* 
 	if(eval_Expr(exp))
 	{
 		*pointer = p;
-		char* until = "#endif";
+		char* until = get_next_flow_marker(p);
 
 		Token_t* token = tokenize_until(pointer, until);
-		*pointer += String_len(until);
+		
+		*pointer = skip_to_MACRO_ENDIF(*pointer);
 		cur -> next = token;
 		return Token_consume_to_last(cur);
 	}
