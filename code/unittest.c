@@ -989,6 +989,85 @@ void unit_test_tokenize_until () {
 	test_passed(test);
 }
 
+extern char* String_substring(char* s, int start, int end);
+void unit_test_string_substring() {
+	char* s = "this is a string.";
+	char* sub = String_substring(s, 5, 7);
+	if(String_compare(sub, "is", 2) == 0) {
+		fprintf(stderr, "'is' is expected but got %s", sub);
+		exit(1);
+	}
+	test_passed("stirng_substring");
+}
+
+#define pop_print(v) for(int i = 0; i < v -> length; i ++){ char* s = Vector_at(v, i); fprintf(stderr,"%d: %s\n", i, s);}
+extern Vector* String_split(char* s, char c);
+void unit_test_string_split(){
+	char* s = "this is a string.";
+	Vector* v = String_split(s, ' ');
+	if(v == NULL) {
+		fprintf(stderr, "v == NULL");
+		exit(1);
+	}
+	if(v -> length != 4) {
+		fprintf(stderr ,"v -> length: expected 4 but got %d", v -> length);
+		exit(1);
+	}
+	char* string = Vector_get_tail(v);
+	if(String_compare("string.", string, 7) == 0) {
+		fprintf(stderr, "expected 'string.' but got %s\n", string);
+		pop_print(v);
+		exit(1);
+	}
+	test_passed("string_split");
+}
+
+extern int aggregate_names_of_contents_from_dir(char* dir_path, Vector* file_container, Vector* dir_container);
+void unit_test_aggregate_names_of_contents_from_dir() {
+	char* path = "./";
+	Vector* f = make_vector();
+	Vector* d = make_vector();
+	if(aggregate_names_of_contents_from_dir(path, f, d) == -1) {
+		fprintf(stderr, "failed to read directory");
+		exit(1);
+	}
+	if(f -> length == 0 || d -> length == 0) {
+		fprintf(stderr, "failed to find contents\n");
+		fprintf(stderr, "file:\n");
+		pop_print(f);
+		fprintf(stderr, "directory:\n");
+		pop_print(d);
+		exit(1);
+	}
+	char* test = Vector_at(d, 0);
+	if(String_compare(Vector_at(d, 0), "./test/", 4) == 0) {
+		fprintf(stderr, "expect 'test' but got %s\n", test);
+		fprintf(stderr, "file:\n");
+		pop_print(f);
+		fprintf(stderr, "./directory:\n");
+		pop_print(d);
+		exit(1);
+	}
+	test_passed("aggregated contents from dir");
+}
+
+extern char* find_file_from(char* root_path/* example: ./dirname/ */, char* target_name);
+void unit_test_find_file_from() {
+	char* path = "./";
+	char* target = "test.h";
+
+	char* file_path = find_file_from(path, target);
+	if(file_path == NULL) {
+		fprintf(stderr, "file_path == NULL");
+		exit(1);
+	}
+	if(String_compare("./test/test.h", file_path, 13) == 0) {
+		fprintf(stderr, "expect './test/test.h' but got %s\n", file_path);
+		exit(1);
+	}
+	test_passed("find_file_from");
+}
+
 int unit_test() {
 	unit_test_Vector();
 	unit_test_String();
@@ -1017,6 +1096,10 @@ int unit_test() {
 	unit_test_vector_pop_init();
 	unit_test_va_arg();
 	unit_test_tokenize_until();
+	unit_test_string_substring();
+	unit_test_string_split();
+	unit_test_aggregate_names_of_contents_from_dir();
+	unit_test_find_file_from();
 	// unit_test_tokenize_include(); just show tokens
 	return 0;
 }
