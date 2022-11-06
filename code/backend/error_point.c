@@ -1,45 +1,10 @@
-#include "cc.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+extern char* user_input;
+extern char* filepath;
+extern char* parsing_here;
 extern void Memory_copy(void*, void*, unsigned int);
-void expect(int kind ,Token_t **token) {
-	if( (*token) -> kind > 100 |  kind != (*token) -> str[0])
-	{
-		error_at( (*token) -> str ,"expect %c but got %c", kind, (*token) -> str[0]);
-	}
-	else
-	{
-		(*token) = (*token) -> next;
-	}
-}
-
-char *expect_ident(Token_t **token) {
-	if((*token)->kind != TK_IDENT)
-	{
-		error_at( (*token)-> str, "invalid identifier name" );
-	}
-	else
-	{
-		char *name = calloc((*token) -> length, sizeof(char));
-		Memory_copy(name,(*token) -> str, (*token) -> length);
-		consume(token);
-		return name;
-	}
-}
-
-int expect_num(Token_t **token) {
-	if((*token) -> kind != TK_CONST)
-	{
-		error_at( (*token) -> str , "number literal is expected");
-	}
-	else
-	{	
-		int v = (*token) -> val;	
-		(*token) = (*token) -> next;
-		return v;
-	}
-}
 
 // this function does not call exit(1)
 void error(char *fmt,...)

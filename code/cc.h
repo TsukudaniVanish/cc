@@ -493,6 +493,29 @@ Token_t* Token_consume_to_last(Token_t* token);
 
 // this function does not consume any token.
 int check_ident_appear_until_punctuator(Token_t** token);
+
+/**
+ * @brief check whether (*token) is compatible with kind or not
+ * @sa error_at
+ * @param int kind 
+ * @param Token_t token
+ * @return void
+ * @sa error_at
+ */
+void expect(int kind,Token_t **token);
+/**
+ * @brief check identifier
+ * @sa error_at
+ * @param Token_t token
+ * @return char 
+ */
+char *expect_ident(Token_t **);
+/**
+ * @brief check number literal
+ * @param Token_t_** token 
+ * @return int 
+ */
+int expect_num(Token_t **token);
 //====================================================
 
 
@@ -612,28 +635,6 @@ char* filepath;
 
 //error assert
 char *parsing_here;
-/**
- * @brief check whether (*token) is compatible with kind or not
- * @sa error_at
- * @param int kind 
- * @param Token_t token
- * @return void
- * @sa error_at
- */
-void expect(int kind,Token_t **token);
-/**
- * @brief check identifier
- * @sa error_at
- * @param Token_t token
- * @return char 
- */
-char *expect_ident(Token_t **);
-/**
- * @brief check number literal
- * @param Token_t_** token 
- * @return int 
- */
-int expect_num(Token_t **token);
 
 void error(char* fmt, ...);
 

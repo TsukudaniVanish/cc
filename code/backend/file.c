@@ -1,18 +1,57 @@
-#include "cc.h"
-//#include<stdarg.h>
-#include<string.h>
-#include<errno.h>
-#include<dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "file.h"
 
 extern int String_len(char*);
 extern int String_compare(char*, char*, unsigned int);
 extern int String_compare_from_tail(char* s1, char* s2, unsigned int size);
 extern char* String_add(char* , char*);
+
+// This function prints formatted string to standard error
+extern void error(char*, ...);
+
+/**
+ * @brief make empty vector
+ * 
+ * @return Vector* 
+ */
+Vector* make_vector();
+
+/**
+ * @brief append element to tail of the vector
+ * 
+ * @param vec 
+ * @param x 
+ */
+void Vector_push(Vector *vec, void* x);
+
+/**
+ * @brief reduce length
+ * 
+ */
+void* Vector_pop(Vector* vec);
+
+/**
+ * @brief pop the initial element from vec 
+ * 
+ */
+void* Vector_pop_init(Vector* vec);
+
+/**
+ * @brief access element of vec at index if index < vec -> length .
+ * 
+ * @param vec 
+ * @param index 
+ * @return void* 
+ */
+void* Vector_at(Vector* vec, unsigned index);
+
+/**
+ * @brief get element of vec at tail.
+ * 
+ * @param vec 
+ * @return void* 
+ */
+void* Vector_get_tail(Vector *vec);
+
 
 char* file_open(char* path)
 {
@@ -133,7 +172,7 @@ char* find_file_from(char* root_path/* example: ./dirname/ */, char* target_name
 	Vector_push(d, path);
 	while (d->length > 0)
 	{
-		path = Vector_pop(d);
+		path = Vector_pop_init(d);
 		if(aggregate_names_of_contents_from_dir(path, f, d) == -1) {
 			error( "Error: in searching file. path: %s\n", path);
 			return NULL;

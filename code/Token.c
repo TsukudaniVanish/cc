@@ -216,3 +216,41 @@ int check_ident_appear_until_punctuator(Token_t** token) {
 	}
 	return 0;
 }
+
+void expect(int kind ,Token_t **token) {
+	if( (*token) -> kind > 100 |  kind != (*token) -> str[0])
+	{
+		error_at( (*token) -> str ,"expect %c but got %c", kind, (*token) -> str[0]);
+	}
+	else
+	{
+		(*token) = (*token) -> next;
+	}
+}
+
+char *expect_ident(Token_t **token) {
+	if((*token)->kind != TK_IDENT)
+	{
+		error_at( (*token)-> str, "invalid identifier name" );
+	}
+	else
+	{
+		char *name = calloc((*token) -> length, sizeof(char));
+		Memory_copy(name,(*token) -> str, (*token) -> length);
+		consume(token);
+		return name;
+	}
+}
+
+int expect_num(Token_t **token) {
+	if((*token) -> kind != TK_CONST)
+	{
+		error_at( (*token) -> str , "number literal is expected");
+	}
+	else
+	{	
+		int v = (*token) -> val;	
+		(*token) = (*token) -> next;
+		return v;
+	}
+}
