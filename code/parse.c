@@ -1324,7 +1324,7 @@ Node_t* enum_specify(Token_t** token, Node_t* node) {
 	}
 	else
 	{
-		name = "_";
+		name = String_add("_", i2a(struct_number++));
 	}
 	node -> name = name;
 
@@ -1377,8 +1377,13 @@ Node_t* enumerator(Token_t** token, Node_t* node) {
 		Map_add(ordinaryNameSpace, name, nameData);
 
 		if(find('=', token))
-		{
-			nameData -> val = expect_num(token);
+		{ // allow minus
+			if((*token) -> kind == TK_OPERATOR && (*token) -> str[0] == '-') {
+				consume(token);
+				nameData -> val = - expect_num(token);
+			} else {
+				nameData -> val = expect_num(token);
+			}
 		}
 		else
 		{

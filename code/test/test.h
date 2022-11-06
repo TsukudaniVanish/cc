@@ -43,3 +43,7 @@ struct this_is_not_compiled = {};
 #endif 
 
 typedef struct struct_scope_test SCOPE_TEST;
+
+enum MINUS_MEMBER_TEST{
+    TEST_MINUS = -1,
+};

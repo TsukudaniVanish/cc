@@ -77,7 +77,8 @@ a generating local variable function
 a generator function which convert an abstract syntax tree into  assembly codes 
 
 ## todo
-- [ ] refactoring/ remove dependency on standard library
+- [x] refactoring/ remove include standard library
+- [ ] allow type cast in a global declaration
 - [ ] add macro operator #, ##
 - [x] add va-arg function declaration 
 - [x] add include file path find algorithm 
