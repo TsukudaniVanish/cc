@@ -1,6 +1,11 @@
 #include "cc.h"
+
 extern unsigned int String_len(char*);
 extern int String_compare(char* , char* , unsigned );
+
+extern void exit(int);
+static void* NULL = (void*) 0;
+extern void* calloc(unsigned nmem, unsigned size);
 
 MacroData* new_MacroData(char* ident, int tag, Token_t* macroBody, Vector* param) {
     MacroData* d = calloc(1, sizeof(MacroData));

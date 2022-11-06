@@ -1,6 +1,9 @@
 #include "cc.h"
 
-extern void sprintf_h(char*, char*, long);
+extern int sprintf(char*, char*, ...);
+extern void exit(int);
+static void* NULL = (void*) 0;
+extern void* calloc(unsigned nmem, unsigned size);
 
 /*
  * @brief allocate memory and make new string has length len
@@ -93,7 +96,7 @@ char* i2a(int d) {
 		q++;
 	}
 	char* s = new_String(q + 1);
-	sprintf_h(s, "%d", d);
+	sprintf(s, "%d", d);
 	return s;
 }
 
@@ -106,7 +109,7 @@ char* l2a(long d) {
 		q++;
 	}
 	char* s = new_String(q + 1);
-	sprintf_h(s, "%ld", d);
+	sprintf(s, "%ld", d);
 	return s;
 }
 
@@ -161,7 +164,7 @@ Vector* String_split(char* s, char sep) {
 		}
 		char* sub = String_substring(s, start, end + start);
 		if(sub == NULL) {
-			fprintf(stderr, "string split fail\ns: %s\nstart: %d\nend: %d\n", s,start, end + start);
+			error( "string split fail\ns: %s\nstart: %d\nend: %d\n", s,start, end + start);
 			return v;
 		}
 		Vector_push(v, sub);

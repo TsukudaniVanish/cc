@@ -10,9 +10,14 @@
  */
 #define VEC_MIN_SIZE SIZEOF_POINTER
 #include "cc.h"
+
 extern void Memory_copy(void*,void*,unsigned int);
 
-Vector *new_Vector(size_t alloc)
+extern void exit(int);
+static void* NULL = (void*) 0;
+extern void* calloc(unsigned nmem, unsigned size);
+
+Vector *new_Vector(unsigned alloc)
 {
     Vector *vec = calloc(1,sizeof(Vector));
     vec -> allocsize = alloc;
@@ -26,7 +31,7 @@ Vector *make_vector()
     return new_Vector(VEC_MIN_SIZE);
 }
 
-int _is_acceptable(Vector *vec,size_t _rsvlen)
+int _is_acceptable(Vector *vec,unsigned _rsvlen)
 {
     if(vec -> allocsize - vec -> length < _rsvlen)
         return 0;
@@ -86,14 +91,14 @@ void* Vector_pop_init(Vector* v) {
     return head;
 }
 
-void Vector_replace(Vector* vec, size_t index,void * p)
+void Vector_replace(Vector* vec, unsigned index,void * p)
 {
     if(index > vec -> length -1)
         return;
     vec -> container[index] = p;
 }
 
-void* Vector_at(Vector* vec, size_t index)
+void* Vector_at(Vector* vec, unsigned index)
 {
     if(index +1 > Vector_get_length(vec))
     {

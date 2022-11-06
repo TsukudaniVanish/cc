@@ -5,6 +5,10 @@
 extern unsigned int String_len(char* s);
 extern int String_compare(char* s1, char* s2, unsigned int size);
 
+extern void* calloc(unsigned nmem, unsigned size);
+extern void exit(int);
+static void* NULL = (void*) 0;
+
 unsigned long hash(char* key){
 
 	unsigned long res = 0;

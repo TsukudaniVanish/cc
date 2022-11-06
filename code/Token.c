@@ -4,6 +4,10 @@ extern unsigned int String_len(char*);
 extern int String_compare(char* ,char* ,unsigned int);
 extern void Memory_copy(void* dest,void* source, unsigned int size);
 
+extern void exit(int);
+static void* NULL = (void*) 0;
+extern void* calloc(unsigned nmem, unsigned size);
+
 Token_t *new_Token_t(Token_kind kind, Token_t* next, int val, int length, char* str, Type* tp) {
 	Token_t* token = calloc(1, sizeof(Token_t));
 	token -> kind = kind;

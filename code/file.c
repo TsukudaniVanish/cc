@@ -6,21 +6,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 extern int String_len(char*);
 extern int String_compare(char*, char*, unsigned int);
 extern int String_compare_from_tail(char* s1, char* s2, unsigned int size);
 extern char* String_add(char* , char*);
-
-void error(char *fmt,...)
-{
-	va_list arg;
-	va_start(arg,fmt);
-	fprintf(stderr,fmt,arg);
-	va_end(arg);
-	exit(1);
-}
-
 
 char* file_open(char* path)
 {
@@ -32,13 +24,15 @@ char* file_open(char* path)
 	if(fseek(fp,0,SEEK_END) == -1)
 	{
 		error("%s : fseek :%s",path,strerror(errno));
+		exit(1);
 	}
 	
-	size_t size = ftell(fp);
+	unsigned size = ftell(fp);
 
 	if(fseek(fp,0,SEEK_SET) == -1)
 	{
 		error("%s : fseek :%s",path,strerror(errno));
+		exit(1);
 	}
 
 	char *buf = calloc(1,size +2);
@@ -78,12 +72,12 @@ int is_dir(char* path) {
 // if error occur return -1.
 int aggregate_names_of_contents_from_dir(char* dir_path /* example: ./directory/ */, Vector* file_container, Vector* dir_container) {
 	if(file_container == NULL || dir_container == NULL) {
-		fprintf(stderr, "container is NULL\nIs vec null: %d\nIs dir null: %d\n", file_container == NULL, dir_container == NULL);
+		error( "container is NULL\nIs vec null: %d\nIs dir null: %d\n", file_container == NULL, dir_container == NULL);
 		return -1;
 	}
 	DIR* target_dir = opendir(dir_path);
 	if(target_dir == NULL) {
-		fprintf(stderr, "can't open dir");
+		error( "can't open dir");
 		return -1;
 	}
 	struct dirent* content = readdir(target_dir);
@@ -141,7 +135,7 @@ char* find_file_from(char* root_path/* example: ./dirname/ */, char* target_name
 	{
 		path = Vector_pop(d);
 		if(aggregate_names_of_contents_from_dir(path, f, d) == -1) {
-			fprintf(stderr, "Error: in searching file. path: %s\n", path);
+			error( "Error: in searching file. path: %s\n", path);
 			return NULL;
 		}
 

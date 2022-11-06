@@ -1,14 +1,16 @@
 // TODO: macro operator #, ##
 #include "cc.h"
-//#include<string.h>
-//#include<stdbool.h>
-#include<ctype.h>
 
 extern char* new_String(unsigned);
 extern unsigned int String_len(char*);
 extern int String_compare(char* ,char*, unsigned int);
 extern void Memory_copy(void* dst, void* src, unsigned length);
 extern char* find_file_from(char* root_path/* example: ./dirname/ */, char* target_name);
+
+extern void exit(int);
+static void* NULL = (void*) 0;
+extern long strtol(char*, char**, unsigned);
+extern int isdigit(char);
 
 Token_t* tokenize_macro_if(char** pointer, Token_t* cur);
 
@@ -174,6 +176,10 @@ int is_symbol(char *p) {
 				break;
 			default:
 				operator = get_symbol(kind);
+				if(operator == NULL) {
+					kind ++;
+					continue;
+				}
 				len = String_len(operator);
 				if(String_compare(operator, p, len))
 				{
@@ -181,7 +187,7 @@ int is_symbol(char *p) {
 						len += 1000;
 					return len;
 				}
-					kind ++;
+				kind ++;
 		}
 	}
 	return 0;
@@ -295,7 +301,7 @@ Token_kind get_correspond_token_kind(keyword kind) {
 		case UNION: return TK_UNION;
 		case ENUM: return TK_ENUM;
 		default:
-			fprintf(stderr, "	failed to get token kind from keyword\n");
+			error( "	failed to get token kind from keyword\n");
 			exit(1);
 	}
 }
@@ -442,7 +448,7 @@ Token_t* tokenize_identifier(char** p, Token_t* cur) {
 	//calculate length of identifier
 	char *q = *p;
 	while(1){
-		if( isspace(*q) || q[0] == '\0' || q[0] == ','  || is_symbol(q))
+		if( is_space(*q) || q[0] == '\0' || q[0] == ','  || is_symbol(q))
 		{ //stop
 			cur -> length = q - *p;
 			*p = q;
@@ -627,7 +633,7 @@ char* tokenize_macro_define(char* p) {
 			while(*q != ',' && *q != ')' && !is_space(*q))
 				q++;
 			unsigned int length = q -p;
-			char* param = calloc(length, sizeof(char));
+			char* param = new_String(length);
 			Memory_copy(param, p, length);
 			
 			Vector_push(v, param);
@@ -809,7 +815,7 @@ Token_t* tokenize_macro_include(char** pointer, Token_t** cur) {
 			file_path = fileName;
 		}
 		if(file_path == NULL) {
-			fprintf(stderr, "can't find file path:%s\n", fileName);
+			error( "can't find file path:%s\n", fileName);
 			exit(1);
 		}
 		char* includeBuf = file_open(file_path);

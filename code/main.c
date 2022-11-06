@@ -7,6 +7,10 @@ extern int unit_test();
 extern unsigned int String_len(char*);
 extern int String_compare(char*, char*,unsigned int);
 
+extern int printf(char*, ...);
+extern void exit(int);
+static void* NULL = (void*) 0;
+
 extern void gen_printf_h();
 extern void gen_sprintf_h();
 extern void gen_calloc_h();

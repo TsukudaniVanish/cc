@@ -62,8 +62,6 @@
  * 		string literal
  */
 #include "cc.h"
-//#include<stdlib.h>
-//#include<string.h>
 
 
 extern char* new_String(unsigned int len);
@@ -73,6 +71,11 @@ extern char* String_add(char*, char*);
 extern char* i2a(int);
 extern void Memory_copy(void*,void*,unsigned int);
 static int struct_number = 0;
+
+extern void exit(int);
+static void* NULL = (void*) 0;
+extern void* calloc(unsigned nmem, unsigned size);
+extern void free(void*);
 
 NameData* new_NameData(int tag) {
 	NameData* data = calloc(1, sizeof(NameData));
@@ -84,7 +87,7 @@ NameData* new_NameData(int tag) {
 
 NameData* search_from_ordinary_namespace(char* name, ScopeInfo* scope) {
 	Vector* v = Map_get_all(ordinaryNameSpace, name);
-	for (size_t i = 0; i < Vector_get_length(v); i++)
+	for (unsigned i = 0; i < Vector_get_length(v); i++)
 	{
 		NameData* maybe = Vector_at(v, i);
 		if(ScopeInfo_in_right(maybe -> scope, scope))
@@ -95,7 +98,7 @@ NameData* search_from_ordinary_namespace(char* name, ScopeInfo* scope) {
 
 StructData* search_from_tag_namespece(char* name, ScopeInfo* scope) {
 	Vector* v = Map_get_all(tagNameSpace, name);
-	for (size_t i = 0; i < Vector_get_length(v); i++)
+	for (unsigned i = 0; i < Vector_get_length(v); i++)
 	{
 		StructData* maybe = Vector_at(v, i);
 		if(ScopeInfo_in_right(maybe -> scope, scope))
@@ -401,7 +404,7 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
 	}
 
-	fprintf(stderr, "type : %d\n", (*prev) -> tp -> Type_label);
+	error( "type : %d\n", (*prev) -> tp -> Type_label);
 	error_at((*token) -> str,"lval is expected");
 }
 
@@ -506,7 +509,7 @@ Node_t *new_node_var(Token_t **token) {
 	}
 	else
 	{
-		fprintf(stderr,"Fail to consume token\n");
+		error("Fail to consume token\n");
 	}
 	if(lvar != NULL && ScopeInfo_inscope(lvar -> scope))
 	{//local variable

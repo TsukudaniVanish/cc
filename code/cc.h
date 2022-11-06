@@ -1,15 +1,9 @@
 
 #define Min(a,b) a < b ? a: b
 #define Max(a, b) a < b? b: a
-#include<stdlib.h>
-//#include<ctype.h>
-#include<stdarg.h>
-#include<stdio.h>
-//#include<string.h>
 
 extern void int_to_string(char*, int);
 extern void long_to_string(char*, long);
-// extern void* calloc(unsigned int, unsigned int);
 
 /**
  * @brief vector that contains void*
@@ -27,9 +21,9 @@ struct vector {
 // Vector.c====================================================
 /**
  * @brief make new Vector*\n
- * @param size_t allocate size
+ * @param unsigned allocate size
  */
-Vector *new_Vector(size_t);
+Vector *new_Vector(unsigned);
 
 /**
  * @brief make empty vector
@@ -41,10 +35,10 @@ Vector* make_vector();
 /*
  * @brief return if received length can be accepted or not 
  * @param Vector* vector
- * @param size_t _rsvlen
+ * @param unsigned _rsvlen
  * @return int
  */
-int _is_acceptable(Vector *,size_t);
+int _is_acceptable(Vector *,unsigned);
 
 /**
  * @brief  if vector needs to reallocate memory then do. This function will use in Vector_push.
@@ -84,11 +78,11 @@ void* Vector_pop_init(Vector* vec);
  * @brief replace element of vec at index by assigned pointer.
  * 
  * @param Vector* vec
- * @param size_t index
+ * @param unsigned index
  * @param void* pointer which will be assigned to vector
  * 
  */
-void Vector_replace(Vector*,size_t,void*);
+void Vector_replace(Vector*,unsigned,void*);
 
 /**
  * @brief access element of vec at index if index < vec -> length .
@@ -97,7 +91,7 @@ void Vector_replace(Vector*,size_t,void*);
  * @param index 
  * @return void* 
  */
-void* Vector_at(Vector* vec, size_t index);
+void* Vector_at(Vector* vec, unsigned index);
 
 /**
  * @brief get element of vec at tail.
@@ -149,7 +143,7 @@ typedef enum {
  * 
  * @param Type_label label of identifier which stands for type.
  * @param Type_* pointer_to 
- * @param size_t size : actual memory size.
+ * @param unsigned size : actual memory size.
  * 
  */
 #define VOID_TYPE_VALUE 0
@@ -640,6 +634,8 @@ char *expect_ident(Token_t **);
  * @return int 
  */
 int expect_num(Token_t **token);
+
+void error(char* fmt, ...);
 
 /**
  * @brief this function points out the code that has some error in syntax.

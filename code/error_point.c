@@ -1,5 +1,7 @@
 #include "cc.h"
-//#include<stdarg.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 extern void Memory_copy(void*, void*, unsigned int);
 void expect(int kind ,Token_t **token) {
 	if( (*token) -> kind > 100 |  kind != (*token) -> str[0])
@@ -37,6 +39,15 @@ int expect_num(Token_t **token) {
 		(*token) = (*token) -> next;
 		return v;
 	}
+}
+
+// this function does not call exit(1)
+void error(char *fmt,...)
+{
+	va_list arg;
+	va_start(arg,fmt);
+	fprintf(stderr,fmt,arg);
+	va_end(arg);
 }
 
 void error_at(char *loc,char *fmt,...){
@@ -90,4 +101,14 @@ void error_at(char *loc,char *fmt,...){
 
     va_end(arg);
     exit(1);
+}
+
+void assert(char *test_name,char *format,...)
+{
+	va_list arg;
+	va_start(arg,format);
+	fprintf(stderr,"	\x1b[31mUnit test error at %s\x1b[m\n",test_name);
+	vfprintf(stderr,format,arg);
+	va_end(arg);
+	return;
 }

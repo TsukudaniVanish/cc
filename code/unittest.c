@@ -1,29 +1,36 @@
 #include "cc.h"
 
-void assert(char* , char*, ...);
 void __Map_show(Map* m);
 void Node_show_all(Node_t* node, unsigned depth);
+extern void assert(char *test_name,char *format,...);
 /*
  * for Map test
  */
+extern char* new_String(unsigned);
 extern int String_len(char*);
 extern int String_compare(char*, char*, unsigned int);
 extern void Memory_copy(void*, void*, unsigned int);
 extern char* String_add(char*, char*);
+
+extern void exit(int);
+static void* NULL = (void*) 0;
+extern void* calloc(unsigned, unsigned);
+extern int printf(char*, ...);
+
 typedef struct {
 	char* name;
 	int age;
 } Person;
 
 Person* recode_Person(char* n, int a) {
-	Person *p = malloc(sizeof(Person));
+	Person *p = calloc(1, sizeof(Person));
 	p -> name = n;
 	p -> age = a;
 	return p;
 }
 
 void Person_show(Person* p) {
-	fprintf(stderr, "name : %s, age : %d\n", p -> name, p -> age);
+	error( "name : %s, age : %d\n", p -> name, p -> age);
 }
 
 int Person_compare(Person* p, Person* q) {
@@ -47,9 +54,9 @@ int assert_Person(char* test, Person* expect, Person* get) {
 	}
 	if(!Person_compare(expect,get)) 
 	{
-		fprintf(stderr, "	expect\n		");
+		error( "	expect\n		");
 		Person_show(expect);
-		fprintf(stderr, "	get\n		");
+		error( "	get\n		");
 		Person_show(get);
 		assert(test, "		not equal people\n");
 		return 1;
@@ -59,24 +66,24 @@ int assert_Person(char* test, Person* expect, Person* get) {
 
 void __Map_show(Map* m) {
 	Person *person = NULL;
-	fprintf(stderr, "Start---\n");
+	error( "Start---\n");
 	for(long i = 0; i < m -> bodySize; i++)
 	{
 		if(m -> body[i] == NULL)
 		{
 			continue;
 		}
-		fprintf(stderr, "	%ld:\n",i);
+		error( "	%ld:\n",i);
 		for(Container* p = m -> body[i]; p; p = p -> next)
 		{
 			person = p -> data;
-			fprintf(stderr, "		key : %s\n", p -> key);
-			fprintf(stderr, "		data : ");
+			error( "		key : %s\n", p -> key);
+			error( "		data : ");
 			Person_show(person);
 		}
 	}
-	fprintf(stderr, "End---\n");
-	fprintf(stderr, "map size : %d\n", m -> size);
+	error( "End---\n");
+	error( "map size : %d\n", m -> size);
 	
 }
 int Token_equal(Token_t* token, Token_t* tester) {
@@ -97,10 +104,10 @@ int Token_equal(Token_t* token, Token_t* tester) {
 }
 
 void Token_show(Token_t* token) {
-	fprintf(stderr, "kind :%d\n", token -> kind);
+	error( "kind :%d\n", token -> kind);
 	if(token -> length > 0)
 	{
-		fprintf(stderr, "%s", token -> str);
+		error( "%s", token -> str);
 	}
 	return;
 }
@@ -116,31 +123,31 @@ void Token_show_all(Token_t* token) {
 void Type_show(Type* tp) {
 	if(tp == NULL)
 	{
-		fprintf(stderr, "NULL\n");
+		error( "NULL\n");
 		return;
 	}
-	fprintf(stderr, "kind: %d, size: %d, name: %s\n", tp -> Type_label, tp -> size, tp -> name != NULL? tp -> name: "NULL");
+	error( "kind: %d, size: %d, name: %s\n", tp -> Type_label, tp -> size, tp -> name != NULL? tp -> name: "NULL");
 }
 
 void StructData_show(StructData* data) {
 	Vector* v = data -> memberNames;
 	Map* m = data -> memberContainer;
 
-	fprintf(stderr, "    member names:\n");
+	error( "    member names:\n");
 	for(unsigned int i = 0; i < Vector_get_length(v); i++)
 	{
 		char* name = Vector_at(v, i);
-		fprintf(stderr, "        %d: %s\n", i, name);
+		error( "        %d: %s\n", i, name);
 	}
 
-	fprintf(stderr, "    member data:\n");
+	error( "    member data:\n");
 	Node_t* node = NULL;
 	for(unsigned j = 0; j < m -> bodySize; j++)
 	{
 		for(Container* con = m -> body[j]; con; con = con -> next)
 		{
 			node = con -> data;
-			fprintf(stderr, "        key: %s", con -> key);
+			error( "        key: %s", con -> key);
 			Node_show_all(node, 0);
 		}
 	}
@@ -150,28 +157,18 @@ void StructData_show(StructData* data) {
 void Node_show_all(Node_t* node, unsigned depth) {
 	if(node == NULL)
 	{
-		fprintf(stderr, "%*sNULL\n", depth, "    ");
+		error( "%*sNULL\n", depth, "    ");
 		return;
 	}
-	fprintf(stderr, "kind: %d\n", node -> kind);
-	fprintf(stderr, "%*s type: ", depth, "    ");
+	error( "kind: %d\n", node -> kind);
+	error( "%*s type: ", depth, "    ");
 	Type_show(node -> tp);
-	fprintf(stderr, "%*sleft:\n", depth, "    ");
+	error( "%*sleft:\n", depth, "    ");
 	Node_show_all(node -> left, depth + 1);
-	fprintf(stderr, "%*sright:\n", depth, "    ");
+	error( "%*sright:\n", depth, "    ");
 	Node_show_all(node -> right, depth + 1);
 }
 #define NODE_ERR(a) {Node_show_all(a, 0); exit(1);}while(0)
-
-void assert(char *test_name,char *format,...)
-{
-	va_list arg;
-	va_start(arg,format);
-	fprintf(stderr,"	\x1b[31mUnit test error at %s\x1b[m\n",test_name);
-	vfprintf(stderr,format,arg);
-	va_end(arg);
-	return;
-}
 
 int assert_int(char *test_name,long int expect, long int input)
 {
@@ -224,7 +221,7 @@ void unit_test_String(){
 	assert_int("long string cmp:",1,String_compare("==","== 1llls}",2));
 
 	char *test = "String copy test";
-	char * x = calloc(3,sizeof(char));
+	char * x = new_String(3);
 	Memory_copy(x,"abc",3);
 	assert_int(test,'a',*x);
 	assert_int(test,'b',*(x+1));
@@ -352,7 +349,7 @@ void unit_test_parse_struct() {
 	if(!Map_contains(tagNameSpace, "Hi"))
 	{
 		Node_show_all(node, 0);
-		fprintf(stderr, "tag names:\n");
+		error( "tag names:\n");
 		__Map_show(tagNameSpace);
 		exit(1);
 	}
@@ -368,7 +365,7 @@ void unit_test_parse_struct() {
 	Lvar* lval = find_lvar("greeting", String_len("greeting"), &table);
 	if(lval == NULL)
 	{
-		fprintf(stderr, "failed to find greeting\n");
+		error( "failed to find greeting\n");
 		Node_show_all(node, 0);
 		exit(1);
 	}
@@ -631,7 +628,7 @@ void unit_test_tokenize_macro_function() {
 	test_passed(test);
 }
 
-#define EXP_ERR(exp) do{fprintf(stderr, "error at %s\n", test); exit(1);}while(0)
+#define EXP_ERR(exp) do{error( "error at %s\n", test); exit(1);}while(0)
 void unit_test_preprocess_macro_expression() {
 	char* test = "parsing Macro expression";
 	char* arg = "10* 1";
@@ -642,9 +639,9 @@ void unit_test_preprocess_macro_expression() {
 	Expr* exp = parse_macro_expr(&token);
 	if(exp == NULL || exp -> kind != Mul)
 	{
-		fprintf(stderr, "error at %s\n", test);
+		error( "error at %s\n", test);
 		if(exp)
-			fprintf(stderr, "%d was expected but got %d\n", Mul, exp -> kind);
+			error( "%d was expected but got %d\n", Mul, exp -> kind);
 		exit(1);
 	}
 	arg = "a * (10 - 1)";
@@ -657,7 +654,7 @@ void unit_test_preprocess_macro_expression() {
 	exp = exp -> left;
 	if(exp == NULL || exp -> kind != Constant || exp -> value != 0)
 	{
-		fprintf(stderr, "kind %d,val %d", exp -> kind, exp -> value);
+		error( "kind %d,val %d", exp -> kind, exp -> value);
 		EXP_ERR(exp);
 	}
 	test_passed(test);
@@ -674,13 +671,13 @@ void unit_test_preprocess_perse_defined() {
 	Expr* exp = parse_macro_expr(&token);
 	if(exp == NULL || exp -> kind != Constant || exp -> value != 1)
 	{
-		fprintf(stderr, "parse defined failed\n");
+		error( "parse defined failed\n");
 		if(exp == NULL)
-			fprintf(stderr, "exp is NULL\n");
+			error( "exp is NULL\n");
 		if(exp -> kind != Constant)
-			fprintf(stderr, "incorrect kind expression %d, but got %d\n", Constant, exp -> kind);
+			error( "incorrect kind expression %d, but got %d\n", Constant, exp -> kind);
 		if(exp -> value != 1)
-			fprintf(stderr, "incorrect value expect %d, but got %d\n", 1, exp -> value);
+			error( "incorrect value expect %d, but got %d\n", 1, exp -> value);
 		exit(1);
 	}
 	test_passed(test);
@@ -717,7 +714,7 @@ void unit_test_preprocess_macro_exp_eval() {
 
 	if(eval_Expr(&input) != 1)
 	{
-		fprintf(stderr, "eval expr failed: expect 1 but got %d\n", eval_Expr(&input));
+		error( "eval expr failed: expect 1 but got %d\n", eval_Expr(&input));
 		exit(1);
 	}
 	test_passed(test);
@@ -731,7 +728,7 @@ void unit_test_preprocess_if() {
 	Token_t* token = lexical_analyze(arg);
 	if(Map_contains(macros, "MACROS"))
 	{
-		fprintf(stderr, "parse #if ... #endif failed");
+		error( "parse #if ... #endif failed");
 		exit(1);
 	}
 	test_passed(test);
@@ -747,8 +744,8 @@ void unit_test_token_splice() {
 
 	Token_t* check = head -> next;
 	if(check -> kind != TK_CONST || check -> val != 12) {
-		fprintf(stderr, "splicing fail expected : kind -> %d, val -> %d but got \n", TK_CONST, 12);
-		fprintf(stderr, "                         kind -> %d, val -> %d\n", check -> kind, check -> val);
+		error( "splicing fail expected : kind -> %d, val -> %d but got \n", TK_CONST, 12);
+		error( "                         kind -> %d, val -> %d\n", check -> kind, check -> val);
 		exit(1);
 	}
 	test_passed(test);
@@ -770,11 +767,11 @@ void unit_test_parse_static() {
 
 	Lvar* l = find_lvar("a", 1, &global);
 	if(l == NULL){
-		fprintf(stderr, "%s: got NULL", test);
+		error( "%s: got NULL", test);
 		exit(1);
 	}
 	if(l -> storage_class != SC_STATIC) {
-		fprintf(stderr, "SC_STATIC was expected but got %d", l -> storage_class);
+		error( "SC_STATIC was expected but got %d", l -> storage_class);
 		exit(1);
 	}
 	test_passed(test);
@@ -788,11 +785,11 @@ void unit_test_conditional_operator() {
 	token = token -> next;
 
 	if(token == NULL) {
-		fprintf(stderr, "lexical analyze: left is null");
+		error( "lexical analyze: left is null");
 		exit(1);
 	}
 	if(token -> kind != TK_OPERATOR || token -> str[0] != '?') {
-		fprintf(stderr, "lexical analyze: expect '?' but got %c", token -> str[0]);
+		error( "lexical analyze: expect '?' but got %c", token -> str[0]);
 		exit(1);
 	} 
 
@@ -806,20 +803,20 @@ void unit_test_conditional_operator() {
 	Node_t* node = Vector_at(v, 0);
 	node = node -> right -> left;
 	if(node == NULL) {
-		fprintf(stderr, "parse: expect not null");
+		error( "parse: expect not null");
 		exit(1);
 	}
 	if(node -> kind != ND_CONDITIONAL) {
-		fprintf(stderr, "parse: expect %d but got %d", ND_CONDITIONAL, node -> kind);
+		error( "parse: expect %d but got %d", ND_CONDITIONAL, node -> kind);
 		exit(1);
 	}
 	Node_t* r = node -> right;
 	if(r == NULL) {
-		fprintf(stderr, "parse: expect not null (node -> right)");
+		error( "parse: expect not null (node -> right)");
 		exit(1);
 	}
 	if(r -> kind != ND_CONDITIONAL_EXPRS) {
-		fprintf(stderr, "parse: expect node -> r -> kind == %d but got %d", ND_CONDITIONAL_EXPRS, r -> kind);
+		error( "parse: expect node -> r -> kind == %d but got %d", ND_CONDITIONAL_EXPRS, r -> kind);
 		exit(1);
 	}
 
@@ -832,7 +829,7 @@ void uint_test_String_add() {
 	char* b = "abcd";
 	char* c = String_add(a, b); 
 	if(!String_compare(c, "abcabcd", 7)) {
-		fprintf(stderr, "expected abcabcd but got %s", c);
+		error( "expected abcabcd but got %s", c);
 		exit(1);
 	}
 	test_passed(test);
@@ -843,17 +840,17 @@ void unit_test_long_long_int() {
 	char* arg = "long a = 1;";
 	Token_t* token = lexical_analyze(arg);
 	if(token -> kind != TK_TypeLONG) {
-		fprintf(stderr, "1:token -> kind != TK_TypeLONG");
+		error( "1:token -> kind != TK_TypeLONG");
 		exit(1);
 	}
 	arg = "long int a = 1;";
 	token = lexical_analyze(arg);
 	if(token -> kind != TK_TypeLONG) {
-		fprintf(stderr, "2:token -> kind != TK_TypeLONG");
+		error( "2:token -> kind != TK_TypeLONG");
 		exit(1);
 	}
 	if(token -> next -> kind != TK_IDENT) {
-		fprintf(stderr, "token -> next -> kind != TK_IDENT");
+		error( "token -> next -> kind != TK_IDENT");
 		exit(1);
 	}
 	test_passed(test);
@@ -865,7 +862,7 @@ void unit_test_character_literal() {
 
 	Token_t* token = lexical_analyze(arg);
 	if(token == NULL) {
-		fprintf(stderr, "token == NULL");
+		error( "token == NULL");
 		exit(1);
 	}
 
@@ -873,11 +870,11 @@ void unit_test_character_literal() {
 	consume(&token);
 	consume(&token);
 	if(token -> kind != TK_CONST) {
-		fprintf(stderr, "token -> kind (%d) != TK_CONST (%d)", token -> kind, TK_CONST);
+		error( "token -> kind (%d) != TK_CONST (%d)", token -> kind, TK_CONST);
 		exit(1);
 	}
 	if(token -> val != '\n') {
-		fprintf(stderr, "expect %d but got %d", 'f', token -> val);
+		error( "expect %d but got %d", 'f', token -> val);
 		exit(1);
 	}
 	test_passed(test);
@@ -890,21 +887,21 @@ void unit_test_macro_ifdef_ifndef() {
 
 	Token_t* token1 = lexical_analyze(arg1);
 	if(token1 == NULL) {
-		fprintf(stderr, "token1 == NULL");
+		error( "token1 == NULL");
 		exit(1);
 	}
 	if(token1 -> kind != TK_TypeINT) {
-		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeINT, token1 -> kind);
+		error( "expect token -> kind == %d, but got %d", TK_TypeINT, token1 -> kind);
 		exit(1);
 	}
 
 	Token_t* token2 = lexical_analyze(arg2);
 	if(token2 == NULL) {
-		fprintf(stderr, "token2 == NULL");
+		error( "token2 == NULL");
 		exit(1);
 	}
 	if(token2 -> kind != TK_TypeCHAR) {
-		fprintf(stderr, "expect token -> kind == %d, but got %d", TK_TypeCHAR, token2 -> kind);
+		error( "expect token -> kind == %d, but got %d", TK_TypeCHAR, token2 -> kind);
 		exit(1);
 	}
 
@@ -918,32 +915,32 @@ void unit_test_vector_pop_init() {
 
 	char* hi = Vector_pop_init(v);
 	if(v -> length != 1) {
-		fprintf(stderr, "expect %d but got %d", 1, v -> length);
+		error( "expect %d but got %d", 1, v -> length);
 		exit(1);
 	}
 	if(!String_compare(hi, "Hi", 2)) {
-		fprintf(stderr, "expect Hi but got %s", hi);
+		error( "expect Hi but got %s", hi);
 		exit(1);
 	}
 	char* There = Vector_at(v, 0);
 	if(!String_compare(There, "There", 5)) {
-		fprintf(stderr, "init element: expect There but got %s", There);
+		error( "init element: expect There but got %s", There);
 		exit(1);
 	}
 
 	hi = Vector_pop_init(v);
 	if(v -> length != 0) {
-		fprintf(stderr, "expect %d but got %d", 0, v -> length);
+		error( "expect %d but got %d", 0, v -> length);
 		exit(1);
 	}
 	if(!String_compare(hi, "There", 5)) {
-		fprintf(stderr, "second pop init:expect There but got %s", hi);
+		error( "second pop init:expect There but got %s", hi);
 		exit(1);
 	}
 
 	hi = Vector_pop_init(v);
 	if(hi != NULL) {
-		fprintf(stderr, "hi != NULL");
+		error( "hi != NULL");
 		exit(1);
 	}
 	test_passed("pop init");
@@ -955,18 +952,18 @@ void unit_test_va_arg() {
 	Token_t* token = lexical_analyze(arg);
 
 	if(token == NULL) {
-		fprintf(stderr, "token == NULL");
+		error( "token == NULL");
 		exit(1);
 	}
 	for(int i = 0; i < 6; i++) {
 		consume(&token);
 	}
 	if(token == NULL) {
-		fprintf(stderr, "token == NULL at ...");
+		error( "token == NULL at ...");
 		exit(1);
 	}
 	if(token -> kind != TK_PLACE_HOLDER) {
-		fprintf(stderr, " token -> kind != TK_PLACE_HOLDER");
+		error( " token -> kind != TK_PLACE_HOLDER");
 		exit(1);
 	}
 	test_passed("va_arg");
@@ -978,12 +975,12 @@ void unit_test_tokenize_until () {
 	char* arg = "#if defined HI\nint a = 0;\n#endif\nint c = 0;\n#else\nchar* b";
 	Token_t* token = tokenize_until(&arg, "#else");
 	if(token == NULL) {
-		fprintf(stderr, "token == NULL");
+		error( "token == NULL");
 		exit(1);
 	}
 	token = Token_consume_to_last(token);
 	if(token -> kind != TK_PUNCTUATOR) {
-		fprintf(stderr, "token -> kind: %d is expected but got %d", TK_PUNCTUATOR, token -> kind);
+		error( "token -> kind: %d is expected but got %d", TK_PUNCTUATOR, token -> kind);
 		exit(1);
 	}
 	test_passed(test);
@@ -994,28 +991,28 @@ void unit_test_string_substring() {
 	char* s = "this is a string.";
 	char* sub = String_substring(s, 5, 7);
 	if(String_compare(sub, "is", 2) == 0) {
-		fprintf(stderr, "'is' is expected but got %s", sub);
+		error( "'is' is expected but got %s", sub);
 		exit(1);
 	}
 	test_passed("stirng_substring");
 }
 
-#define pop_print(v) for(int i = 0; i < v -> length; i ++){ char* s = Vector_at(v, i); fprintf(stderr,"%d: %s\n", i, s);}
+#define pop_print(v) for(int i = 0; i < v -> length; i ++){ char* s = Vector_at(v, i); error("%d: %s\n", i, s);}
 extern Vector* String_split(char* s, char c);
 void unit_test_string_split(){
 	char* s = "this is a string.";
 	Vector* v = String_split(s, ' ');
 	if(v == NULL) {
-		fprintf(stderr, "v == NULL");
+		error( "v == NULL");
 		exit(1);
 	}
 	if(v -> length != 4) {
-		fprintf(stderr ,"v -> length: expected 4 but got %d", v -> length);
+		error("v -> length: expected 4 but got %d", v -> length);
 		exit(1);
 	}
 	char* string = Vector_get_tail(v);
 	if(String_compare("string.", string, 7) == 0) {
-		fprintf(stderr, "expected 'string.' but got %s\n", string);
+		error( "expected 'string.' but got %s\n", string);
 		pop_print(v);
 		exit(1);
 	}
@@ -1028,23 +1025,23 @@ void unit_test_aggregate_names_of_contents_from_dir() {
 	Vector* f = make_vector();
 	Vector* d = make_vector();
 	if(aggregate_names_of_contents_from_dir(path, f, d) == -1) {
-		fprintf(stderr, "failed to read directory");
+		error( "failed to read directory");
 		exit(1);
 	}
 	if(f -> length == 0 || d -> length == 0) {
-		fprintf(stderr, "failed to find contents\n");
-		fprintf(stderr, "file:\n");
+		error( "failed to find contents\n");
+		error( "file:\n");
 		pop_print(f);
-		fprintf(stderr, "directory:\n");
+		error( "directory:\n");
 		pop_print(d);
 		exit(1);
 	}
 	char* test = Vector_at(d, 0);
 	if(String_compare(Vector_at(d, 0), "./test/", 4) == 0) {
-		fprintf(stderr, "expect 'test' but got %s\n", test);
-		fprintf(stderr, "file:\n");
+		error( "expect 'test' but got %s\n", test);
+		error( "file:\n");
 		pop_print(f);
-		fprintf(stderr, "./directory:\n");
+		error( "./directory:\n");
 		pop_print(d);
 		exit(1);
 	}
@@ -1058,11 +1055,11 @@ void unit_test_find_file_from() {
 
 	char* file_path = find_file_from(path, target);
 	if(file_path == NULL) {
-		fprintf(stderr, "file_path == NULL");
+		error( "file_path == NULL");
 		exit(1);
 	}
 	if(String_compare("./test/test.h", file_path, 13) == 0) {
-		fprintf(stderr, "expect './test/test.h' but got %s\n", file_path);
+		error( "expect './test/test.h' but got %s\n", file_path);
 		exit(1);
 	}
 	test_passed("find_file_from");

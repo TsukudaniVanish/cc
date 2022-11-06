@@ -1,7 +1,7 @@
 CFLAGS=-std=c11 -g -static
 SRCS=$(wildcard *.c)
-OBJS=$(SRCS:.c=.o)
-HELPER=helper_functions.o
+SRCSNOHELPER=$(filter-out helper_functions.c, $(SRCS))
+OBJS=$(SRCSNOHELPER:.c=.o)
 
 cc: $(OBJS)
 		$(CC) -o cc $(OBJS) $(LDFLAGS)

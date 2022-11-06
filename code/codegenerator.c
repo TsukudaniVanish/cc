@@ -2,6 +2,10 @@
 //#include<stdio.h>
 //#include<stdlib.h>
 
+extern int printf(char* fmt, ...);
+extern void exit(int);
+static void* NULL = (void*) 0;
+
 extern unsigned int String_len(char*);
 extern int String_compare(char* ,char* ,unsigned int);
 extern char* String_add(char*, char*);
