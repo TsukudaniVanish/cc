@@ -141,8 +141,8 @@ char* find_file_from(char* root_path/* example: ./dirname/ */, char* target_name
 	{
 		path = Vector_pop(d);
 		if(aggregate_names_of_contents_from_dir(path, f, d) == -1) {
-			fprintf(stderr, "Error: in searching file.path: %s\n", path);
-			exit(1);
+			fprintf(stderr, "Error: in searching file. path: %s\n", path);
+			return NULL;
 		}
 
 		char* file_path = find_file_from_file_path_container(f, target_name);

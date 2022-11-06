@@ -1,12 +1,14 @@
-// TODO: tokenize #elif #else 
+// TODO: macro operator #, ##
 #include "cc.h"
 //#include<string.h>
 //#include<stdbool.h>
 #include<ctype.h>
 
+extern char* new_String(unsigned);
 extern unsigned int String_len(char*);
 extern int String_compare(char* ,char*, unsigned int);
 extern void Memory_copy(void* dst, void* src, unsigned length);
+extern char* find_file_from(char* root_path/* example: ./dirname/ */, char* target_name);
 
 Token_t* tokenize_macro_if(char** pointer, Token_t* cur);
 
@@ -239,6 +241,7 @@ char* get_keyword(keyword kind) {
 		case DO: return "do";
 		case STATIC: return "static";
 		case EXTERN: return "extern";
+		case MACRO_UNDEF: return "#undef";
 		case MACRO_DEFINE: return "#define";
 		case MACRO_ENDIF: return "#endif";
 		case MACRO_IF: return "#if";
@@ -584,6 +587,20 @@ Token_t *tokenize(char **pointer) {
 	return head.next;
 };
 
+char* tokenize_macro_undef(char* p) {
+	p = skip_in_macro(p);
+	char* q = p;
+	while(!is_space(*q) && *q != ',' && !is_symbol(q))
+	{
+		q++;
+	}
+	char* name = new_String(q - p);
+	Memory_copy(name, p, q - p);
+	p = q;
+	Map_delete(macros, name);
+	return p;
+}
+
 char* tokenize_macro_define(char* p) {
 	// get identifier
 	p = skip_in_macro(p);
@@ -592,7 +609,7 @@ char* tokenize_macro_define(char* p) {
 	{
 		q++;
 	}
-	char* name = calloc(q - p, sizeof(char));
+	char* name = new_String(q - p);
 	Memory_copy(name, p, q - p);
 	p = q;
 	MacroData* data = new_MacroData(name, MACRO_OBJECT, NULL, NULL);
@@ -706,7 +723,7 @@ Token_t* tokenize_macro_conditional_flow(char** pointer, Token_t* cur, Token_t* 
 	}
 	if(next_flow_marker == MACRO_ELSE) {
 		*pointer = skip_to(*pointer, until);
-		Token_t* token = tokenize_until(pointer, until);
+		Token_t* token = tokenize_until(pointer, "#endif");
 
 		*pointer = skip_to(*pointer, "#endif");
 		cur -> next = token;
@@ -773,19 +790,29 @@ Token_t* tokenize_macro_ifndef(char** pointer, Token_t* cur) {
 Token_t* tokenize_macro_include(char** pointer, Token_t** cur) {
 	char* p = *pointer;
 	p = skip_in_macro(p);
-	if(*p == '"') {
+	if(*p == '"' || *p == '<') {
 		p++;
 		char* q = p;
-		while(*q != '\"') {
+		while(*q != '\"' && *q != '>') {
 			if(*q == '\n' || *q == '\0') {
 				error_at(p, "include file is not specified");
 			}
 			q++;
 		}
 		int len = q - p;
-		char* fileName = calloc(len, sizeof(char));
+		char* fileName = new_String(len);
 		Memory_copy(fileName, p,len);
-		char* includeBuf = file_open(fileName);
+		char* file_path = NULL;
+		if(*q == '>') {
+			file_path = find_file_from("/usr/include/", fileName);
+		} else {
+			file_path = fileName;
+		}
+		if(file_path == NULL) {
+			fprintf(stderr, "can't find file path:%s\n", fileName);
+			exit(1);
+		}
+		char* includeBuf = file_open(file_path);
 		Token_t* token = tokenize(&includeBuf); // cur points end of include file
 		*pointer = q + 1;
 		if(token -> kind != TK_EOF)
@@ -799,14 +826,25 @@ Token_t* tokenize_macro_include(char** pointer, Token_t** cur) {
 
 Token_t* tokenize_macro(char** p, Token_t* cur) {
 
+
 	keyword keyWord = is_keyword(*p);
 	char* keywordString = get_keyword(keyWord);
+	if(*(*p + 1) == ' ') // # define
+	{
+		if(String_compare(*p, "# define", 8)){
+			keyWord = MACRO_DEFINE;
+			keywordString ="# define";
+		}
+	}  
 	if(keyWord != KEYWORD_START && keywordString != NULL)
 		*p = *p + String_len(keywordString);
 	switch(keyWord)
 	{
 	case MACRO_DEFINE:
 		*p = tokenize_macro_define(*p);
+		return cur;
+	case MACRO_UNDEF:
+		*p = tokenize_macro_undef(*p);
 		return cur;
 	case MACRO_IF:
 		return tokenize_macro_if(p, cur);
@@ -817,7 +855,7 @@ Token_t* tokenize_macro(char** p, Token_t* cur) {
 	case MACRO_INCLUDE:
 		return tokenize_macro_include(p, &cur);
 	default:
-		error_at(*p, "Anonymous keyword");
+		error_at(*p, "Anonymous keyword: %s\n", keywordString);
 	}
 	return cur;				
 }

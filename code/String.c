@@ -6,8 +6,8 @@ extern void sprintf_h(char*, char*, long);
  * @brief allocate memory and make new string has length len
 */
 char* new_String(unsigned int len) {
-	char* a = calloc(len, sizeof(char));
-	a[len - 1] = '\0';
+	char* a = calloc(len + 1, sizeof(char));
+	a[len] = '\0';
 	return a;
 }
 

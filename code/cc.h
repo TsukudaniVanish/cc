@@ -265,6 +265,7 @@ typedef enum keyWords {
 	IF,
 	STATIC,
 	EXTERN,
+	MACRO_UNDEF,
 	MACRO_DEFINE,
 	MACRO_IF,
 	MACRO_IFDEF,
@@ -298,6 +299,7 @@ typedef enum symbols {
 	LOG_AND,// &&
 	LOG_OR,// ||
 	ARROW,// ->
+	DOUBLE_NUMBER, // ## 
 	THREE_DOTS, // ...
 	END_OF_MULTI_OPERATOR,
 	UNIT_SYMBOL_START = 0,
@@ -312,6 +314,7 @@ typedef enum symbols {
 	ASSIGN,//= '=',
 	EXCLAMATION, //= '!'
 	QUESTION, //= '?'
+	NUMBER, // = '#'
 	END_OF_UNIT_OPERATOR,
 	PUNCTUATOR_START,
 	COMMA,// = ','
