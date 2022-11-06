@@ -1036,9 +1036,8 @@ void unit_test_aggregate_names_of_contents_from_dir() {
 		pop_print(d);
 		exit(1);
 	}
-	char* test = Vector_at(d, 0);
-	if(String_compare(Vector_at(d, 0), "./test/", 4) == 0) {
-		error( "expect 'test' but got %s\n", test);
+	if(d -> length != 2) {
+		error( "expect 2 but got %ld\n", d -> length);
 		error( "file:\n");
 		pop_print(f);
 		error( "./directory:\n");

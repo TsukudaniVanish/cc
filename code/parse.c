@@ -885,18 +885,6 @@ void program(Token_t **token,Vector *codes) {
 }
 
 Node_t *func(Token_t **token) {
-
-	int is_storage_class = (*token) -> kind == TK_STATIC || (*token) -> kind == TK_EXTERN;
-	if (((*token) -> kind <= TOKEN_TYPE - 1) && !is_storage_class && (*token) -> kind != TK_TYPEDEF){
-
-		error_at((*token) -> str , "Expected type specifier");
-
-	}
-	if( !((*token) ->next ) && (*token) -> next -> kind != TK_IDENT){
-
-
-		error_at((*token) -> str,"Expected identifier");
-	}
 	return new_node_glob_ident(token);
 }
 
@@ -1234,10 +1222,6 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	StructData* structData = search_from_tag_namespece(name, ScopeController_get_current_scope(controller));
 	if(structData == NULL)
 	{// declare struct or union
-		if((*token) -> kind != TK_PUNCTUATOR || (*token) -> str[0] != '{')
-		{
-			error_at((*token) -> str, "unknown type name");
-		}
 		structData = make_StructData();
 		structData -> tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
 		structData -> scope = ScopeInfo_copy(ScopeController_get_current_scope(controller));

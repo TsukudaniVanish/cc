@@ -84,8 +84,11 @@ int is_functioncall(Token_t **token) {
 
 	if (buf -> kind == TK_STATIC || buf -> kind == TK_EXTERN)
 		consume(&buf);
-    if(buf -> kind >= TOKEN_TYPE)
+    if(buf -> kind >= TOKEN_TYPE || buf -> kind == TK_IDENT)
         consume(&buf);
+	while(buf -> str[0] == '*') {
+		consume(&buf);
+	}
 	if(buf -> kind == TK_IDENT)
 		consume(&buf);
 

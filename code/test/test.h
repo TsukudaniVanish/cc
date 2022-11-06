@@ -41,3 +41,5 @@ struct this_is_not_compiled = {};
 #elif defined THIS_WILL_BE_DEFINED
 #define ELIF_OK 1
 #endif 
+
+typedef struct struct_scope_test SCOPE_TEST;

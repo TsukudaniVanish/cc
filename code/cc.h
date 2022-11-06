@@ -23,14 +23,14 @@ struct vector {
  * @brief make new Vector*\n
  * @param unsigned allocate size
  */
-Vector *new_Vector(unsigned);
+extern Vector* new_Vector(unsigned);
 
 /**
  * @brief make empty vector
  * 
  * @return Vector* 
  */
-Vector* make_vector();
+extern Vector* make_vector();
 
 /*
  * @brief return if received length can be accepted or not 
@@ -38,13 +38,13 @@ Vector* make_vector();
  * @param unsigned _rsvlen
  * @return int
  */
-int _is_acceptable(Vector *,unsigned);
+extern int _is_acceptable(Vector *,unsigned);
 
 /**
  * @brief  if vector needs to reallocate memory then do. This function will use in Vector_push.
  * @param Vector** vector
  */
-void _maybe_realloc(Vector* vector);
+extern void _maybe_realloc(Vector* vector);
 
 /**
  * @brief get vec -> length if vec is available.
@@ -52,7 +52,7 @@ void _maybe_realloc(Vector* vector);
  * @param vec 
  * @return int 
  */
-int Vector_get_length(Vector* vec);
+extern int Vector_get_length(Vector* vec);
 
 /**
  * @brief append element to tail of the vector
@@ -60,19 +60,19 @@ int Vector_get_length(Vector* vec);
  * @param vec 
  * @param x 
  */
-void Vector_push(Vector *vec, void* x);
+extern void Vector_push(Vector *vec, void* x);
 
 /**
  * @brief reduce length
  * 
  */
-void* Vector_pop(Vector* vec);
+extern void* Vector_pop(Vector* vec);
 
 /**
  * @brief pop the initial element from vec 
  * 
  */
-void* Vector_pop_init(Vector* vec);
+extern void* Vector_pop_init(Vector* vec);
 
 /**
  * @brief replace element of vec at index by assigned pointer.
@@ -82,7 +82,7 @@ void* Vector_pop_init(Vector* vec);
  * @param void* pointer which will be assigned to vector
  * 
  */
-void Vector_replace(Vector*,unsigned,void*);
+extern void Vector_replace(Vector*,unsigned,void*);
 
 /**
  * @brief access element of vec at index if index < vec -> length .
@@ -91,7 +91,7 @@ void Vector_replace(Vector*,unsigned,void*);
  * @param index 
  * @return void* 
  */
-void* Vector_at(Vector* vec, unsigned index);
+extern void* Vector_at(Vector* vec, unsigned index);
 
 /**
  * @brief get element of vec at tail.
@@ -99,7 +99,7 @@ void* Vector_at(Vector* vec, unsigned index);
  * @param vec 
  * @return void* 
  */
-void* Vector_get_tail(Vector *vec);
+extern void* Vector_get_tail(Vector *vec);
 
 // ====================================================
 // Map.c====================================================
@@ -122,11 +122,11 @@ typedef struct {
  * @brief make empty Map
  */
 Map* make_Map();
-void Map_add(Map*, char*, void*);
-void* Map_at(Map*, char*);
-Vector* Map_get_all(Map*, char*);
-void* Map_delete(Map*, char*);
-int Map_contains(Map*, char*);
+extern void Map_add(Map*, char*, void*);
+extern void* Map_at(Map*, char*);
+extern Vector* Map_get_all(Map*, char*);
+extern void* Map_delete(Map*, char*);
+extern int Map_contains(Map*, char*);
 // ====================================================
 
 /**
@@ -408,7 +408,7 @@ struct token {
 
 
 };
-Token_t* new_Token_t(Token_kind, Token_t*, int val, int length, char* str, Type* tp);
+extern Token_t* new_Token_t(Token_kind, Token_t*, int val, int length, char* str, Type* tp);
 /**
  * @brief make new token
  * @param Token_kind kind
@@ -416,7 +416,7 @@ Token_t* new_Token_t(Token_kind, Token_t*, int val, int length, char* str, Type*
  * @param char_* str
  * @return Token_t_*
  * */
-Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
+extern Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
 
 /**
  * @brief 
@@ -425,7 +425,7 @@ Token_t *new_token(Token_kind kind,Token_t *cur,char *str);
  * @param Token_t* cur previous token
  * @return Token_t* 
  */
-Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
+extern Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
 
 
 /**
@@ -434,7 +434,7 @@ Token_t *new_keyword(Token_kind, keyword,Token_t *,char *);
  * @param Token_t_** token 
  * @return bool
  */
-int find(int ,Token_t **);
+extern int find(int ,Token_t **);
 
 
 
@@ -443,7 +443,7 @@ int find(int ,Token_t **);
  * @param token 
  * @return Token_t* 
  */
-Token_t *consume(Token_t **token);
+extern Token_t *consume(Token_t **token);
 
 /**
  * @brief check function call. this function does not consume token.
@@ -452,47 +452,47 @@ Token_t *consume(Token_t **token);
  * @return int
  * 
  */
-int is_functioncall(Token_t **);
+extern int is_functioncall(Token_t **);
 
 /**
  * @brief check cast. this function does not consume token.
  * 
  * @return int 
  */
-int is_cast(Token_t**);
+extern int is_cast(Token_t**);
 
 /**
  * @brief get ident string from token if kind == TK_IDENT
  * 
  */
-char* get_ident_name(Token_t** token);
+extern char* get_ident_name(Token_t** token);
 
 /**
  * @brief check ident is type alias
  * 
  */
-int is_type_alias(Token_t**);
+extern int is_type_alias(Token_t**);
 /** 
  * @brief copy kind val length str tp not copy next
  */ 
-Token_t* Token_copy(Token_t* token);
+extern Token_t* Token_copy(Token_t* token);
 /**
  * @brief copy all members
  * 
  * @param token 
  * @return Token_t* 
  */
-Token_t* Token_copy_all(Token_t* token);
+extern Token_t* Token_copy_all(Token_t* token);
 
 // insert first param between second param and third param 
-void Token_splice(Token_t*, Token_t*, Token_t*);
+extern void Token_splice(Token_t*, Token_t*, Token_t*);
 
-Token_t* Token_tailHead(Token_t* newToken, Token_t* old);
+extern Token_t* Token_tailHead(Token_t* newToken, Token_t* old);
 
-Token_t* Token_consume_to_last(Token_t* token);
+extern Token_t* Token_consume_to_last(Token_t* token);
 
 // this function does not consume any token.
-int check_ident_appear_until_punctuator(Token_t** token);
+extern int check_ident_appear_until_punctuator(Token_t** token);
 
 /**
  * @brief check whether (*token) is compatible with kind or not
@@ -502,20 +502,20 @@ int check_ident_appear_until_punctuator(Token_t** token);
  * @return void
  * @sa error_at
  */
-void expect(int kind,Token_t **token);
+extern void expect(int kind,Token_t **token);
 /**
  * @brief check identifier
  * @sa error_at
  * @param Token_t token
  * @return char 
- */
+ */extern 
 char *expect_ident(Token_t **);
 /**
  * @brief check number literal
  * @param Token_t_** token 
  * @return int 
  */
-int expect_num(Token_t **token);
+extern int expect_num(Token_t **token);
 //====================================================
 
 
@@ -612,9 +612,9 @@ struct node {
  * 
  * @return Node_t* 
  */
-Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,unsigned int off,Type* tp,char *name);
+extern Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,unsigned int off,Type* tp,char *name);
 // Identify node is lvar or not
-int is_lval(Node_t* node);
+extern int is_lval(Node_t* node);
 
 //file.c====================================================
 /**
@@ -622,7 +622,7 @@ int is_lval(Node_t* node);
  * @param char* path
  * @return char*
  */
-char *file_open(char *);
+extern char *file_open(char *);
 //====================================================
 
 // error_point.c====================================================
@@ -636,7 +636,7 @@ char* filepath;
 //error assert
 char *parsing_here;
 
-void error(char* fmt, ...);
+extern void error(char* fmt, ...);
 
 /**
  * @brief this function points out the code that has some error in syntax.
@@ -644,7 +644,7 @@ void error(char* fmt, ...);
  * @param char_* format
  * @param ... 
  */
-void error_at(char *,char *,...);
+extern void error_at(char *,char *,...);
 //====================================================
 
 //file.c====================================================
@@ -653,9 +653,8 @@ void error_at(char *,char *,...);
  * @param char* path
  * @return char*
  */
-char *file_open(char *);
+extern char *file_open(char *);
 //====================================================
-
 //main.c=====================================================
 
 //=====================================================
@@ -664,13 +663,13 @@ char *file_open(char *);
  * tokenize.c=====================================================
  */
 
-int is_space(char );
+extern int is_space(char );
 /**
  * @brief skip withe space characters
  * @param char* p 
  * @return char* 
  */
-char *skip(char * p);
+extern char *skip(char * p);
 
 /**
  * @brief return size of TK_Type... 
@@ -679,30 +678,30 @@ char *skip(char * p);
  * @return int
  * 
  */
-int sizeof_token(int);
+extern int sizeof_token(int);
 
-int is_alnum(char c);
+extern int is_alnum(char c);
 
-char* get_symbol(int);
+extern char* get_symbol(int);
 /**
  * 
  * @brief judge if it is symbol or not 
  * @param char*
  * @return int : len of operator
  * */
-int is_symbol(char *);
+extern int is_symbol(char *);
 
-int is_comment(char *p);
+extern int is_comment(char *p);
 
 /**
  * @brief skip comment section and set p to next character
  * 
  * @param char** p 
  */
-void comment_skip(char **p);
+extern void comment_skip(char **p);
 
-char* get_keyword(keyword);
-int get_correspond_token_kind(keyword);
+extern char* get_keyword(keyword);
+extern int get_correspond_token_kind(keyword);
 
 /**
  * @fn 
@@ -711,11 +710,11 @@ int get_correspond_token_kind(keyword);
  * 
  * @return Token_t*
  * */
-Token_t *lexical_analyze(char *p);
+extern Token_t *lexical_analyze(char *p);
 
 // store identifier: macro tokens
 Map *macros;
-Token_t* tokenize_macro(char** p, Token_t* cur);
+extern Token_t* tokenize_macro(char** p, Token_t* cur);
 //=====================================================
 
 // preprocess.c
@@ -728,9 +727,9 @@ typedef struct {
 		MACRO_FUNCTION,
 	}tag;
 }MacroData;
-MacroData* new_MacroData(char* ident, int tag, Token_t* macroBody, Vector* parameters);
-void* MacroData_get_parameters(MacroData* d, unsigned int index);
-int MacroData_contains_param(MacroData* d, char* name);
+extern MacroData* new_MacroData(char* ident, int tag, Token_t* macroBody, Vector* parameters);
+extern void* MacroData_get_parameters(MacroData* d, unsigned int index);
+extern int MacroData_contains_param(MacroData* d, char* name);
 
 typedef enum tokenInMacro {
     Constant = 0,
@@ -760,17 +759,17 @@ struct expression{
     Expr* left;
     Expr* right;
 };
-Expr* parse_macro_expr(Token_t** token);
-int eval_Expr(Expr*);
+extern Expr* parse_macro_expr(Token_t** token);
+extern int eval_Expr(Expr*);
 
-Token_t* preprocess(Token_t* token);
+extern Token_t* preprocess(Token_t* token);
 //=====================================================
 
 /*
  * parse.c=====================================================
  */
-NameData* new_NameData(int tag);
-NameData* search_from_ordinary_namespace(char*, ScopeInfo*);
+extern NameData* new_NameData(int tag);
+extern NameData* search_from_ordinary_namespace(char*, ScopeInfo*);
 
 ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number);
 ScopeInfo* ScopeInfo_copy(ScopeInfo* info);

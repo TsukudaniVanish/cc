@@ -658,6 +658,7 @@ void test_ifdef_ifndef() {
 }
 
 extern void test_place_holder(int, int, char*, ...);
+extern OK_IFDEF* test_type_alias_function_declare(int, char*, struct struct_scope_test,OK_IFDEF, OK_IFDEF*);
 
 #define TEST_DEFINE 100
 #define timesTen(a) a*10
