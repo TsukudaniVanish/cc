@@ -963,11 +963,11 @@ void gen_glob_declare(Node_t* node) {
 	Type* type = node -> kind != ND_INITLIST? node -> tp: node -> left -> tp;
 	int storage_class = node -> kind != ND_INITLIST? node -> storage_class: node -> left -> storage_class;
 	// register symbol
-	if(storage_class != SC_STATIC) {
-		section_global(name);
+	if(storage_class == SC_STATIC) {
+		section_local(name);
 	} 	
 	else {
-		section_local(name);
+		section_global(name);
 	}
 	section_type(name, "@object");
 	section_size(name, ui2a(type -> size));
@@ -983,24 +983,17 @@ void gen_glob_declare(Node_t* node) {
 		}
 		return;
 	}
-	if(node -> tp -> Type_label == TP_INT)
-	{
-		if(node -> val == 0)
-		{
-			section_zero(node -> tp -> size);
-		}
-		else
-		{
-			section_long(node -> val);
-		}
-	}
-	else if(node -> tp -> Type_label == TP_STRUCT && node -> name == NULL)
-	{
+
+	// generate data definition
+	if(node -> val == 0) {
+		section_zero(node -> tp -> size);
 		return;
 	}
-	else
-	{
-		section_zero(node -> tp -> size);
+	
+	if(node -> tp -> size <= 4) {
+		section_long(node -> val);
+	} else {
+		section_quad(l2a(node -> val));
 	}
 	return;
 }

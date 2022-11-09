@@ -1,7 +1,4 @@
 #include "cc.h"
-//#include<stdio.h>
-//#include<stdbool.h>
-//#include<string.h>
 
 extern int unit_test();
 extern unsigned int String_len(char*);

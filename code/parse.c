@@ -794,10 +794,11 @@ Node_t *new_node_glob_ident(Token_t**token) {
 		lvar = declare_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
 	if (find('=',token))// initialization
 	{
-		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
+		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY) {
 			node = init(token, node);
-		else
-			node -> val = expect_num(token);
+		} else {
+			node -> val = expr(token) -> val;
+		}
 	}
 
 	lvar -> storage_class = node -> storage_class;

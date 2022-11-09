@@ -595,9 +595,10 @@ struct node {
 	Node_t *right;
 	/**
 	 * 
-	 * @brief of member variable : val 
-	 * ND_FUNCTION... -> number of arguments
-	 * ND_NUM -> value
+	 * @brief 
+	 * 	ND_FUNCTION... -> number of arguments
+	 * 
+	 * 	ND_NUM -> value
 	 */
 	int val;
 	unsigned int offset;// offset from rbp
