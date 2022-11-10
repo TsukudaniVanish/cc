@@ -78,7 +78,7 @@ a generator function which convert an abstract syntax tree into  assembly codes
 
 ## todo
 - [x] refactoring/ remove include standard library
-- [ ] allow type cast in a global declaration
+- [x] allow type cast in a global declaration
 - [ ] add macro operator #, ##
 - [x] add va-arg function declaration 
 - [x] add include file path find algorithm 
