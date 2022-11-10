@@ -142,7 +142,7 @@ echo "while test"
 assert 0 'int a=10;while(a) a=a-1; return a '
 
 echo "For test"
-assert 10 'for(int i = 0; i <10; i = i+1) 0; return i'
+assert 10 'int i;for(i = 0; i <10; i = i+1) 0; return i'
 
 echo "block test"
 assert 1 ' int a = 0; int i = 0; { i = 4 ; i = 3 ; i = 2; i=1;  } return i'

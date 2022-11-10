@@ -556,6 +556,8 @@ Node_t *new_node_block(Token_t ** token){
 Node_t *new_node_if(Token_t** token)
 {
 	expect('(',token);
+	ScopeController_nest_appeared(controller);
+
 	Node_t *condition = expr(token);
 	expect(')',token);
 	Node_t *statement = stmt(token);
@@ -568,32 +570,45 @@ Node_t *new_node_if(Token_t** token)
 				stmt(token),
 				0,0,NULL,NULL);
 	}
-	return new_Node_t(
+	Node_t* node = new_Node_t(
 			ND_IF,
 			condition,
 			statement,
 			0,0,NULL,NULL);
+	ScopeController_nest_disappeared(controller);
+	return node;
 }
 
 Node_t *new_node_while(Token_t **token) {
+	ScopeController_nest_appeared(controller);
+
 	Node_t *condition = expr(token);
 	Node_t *statement = stmt(token);
-	return new_Node_t(ND_WHILE,condition,statement,0,0,NULL,NULL);
+	Node_t* node = new_Node_t(ND_WHILE,condition,statement,0,0,NULL,NULL);
+
+	ScopeController_nest_disappeared(controller);
+	return node;
 }
 
 Node_t* new_node_do_while(Token_t** token) {
+	ScopeController_nest_appeared(controller);
+
 	Node_t* statement = stmt(token);
 	if((*token) -> kind != TK_WHILE) {
 		error_at((*token) -> str, "while was expected");
 	}
 	consume(token);
 	Node_t* condition = expr(token);
-	return new_Node_t(ND_DO, condition, statement,0, 0, NULL, NULL);
+	Node_t* node = new_Node_t(ND_DO, condition, statement,0, 0, NULL, NULL);
+
+	ScopeController_nest_disappeared(controller);
+	return node;
 }
 
 Node_t *new_node_for(Token_t **token) {
 	Node_t *init,*check,*update = NULL;
 	expect('(',token);
+	ScopeController_nest_appeared(controller);
 	if(!find(';',token))
 	{// this is not infinite loop
 		if(is_lvardec(token))
@@ -610,19 +625,24 @@ Node_t *new_node_for(Token_t **token) {
 		expect(';',token);
 	}
 	expect(')',token);
-	return new_Node_t(
-			ND_FOR,
+	Node_t* node = new_Node_t(
+		ND_FOR,
+		new_Node_t(
+			ND_FORUPDATE,
 			new_Node_t(
-				ND_FORUPDATE,
-				new_Node_t(
-					ND_FORINITCONDITION,
-					init,
-					check,
-					0,0,NULL,NULL),
-				update,
-				0,0,NULL,NULL),
-			stmt(token),
-			0,0,NULL,NULL);
+				ND_FORINITCONDITION,
+				init,
+				check,
+				0,0,NULL,NULL
+			),
+			update,
+			0,0,NULL,NULL
+		),
+		stmt(token),
+		0,0,NULL,NULL
+	);
+	ScopeController_nest_disappeared(controller);
+	return node;
 }
 
 Node_t *new_node_return(Token_t **token) {
