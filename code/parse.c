@@ -296,6 +296,7 @@ int typecheck(Node_t *node) {
 #if defined(Min)
 	#define Is_type_integer(t) INTEGER_TYPE_START == Min(t,INTEGER_TYPE_START) ? t <= INTEGER_TYPE_END ? 1: t == TP_ENUM? 1: 0: 0 
 #endif
+#define Is_type_pointer(t) (t == TP_POINTER || t == TP_ARRAY? 1: 0)
 Type *imptypecast(Node_t *node) {
 	int tp_l , tp_r;
 
@@ -382,7 +383,6 @@ int is_arrmemaccess(Token_t **token) {
 	}
 	return 0;
 }
-#define Is_type_pointer(kind) (kind == TP_POINTER || kind == TP_ARRAY? 1: 0)
 Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	expect('[',token);
 	Node_t *node = expr(token);
@@ -391,10 +391,11 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	/**
 	 * a[expr] is a syntax sugar of *(a + expr) 
 	 * so "10[a]" for a being some pointer type is ok.
+	 * 
 	 */
 	if(
-		(Is_type_pointer(node -> tp -> Type_label) && (*prev) -> tp -> Type_label == TP_INT) ||
-		(node -> tp -> Type_label == TP_INT && Is_type_pointer((*prev) -> tp -> Type_label))
+		(Is_type_pointer(node -> tp -> Type_label) && Is_type_integer((*prev) -> tp -> Type_label)) ||
+		(Is_type_integer(node -> tp -> Type_label) && Is_type_pointer((*prev) -> tp -> Type_label))
 	){
 		Node_t *get_address = new_node(ND_ADD,*prev,node, (*token) -> str);
 		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
@@ -458,7 +459,7 @@ Node_t *new_node_function_call(Token_t **token) {
 
 		node_end -> kind = ND_ARGMENT;
 		Node_t *node_right_end = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);
-		node_end ->left = add(token);
+		node_end ->left = conditional(token);
 		node_end ->right = node_right_end;
 		node_end = node_right_end;
 		find(',',token);
