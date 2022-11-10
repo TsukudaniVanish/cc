@@ -396,9 +396,12 @@ Token_t* tokenize_string_literal(char** p, Token_t* cur) {
 	cur = new_token(TK_PUNCTUATOR, cur, *p);
 	cur -> length = 1;
 	char *q = *p;
-	while (q && *(q + 1) != '"')
+	while (*q != '\0' && *(q + 1) != '"')
 	{
 		q++;
+		if(*q == '\\') {
+			q = q + 1;
+		}
 	}
 	cur = new_token(TK_STRINGLITERAL, cur, *p + 1);
 	cur -> length = q - *p;
@@ -584,7 +587,7 @@ Token_t *tokenize(char **pointer) {
 		case IDENTIFIER: cur = tokenize_identifier(&p, cur);
 			break;
 		case TOKENIZE_ERR:
-			error_at(cur -> str,"Failed to tokenize");
+			error_at(cur -> str,"Failed to tokenize at: %c", *p);
 		}
 		continue;	
 	}
