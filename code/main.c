@@ -99,7 +99,7 @@ int main(int argc, char **argv){
 	// recursive code generation 
 	for(int i = 0;i < len;i++){
 		Node_t* code = Vector_at(codes, i);
-		if(code -> kind == ND_FUNCTIONDEF )
+		if(code -> kind == ND_FUNCTIONDEF && code -> right != NULL)
 		{
 			printf(".text\n");
 
