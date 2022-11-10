@@ -203,3 +203,5 @@ assert_should_fail 'int foo(){struct a {int a;}; union a{char* hi;}; return 0;}'
 assert_should_fail 'int foo(){ else {return 10;} return 0;}'
 
 assert_should_fail 'int foo(){ sizeof int;}'
+
+assert_should_fail 'int foo(){ if(1){ int a = 0;} if(1){a = 10;}}'

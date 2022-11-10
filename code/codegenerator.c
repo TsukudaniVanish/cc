@@ -1289,7 +1289,7 @@ StructData* get_struct_union_data(int tag, ScopeInfo* scope, char* name) {
 	for(int i = 0; i < Vector_get_length(data); i++)
 	{
 		StructData* maybeThis = Vector_at(data, i);
-		if(ScopeInfo_in_right(maybeThis -> scope, scope) && maybeThis -> tag == tag)
+		if(ScopeInfo_in_right(scope, maybeThis -> scope) && maybeThis -> tag == tag)
 		{
 			return maybeThis;
 		}

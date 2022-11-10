@@ -362,6 +362,8 @@ void unit_test_parse_struct() {
 
 	node = Vector_at(v, 1);
 	Lvar* table = Vector_at(nameTable, Vector_get_length(nameTable) - 2);
+	
+	controller -> current_number = 2;
 	Lvar* lval = find_lvar("greeting", String_len("greeting"), &table);
 	if(lval == NULL)
 	{

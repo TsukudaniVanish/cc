@@ -90,7 +90,7 @@ NameData* search_from_ordinary_namespace(char* name, ScopeInfo* scope) {
 	for (unsigned i = 0; i < Vector_get_length(v); i++)
 	{
 		NameData* maybe = Vector_at(v, i);
-		if(ScopeInfo_in_right(maybe -> scope, scope))
+		if(ScopeInfo_in_right(scope, maybe -> scope))
 			return maybe;
 	}
 	return NULL;
@@ -101,70 +101,66 @@ StructData* search_from_tag_namespece(char* name, ScopeInfo* scope) {
 	for (unsigned i = 0; i < Vector_get_length(v); i++)
 	{
 		StructData* maybe = Vector_at(v, i);
-		if(ScopeInfo_in_right(maybe -> scope, scope))
+		if(ScopeInfo_in_right(scope, maybe -> scope))
 			return maybe;
 	}
 	return NULL;
 }
 
-ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number) {
+ScopeInfo* new_ScopeInfo(unsigned number,ScopeInfo* parent) {
 	ScopeInfo* info = calloc(1, sizeof(ScopeInfo));
-	info ->nested = nested;
 	info ->number = number;
+	info -> parent = parent;
 	return info;
 }
 ScopeInfo* ScopeInfo_copy(ScopeInfo* info) {
-	return new_ScopeInfo(info ->nested, info ->number);
+	return new_ScopeInfo(info -> number, info -> parent);
 }
 int ScopeInfo_equal(ScopeInfo* self, ScopeInfo* other) {
-	if(self ->nested != other ->nested || self -> number != other -> number)
-	{
-		return 0;
+	if(self -> number == other -> number) {
+		return 1;
 	}
-	return 1;
+	return 0;
 }
 int ScopeInfo_in_right(ScopeInfo* info, ScopeInfo* current) {
-	if(current -> nested > info -> nested) {
-		return 1;
-	}
-	if(ScopeInfo_equal(current, info))
+	while (info != NULL)
 	{
-		return 1;
+		if(ScopeInfo_equal(info, current)) {
+			return 1;
+		}
+		info = info -> parent;
 	}
 	return 0;	
 }
 // compare Scope with current Scope
 int ScopeInfo_inscope(ScopeInfo* info) {
-	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
-	return ScopeInfo_in_right(info , currentNest);
+	ScopeInfo* current_scope = ScopeController_get_current_scope(controller);
+	return ScopeInfo_in_right(current_scope, info);
 }
+
 ScopeController* ScopeController_init() {
 	ScopeController* controller = calloc(1, sizeof(ScopeController));
 	controller ->nestedScopeData = make_vector();
-	controller -> currentNest = 0;
-	Vector_push(controller ->nestedScopeData, new_ScopeInfo(0, 0));
+	controller -> current_number = 0;
+	controller -> total_number = 0;
+	Vector_push(controller ->nestedScopeData, new_ScopeInfo(0, NULL));
 	return controller;
 }
 void ScopeController_nest_appeared(ScopeController* con) {
-	con ->currentNest ++;
-	if(Vector_get_length(con ->nestedScopeData) >= con -> currentNest + 1)
-	{
-		ScopeInfo *current = Vector_at(con ->nestedScopeData, con ->currentNest);
-		current ->number++;
-		return;
-	}
-	else
-	{
-		ScopeInfo* newNest = new_ScopeInfo(con ->currentNest, 0);
-		Vector_push(con ->nestedScopeData, newNest);
-	}
+	ScopeInfo* current_scope = ScopeController_get_current_scope(con);
+	con ->total_number ++;
+	ScopeInfo* newNest = new_ScopeInfo(con ->total_number, current_scope);
+	Vector_push(con ->nestedScopeData, newNest);
+	con -> current_number = newNest -> number;
 }
 void ScopeController_nest_disappeared(ScopeController* con) {
-	con ->currentNest--;
+	// con ->current_number--;
+	ScopeInfo* current_scope = ScopeController_get_current_scope(con);
+	con -> current_number = current_scope -> parent -> number;
 	return;
 }
 ScopeInfo* ScopeController_get_current_scope(ScopeController* con) {
-	return Vector_at(con ->nestedScopeData, con ->currentNest);
+	return Vector_at(con ->nestedScopeData, con ->current_number);
 }
 StructData* make_StructData() {
 	StructData* data = calloc(1, sizeof(StructData));
@@ -233,7 +229,7 @@ Type *Type_function_return(char **name,Token_t** token) {
 Lvar *find_lvar(char *name,int length,Lvar **locals) {
 	for(Lvar *var = *locals; var;var = var -> next)
 	{
-		if( var -> length == length && String_compare( name, var ->name,length))
+		if( var -> length == length && String_compare( name, var ->name,length) && ScopeInfo_inscope(var -> scope))
 		{
 			return var; 
 		}
@@ -443,7 +439,7 @@ Node_t *new_node_function_call(Token_t **token) {
 	if(data == NULL || data -> tag != TAG_FUNCTION)
 	{
 		if(data == NULL)
-			error_at((*token) -> str, "this is not exist in the ordinary name space");
+			error_at((*token) -> str, "this is not exist in the ordinary name space: %s", name);
 		else
 			error_at((*token) -> str, "%s is not function", name);
 	}
@@ -471,6 +467,7 @@ Node_t *new_node_function_call(Token_t **token) {
 	return node;
 }
 
+// to make a scope of function global, we update scope after parse function name. 
 Node_t *new_node_function_definition(Token_t **token) {
 	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
 	node = declare_specify(token, node, is_type_alias(token));
@@ -481,9 +478,12 @@ Node_t *new_node_function_definition(Token_t **token) {
 	Map_add(ordinaryNameSpace, node -> name, data);
 	
 	expect('(',token);	
+	ScopeController_nest_appeared(controller); // start function nest
 	node -> val = type_parameter_list(token,&node -> left);
 	
 	node -> right = stmt(token);
+
+	ScopeController_nest_disappeared(controller);
 	return node;
 
 }
@@ -513,7 +513,6 @@ Node_t *new_node_var(Token_t **token) {
 	}
 	if(lvar != NULL && ScopeInfo_inscope(lvar -> scope))
 	{//local variable
-	
 		return new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
 	}
 	lvar = find_lvar(ident -> str,ident -> length,&global);
@@ -925,7 +924,7 @@ int parameter_list(Token_t** token, Node_t** parameter_container) {
 // parse parameter.
 // number_of_parameter is used for unamed parameter
 Node_t* parameter_declare(Token_t** token, int number_of_parameter) {
-	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
+	ScopeInfo* current_scope = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 
@@ -946,7 +945,7 @@ Node_t* parameter_declare(Token_t** token, int number_of_parameter) {
 		node -> name = String_add("parameter_",i2a(number_of_parameter));
 	}
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table); //
-	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
+	if(lvar == NULL || !ScopeInfo_equal(current_scope, lvar -> scope))
 		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	else
 		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
@@ -989,7 +988,7 @@ Node_t *stmt(Token_t **token) {
 }
 
 Node_t *declare(Token_t **token) {
-	ScopeInfo* currentNest = ScopeController_get_current_scope(controller);
+	ScopeInfo* current_Scope = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
 	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
 	int isTypeDef = (*token) -> kind == TK_TYPEDEF;
@@ -1015,7 +1014,7 @@ Node_t *declare(Token_t **token) {
 
 	// check: scope && name space 
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
-	if(lvar == NULL || !ScopeInfo_equal(currentNest, lvar -> scope))
+	if(lvar == NULL || !ScopeInfo_equal(current_Scope, lvar -> scope))
 		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
 	else
 		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);

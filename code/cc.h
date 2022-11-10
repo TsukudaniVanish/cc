@@ -181,12 +181,12 @@ typedef enum {
 	SIZEOF_POINTER = 8,
 }SIZEOF_BASE_TYPE;
 
-
+typedef struct scope_info ScopeInfo;
 /* scope infomation*/
-typedef struct {
-	unsigned nested;// 0 <= nested: nested = 0 is root block
+struct scope_info {
 	unsigned number;// if nested > 0, this member recodes block number
-}ScopeInfo;
+	ScopeInfo* parent; // parent of this scope.
+};
 
 /**
  * @brief Container which store objects that need to calculate an offset to map stack or data section.
@@ -772,7 +772,7 @@ extern Token_t* preprocess(Token_t* token);
 extern NameData* new_NameData(int tag);
 extern NameData* search_from_ordinary_namespace(char*, ScopeInfo*);
 
-ScopeInfo* new_ScopeInfo(unsigned nested, unsigned number);
+ScopeInfo* new_ScopeInfo(unsigned number, ScopeInfo* parent);
 ScopeInfo* ScopeInfo_copy(ScopeInfo* info);
 int ScopeInfo_equal(ScopeInfo*, ScopeInfo*);
 int ScopeInfo_in_right(ScopeInfo*, ScopeInfo*);
@@ -780,7 +780,8 @@ int ScopeInfo_inscope(ScopeInfo*);
 
 typedef struct {
 	Vector* nestedScopeData;
-	unsigned currentNest;
+	unsigned current_number;
+	unsigned total_number;
 }ScopeController;
 ScopeController* ScopeController_init();
 void ScopeController_nest_appeared(ScopeController*);

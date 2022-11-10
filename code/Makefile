@@ -23,6 +23,9 @@ utest: cc
 etest: cc
 	./test/test.sh
 
+unit_test: cc 
+	./cc -T
+
 clean:
 	rm -f cc *.o *~ tmp* *.log ./backend/*.o
 

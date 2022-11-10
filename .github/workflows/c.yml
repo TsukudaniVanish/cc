@@ -17,5 +17,5 @@ jobs:
       run: make
       working-directory: ./code
     - name: make test
-      run: make test && make etest
+      run: make test && make etest && make unit_test
       working-directory: ./code

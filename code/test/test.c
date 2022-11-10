@@ -657,6 +657,21 @@ void test_ifdef_ifndef() {
 	test_passed(test);
 }
 
+void test_scope_parallel() {
+	char* test = "scope parallel";
+	if(1) {
+		int a = 0;
+	}
+
+	if(1) {
+		int a = 10;
+		if(a != 10) {
+			error_template_int(test, 10, a);
+		}
+	}
+	test_passed(test);
+}
+
 extern void test_place_holder(int, int, char*, ...);
 extern OK_IFDEF* test_type_alias_function_declare(int, char*, struct struct_scope_test,OK_IFDEF, OK_IFDEF*);
 
@@ -694,6 +709,7 @@ int main(){// line comment
 	test_type_cast();
 	test_character_literal();
 	test_ifdef_ifndef();
+	test_scope_parallel();
 
 
 	test_global();
