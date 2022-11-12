@@ -684,6 +684,18 @@ extern OK_IFDEF* test_type_alias_function_declare(int, char*, struct struct_scop
 #ifndef ELIF_OK
 	fail to compile 
 #endif 
+
+#define MACRO1(a, b) a + b + b
+#define MACRO2(a) MACRO1(a, a + 1)
+void test_macro_in_macro() {
+	char* test = "macro in macro";
+	int a = MACRO2(9 + 1);
+	if(a != 32) {
+		error_template_int(test, 32, a);
+	}
+	test_passed(test);
+}
+
 int main(){// line comment 
     printf_h("\x1b[32mHello\x1b[m\n"); /* display test */
 	test_arithmetic();
@@ -710,6 +722,7 @@ int main(){// line comment
 	test_character_literal();
 	test_ifdef_ifndef();
 	test_scope_parallel();
+	test_macro_in_macro();
 
 
 	test_global();

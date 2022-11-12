@@ -11,7 +11,7 @@ void error(char *fmt,...)
 {
 	va_list arg;
 	va_start(arg,fmt);
-	fprintf(stderr,fmt,arg);
+	vfprintf(stderr,fmt,arg);
 	va_end(arg);
 }
 

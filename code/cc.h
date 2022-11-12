@@ -477,12 +477,13 @@ extern int is_type_alias(Token_t**);
  */ 
 extern Token_t* Token_copy(Token_t* token);
 /**
- * @brief copy all members
+ * @brief copy all members until until.
+ * 	if until == NULL, this function copy tokens to TK_EOF.
  * 
  * @param token 
  * @return Token_t* 
  */
-extern Token_t* Token_copy_all(Token_t* token);
+extern Token_t* Token_copy_all(Token_t* token, Token_t* until);
 
 // insert first param between second param and third param 
 extern void Token_splice(Token_t*, Token_t*, Token_t*);

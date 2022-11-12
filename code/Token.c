@@ -167,12 +167,12 @@ Token_t* Token_copy(Token_t* token) {
 	return new_Token_t(token -> kind, NULL, token -> val, token -> length, token -> str, token -> tp);
 }
 
-Token_t* Token_copy_all(Token_t* token) {
+Token_t* Token_copy_all(Token_t* token, Token_t* until) {
 	Token_t* buf = new_Token_t(token -> kind, NULL, token -> val, token -> length, token -> str, token -> tp);
 	Token_t* toReturn = buf;
 	Token_t *cur = NULL;
 	token = token -> next;
-	while(token -> kind != TK_EOF)
+	while(token -> kind != TK_EOF && token != until)
 	{
 		cur = new_Token_t(token -> kind, NULL, token -> val, token -> length, token -> str, token -> tp);
 		buf -> next = cur;
@@ -184,6 +184,7 @@ Token_t* Token_copy_all(Token_t* token) {
 	return toReturn;
 }
 
+// insert chain to tokens
 void Token_splice(Token_t* insert, Token_t* pre, Token_t* next) {
 	pre -> next = insert;
 	while (insert -> next -> kind != TK_EOF)
@@ -207,6 +208,17 @@ Token_t* Token_consume_to_last(Token_t* token) {
 	return token;
 }
 
+// consume token until token -> next == until
+Token_t* consume_to(Token_t* token, Token_t* until) {
+	if(token == NULL) {
+		return token;
+	}
+	while (token -> next != NULL && token -> next != until)
+	{
+		consume(&token);
+	}
+	return token;
+}
 // this function does not consume any token.
 int check_ident_appear_until_punctuator(Token_t** token) {
 	Token_t* buf = *token;

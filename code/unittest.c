@@ -104,18 +104,22 @@ int Token_equal(Token_t* token, Token_t* tester) {
 }
 
 void Token_show(Token_t* token) {
-	error( "kind :%d\n", token -> kind);
+	error("kind : %d\n", token -> kind);
 	if(token -> length > 0)
 	{
-		error( "%s", token -> str);
+		error("%.*s\n", token -> length, token -> str);
 	}
 	return;
 }
 void Token_show_all(Token_t* token) {
+	error("start ----- ----- -----\n");
 	for(Token_t* p = token; p -> kind != TK_EOF; p = p -> next)
 	{
+		error("-----\n");
 		Token_show(p);
+		error("-----\n\n");
 	}
+	error("----- ----- ----- end\n");
 	return;
 }
 #define ERROR_TOKEN(a) do{Token_show_all(a); exit(1);}while(0)
@@ -1078,13 +1082,13 @@ int unit_test() {
 	unit_test_parse_union();
 	unit_test_parse_enum();
 	unit_test_parse_not();
+	unit_test_token_splice();
 	unit_test_tokenize_macro_define();
 	unit_test_tokenize_macro_function();
 	unit_test_preprocess_macro_expression();
 	unit_test_preprocess_macro_exp_eval();
 	unit_test_preprocess_perse_defined();
 	unit_test_preprocess_if();
-	unit_test_token_splice();
 	unit_test_parse_static();
 	unit_test_conditional_operator();
 	uint_test_String_add();

@@ -247,17 +247,27 @@ Vector* read_parameters(Token_t** token) {
     Vector* result = make_vector();
     while (!find(')', token))
     {
-        Token_t* arg = Token_copy(*token);
-        Vector_push(result, arg);
-        if(!find(',', token))
-            *token = (*token) -> next;
+        Token_t* buf = *token;
+        while (*token && (*token) -> str[0] != ',' && (*token) -> str[0] != ')')
+        {
+            consume(token);
+        }
+        if(*token == NULL) {
+            error_at(buf -> str, "failed to read parameters");
+        }
+        Token_t* arg_head = Token_copy_all(buf, *token);
+        Vector_push(result, arg_head);
+        if((*token) -> str[0] == ',') {
+            consume(token);
+        }
     }
     return result;
 }
 
 // replace parameters and return previous token of end
+// expect buf -> next == head
 Token_t* replace_arguments(MacroData* macroData,Token_t* buf, Token_t* head, Token_t* end,Vector* arguments) {
-    while(head -> next && head -> next != end)
+    while(head && head != end)
     {
         if(arguments && head -> kind == TK_IDENT)
         {
@@ -266,8 +276,7 @@ Token_t* replace_arguments(MacroData* macroData,Token_t* buf, Token_t* head, Tok
             if(i > -1)
             {
                 Token_t* arg = Vector_at(arguments, i);
-                Token_t* replace_ident = Token_copy(arg);
-                replace_ident -> next = new_Token_t(TK_EOF, NULL, 0, 0, NULL, NULL);
+                Token_t* replace_ident = Token_copy_all(arg, NULL);
                 Token_splice(replace_ident, buf, head);
             }
             buf = buf -> next;
@@ -279,30 +288,39 @@ Token_t* replace_arguments(MacroData* macroData,Token_t* buf, Token_t* head, Tok
     return head;
 }
 
+extern Token_t* consume_to(Token_t* token, Token_t* until);
 int macro_expansion(Token_t* token) {
     int macroWasExpanded = 0;
 
     Token_t* buf = token;// buf - token or buf == token
     while(token -> kind != TK_EOF) {
+        if(buf != token && buf -> next != token) {
+            buf = consume_to(buf, token);
+            if(buf == NULL) {
+                error_at(token -> str, "failed in expand macro");
+            }
+        }
+        
         if(token -> kind == TK_IDENT)
         {
             char* ident = expect_ident(&token);
             if(Map_contains(macros, ident))
             {
                 MacroData* macroData = Map_at(macros, ident);
-                Token_t* macro = macroData -> macroBody;
-                Token_t* insert = Token_copy_all(macro);
+                Token_t* insert = Token_copy_all(macroData -> macroBody, NULL);
                 Vector* parameters = NULL;
                 if(macroData -> tag == MACRO_FUNCTION && find('(', &token))
                 {// function type macro
                     parameters = read_parameters(&token);
                 }
 
+
                 Token_t* buf_in_macro = buf;// buf_in_macro - insert or buf_in_macro == insert
                 Token_splice(insert, buf_in_macro, token);
 
-                if(parameters)
+                if(parameters) {
                     buf = replace_arguments(macroData, buf_in_macro, insert, token, parameters);
+                }
                 macroWasExpanded = 1;
                 continue;
             }

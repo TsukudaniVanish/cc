@@ -411,7 +411,7 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
 	//type check
 	if(typecheck(node) == 0)
 	{
-		error_at(parsing_here,"Type cast error");
+		error_at(parsing_here,"Type cast error: kind %d", kind);
 	}
 	node -> tp = imptypecast(node);
 	if(node -> tp)
@@ -429,7 +429,7 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
 	}
 	else
 	{
-		error_at(parsing_here,"Type cast error");
+		error_at(parsing_here,"Type cast error: kind: %d", kind);
 	}
 }
 
