@@ -1,3 +1,9 @@
+// TODO: fix a function macro argument replacement
+// see test_2.c
+// if any identifiers are longer than an argument name and  their head substrings are same , then miss match happen. 
+// -> fixed but make test failed
+// -> 同じ名前が二つ以上使われるとバグる
+// -> macro の tokenize が悪いっぽい
 #include "cc.h"
 
 extern unsigned int String_len(char*);
@@ -22,15 +28,16 @@ void* MacroData_get_parameters(MacroData* d, unsigned int index) {
     return Vector_at(d -> parameters, index);
 }
 
-int MacroData_contains_parameters(MacroData* d, char* name) {
+unsigned MacroData_contains_parameters(MacroData* d, char* name) {
     if(d -> tag != MACRO_FUNCTION)
         return -1;
     Vector* v = d -> parameters;
     unsigned len = Vector_get_length(v);
+    unsigned name_len = String_len(name);
     for(unsigned i = 0; i < len; i++)
     {
         char* p = Vector_at(v, i);
-        if(String_compare(p , name, String_len(p)))
+        if(String_compare(p , name, name_len))
             return i;
     }
     return -1;
