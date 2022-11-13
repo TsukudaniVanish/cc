@@ -1,9 +1,3 @@
-// TODO: fix a function macro argument replacement
-// see test_2.c
-// if any identifiers are longer than an argument name and  their head substrings are same , then miss match happen. 
-// -> fixed but make test failed
-// -> 同じ名前が二つ以上使われるとバグる
-// -> macro の tokenize が悪いっぽい
 #include "cc.h"
 
 extern unsigned int String_len(char*);
