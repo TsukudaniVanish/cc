@@ -1,7 +1,7 @@
 # cc
 [![C/C++ CI](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml/badge.svg)](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml)  
 cc is a subset of c compiler. It will cover the c89 syntax in th future. 
-This product is developed for my study of computer science. Pull requests which are related to language implementation will be declined. Thank you for your understanding!
+This product is developed for my study of computer science. Pull requests which are related to language implementation will be declined since I want to study implementing features and do that by my self. ALL issues are welcome and will help me for developing this project. Thank you for your understanding!
 
 ## covered language functionalities 
 ### type 
@@ -32,49 +32,54 @@ This product is developed for my study of computer science. Pull requests which 
 
 ## code/
 
+
+### test/
+
+##### test.h 
+A test header file for test.c
+##### test.c 
+A test file for application. This file is not used to build cc.
+
+#### backend/
+##### error_point.c
+All error point logics are controlled here. 
+
+##### file.c 
+A file reader and an include path finder.
+
 ### cc.h
-header file which all used functions are declared in.
+A header file which all used functions are declared in.
 Also, briefs of those functions  are written here.
 
 ### Token.c  
-new token functions which make  new tokens and token utilities
+New token functions which make  new tokens and token utilities
 
 ### Node.c
-new node functions which make new nodes for abstract syntax tree
+New node functions which make new nodes for abstract syntax tree
 
 ### Vector.c
-this file serves vector utilities.
+This file serves vector utilities.
 
 ### Map.c
-hash map utilities
+Hash map utilities
 
 ### String.c
-string utilities such as strlen, strncmp, strncpy in string.h 
-
-### error_point.c
-all error point logics are controlled here. 
-
-### file.c 
-file reader.
+String utilities such as strlen, strncmp, strncpy in string.h.
 
 ### unittest.c
-functions for unit test.
-
-### test.c 
-test file for application. this file is not used to build cc.
+Functions for unit test.
 
 ### tokenize.c
-a tokenizer
+A tokenizer
 
 ### main.c 
-expect functions and  a main function are written in this file.
+A main function are written in this file.
 
 ### parse.c
-a parsing functions
+Parsing functions.
 
 ### codegenerator.c
-a generating local variable function  
-a generator function which convert an abstract syntax tree into  assembly codes 
+Generator functions which convert an abstract syntax tree into  assembly codes.
 
 ## todo
 - [x] refactoring/ remove include standard library
