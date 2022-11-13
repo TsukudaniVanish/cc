@@ -22,15 +22,16 @@ void* MacroData_get_parameters(MacroData* d, unsigned int index) {
     return Vector_at(d -> parameters, index);
 }
 
-int MacroData_contains_parameters(MacroData* d, char* name) {
+unsigned MacroData_contains_parameters(MacroData* d, char* name) {
     if(d -> tag != MACRO_FUNCTION)
         return -1;
     Vector* v = d -> parameters;
     unsigned len = Vector_get_length(v);
+    unsigned name_len = String_len(name);
     for(unsigned i = 0; i < len; i++)
     {
         char* p = Vector_at(v, i);
-        if(String_compare(p , name, String_len(p)))
+        if(String_compare(p , name, name_len))
             return i;
     }
     return -1;

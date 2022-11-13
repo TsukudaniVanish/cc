@@ -631,6 +631,7 @@ char* tokenize_macro_define(char* p) {
 		p++;
 		while(*p != ')')
 		{
+			p = skip_in_macro(p);
 			// read parameters
 			char* q = p;
 			while(*q != ',' && *q != ')' && !is_space(*q))
@@ -641,6 +642,8 @@ char* tokenize_macro_define(char* p) {
 			
 			Vector_push(v, param);
 
+			// After read parameter we have to find ','.
+			// if we found like "(ident) ," we need to skip space.
 			p = q;
 			p = skip_in_macro(p);
 			if(*p == ',')
