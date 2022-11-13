@@ -1,7 +1,7 @@
 # cc
 [![C/C++ CI](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml/badge.svg)](https://github.com/TsukudaniVanish/cc/actions/workflows/c.yml)  
 cc is a subset of c compiler. It will cover the c89 syntax in th future. 
-This product is developed for my study of computer science. Pull requests which are related to language implementation will be declined since I want to study implementing features and do that by my self. ALL issues are welcome and will help me for developing this project. Thank you for your understanding!
+This product is developed for my study of computer science. Pull requests which are related to language implementation will be declined since I want to study implementing features and do that by my self. A issues are welcome and will help me for developing this project. Thank you for your understanding!
 
 ## covered language functionalities 
 ### type 
