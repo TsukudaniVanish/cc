@@ -585,6 +585,7 @@ void gen_function_call(Node_t *node){
 		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
 	}
 
+	move_data(get_registername(RN_RAX, 4), i2a(0));
 	call(node -> name);
 	
 	if(rsp_counter%16 !=0)
@@ -968,6 +969,7 @@ void gen_glob_declare(Node_t* node) {
 	} 	
 	else {
 		section_global(name);
+		printf("	.align 8\n"); // TODO wrap by a function
 	}
 	section_type(name, "@object");
 	section_size(name, ui2a(type -> size));
