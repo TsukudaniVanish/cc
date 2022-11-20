@@ -26,10 +26,13 @@ etest: cc
 unit_test: cc 
 	./cc -T
 
+all_test: cc 
+	sh ./test/test_all.sh 
+
 clean:
 	rm -f cc *.o *~ tmp* *.log ./backend/*.o
 
 db:
 	gdb cc
 	
-.PHONY: test clean
+.PHONY: test clean utest etest unit_test all_test
