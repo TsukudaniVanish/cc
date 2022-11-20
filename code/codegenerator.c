@@ -229,7 +229,7 @@ void section_string(char* name) {
  * @param offset 
  * @param name 
  */
-void string_literal(long offset, char* name) {
+void data_string_literal(long offset, char* name) {
 	label(get_label_string_literal(offset));
 
 	section_string(name);
@@ -508,10 +508,10 @@ void set_stringiter()
 {
 	section_read_only();
 
-	Lvar *iter = string_iter;
+	Lvar *iter = string_literal;
 	while (iter)
 	{
-		string_literal(iter -> offset, iter -> name);
+		data_string_literal(iter -> offset, iter -> name);
 		iter = iter -> next;
 	}
 	

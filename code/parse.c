@@ -77,11 +77,18 @@ static void* NULL = (void*) 0;
 extern void* calloc(unsigned nmem, unsigned size);
 extern void free(void*);
 
+// Scope is set with a current scope.
 NameData* new_NameData(int tag) {
 	NameData* data = calloc(1, sizeof(NameData));
 	data -> tp = NULL;
 	data -> tag = tag;
 	data -> scope = ScopeInfo_copy(ScopeController_get_current_scope(controller));
+	return data;
+}
+
+NameData* set_tag_obj_to_ordinary_namespace(char* name) {
+	NameData* data = new_NameData(TAG_OBJECT);
+	Map_add(ordinaryNameSpace, name, data);
 	return data;
 }
 
@@ -259,10 +266,6 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 		lvar -> offset = (lvar -> tp->size);
 	}
 	lvar -> scope = ScopeController_get_current_scope(controller);
-
-	// set this to ordinary name space
-	NameData* data = new_NameData(TAG_OBJECT);
-	Map_add(ordinaryNameSpace, lvar -> name, data);
 
 	return lvar;
 }
@@ -764,14 +767,14 @@ Node_t *new_node_num(int val) {
 
 
 
-Node_t *new_node_stringiter(Token_t ** token) {
+Node_t *new_node_string_literal(Token_t ** token) {
 	Node_t *node = new_Node_t(ND_STRINGLITERAL,NULL,NULL,0,0,new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),SIZEOF_POINTER),NULL);
 	
-	Lvar *iter = declare_ident(node -> tp,(*token) -> str,(*token) -> length,&string_iter);
+	Lvar *literal = declare_ident(node -> tp,(*token) -> str,(*token) -> length,&string_literal);
 	
-	node -> name = calloc(iter -> length, sizeof(char));
-    Memory_copy(node -> name,iter -> name,iter -> length);
-	node -> offset = iter -> offset;
+	node -> name = calloc(literal -> length, sizeof(char));
+    Memory_copy(node -> name,literal -> name,literal -> length);
+	node -> offset = literal -> offset;
 	
 	consume(token);
 	expect('\"',token);
@@ -810,8 +813,10 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	// global variable declaration 
 	
 	Lvar *lvar = find_lvar(node -> name, String_len(node -> name), &global);
-	if(lvar == NULL)
+	if(lvar == NULL) {
 		lvar = declare_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
+		set_tag_obj_to_ordinary_namespace(lvar -> name);
+	}
 	if (find('=',token))// initialization
 	{
 		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY) {
@@ -966,8 +971,10 @@ Node_t* parameter_declare(Token_t** token, int number_of_parameter) {
 		node -> name = String_add("parameter_",i2a(number_of_parameter));
 	}
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table); //
-	if(lvar == NULL || !ScopeInfo_equal(current_scope, lvar -> scope))
+	if(lvar == NULL || !ScopeInfo_equal(current_scope, lvar -> scope)) {
 		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
+		set_tag_obj_to_ordinary_namespace(lvar -> name);
+	}
 	else
 		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
 
@@ -1035,8 +1042,10 @@ Node_t *declare(Token_t **token) {
 
 	// check: scope && name space 
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
-	if(lvar == NULL || !ScopeInfo_equal(current_Scope, lvar -> scope))
+	if(lvar == NULL || !ScopeInfo_equal(current_Scope, lvar -> scope)) {
 		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
+		set_tag_obj_to_ordinary_namespace(lvar -> name);
+	}
 	else
 		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
 
@@ -1760,7 +1769,7 @@ Node_t *primary(Token_t **token) {
 	}
 	else if(find('\"',token))
 	{
-		node = new_node_stringiter(token);
+		node = new_node_string_literal(token);
 	}
 	else if((*token) -> kind == TK_CONST)
 	{

@@ -215,7 +215,7 @@ struct lvar{
 	unsigned int offset;
 	ScopeInfo* scope;
 };
-Lvar *string_iter;
+Lvar *string_literal;
 Lvar *global;
 
 /* @brief  this use for ordinary name space
@@ -939,7 +939,7 @@ Node_t *new_node_num(int val);
  * @param Token_t** token
  * 
  */
-Node_t* new_node_stringiter(Token_t**);
+Node_t* new_node_string_literal(Token_t**);
 
 /**
  * @brief 識別子の末端ノードを作る

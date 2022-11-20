@@ -76,7 +76,7 @@ int main(int argc, char **argv){
 
 // print heder of assembly 
 	printf(".intel_syntax noprefix\n");
-	if(string_iter)
+	if(string_literal)
 		set_stringiter();
 	printf("	.data\n");
 	// generate glob var declaring code
