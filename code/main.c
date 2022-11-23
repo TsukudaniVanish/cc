@@ -15,7 +15,7 @@ extern void gen_calloc_h();
 extern void gen_exit_h();
 
 int main(int argc, char **argv){
-	
+	int helper_flag = 1; 
 	controller = NULL;
 	ordinaryNameSpace = NULL;
 	macros = NULL;
@@ -29,8 +29,11 @@ int main(int argc, char **argv){
 
 	
 	char *buffer;
-	if(String_len(argv[1]) == 2 && String_compare(argv[1],"-f",2))
+	if(String_len(argv[1]) == 2 && (String_compare(argv[1],"-f",2) || String_compare(argv[1], "-F", 2)))
 	{
+		if(String_compare(argv[1],"-F",2)) {
+			helper_flag = 0;
+		}
 		filepath = argv[2];
 		buffer = file_open(argv[2]);
 		user_input = buffer;
@@ -91,11 +94,13 @@ int main(int argc, char **argv){
 		}
 	}
 
-	// add pre-implemented functions 
-	gen_printf_h();
-	gen_sprintf_h();
-	gen_calloc_h();
-	gen_exit_h();
+	if(helper_flag) {
+		// add pre-implemented functions 
+		gen_printf_h();
+		gen_sprintf_h();
+		gen_calloc_h();
+		gen_exit_h();
+	}
 
 	// recursive code generation 
 	for(int i = 0;i < len;i++){
