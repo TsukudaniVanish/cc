@@ -31,7 +31,7 @@ int main(int argc, char **argv){
 	char *buffer;
 	if(String_len(argv[1]) == 2 && (String_compare(argv[1],"-f",2) || String_compare(argv[1], "-F", 2)))
 	{
-		if(String_compare(argv[1],"-F",2)) {
+		if(String_compare(argv[1],"-F",2)) { // this option does not print helper functions 
 			helper_flag = 0;
 		}
 		filepath = argv[2];
