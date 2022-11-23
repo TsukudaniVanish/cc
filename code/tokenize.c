@@ -430,7 +430,7 @@ Token_t* tokenize_symbol(char** p, Token_t* cur) {
 	if(cur -> length > 1000)
 	{// punctuator or not
 		cur -> kind = TK_PUNCTUATOR;
-		cur -> length -= 1000;
+		cur -> length = cur -> length - 1000;
 	}
 	if(cur -> length == 3) {
 		// place holder ...
@@ -594,7 +594,7 @@ Token_t *tokenize(char **pointer) {
 	new_token(TK_EOF, cur, p);
 	*pointer = p;
 	return head.next;
-};
+}
 
 char* tokenize_macro_undef(char* p) {
 	p = skip_in_macro(p);
