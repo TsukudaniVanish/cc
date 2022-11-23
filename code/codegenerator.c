@@ -708,11 +708,14 @@ int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** regi
 	case TP_POINTER:
 		return node -> tp -> pointer_to -> size;
 	case TP_CHAR: return 1;
+	case TP_LONG:
 	case TP_INT: return 1;
+	case TP_ENUM: return 1;
 	default:
 		return 0;
 	}
 }
+// fix adding enum constant
 void gen_inc_dec(Node_t *node) {
 	int instruction = 0;
 	switch(node -> kind) {
@@ -1192,8 +1195,9 @@ void gen_for(Node_t* node) {
 }
 
 // store value at rcx. to compare case label with value, we copy value to rax
-void gen_switch(Node_t* node) {
-	int end_number = filenumber++;
+// TODO: allow blank block
+void gen_switch(Node_t* node, int begin_number) {
+	int end_number_switch = filenumber++;
 	unsigned int size = node -> left -> tp -> size;
 	char* prefix = get_pointerpref(size);
 	char* rcx = get_registername(RN_RCX, size);
@@ -1201,7 +1205,7 @@ void gen_switch(Node_t* node) {
 	char* rax = get_registername(RN_RAX, size);
 	// get  a value 
 	// value is in the head of the current stack
-	generate(node -> left, 0, end_number);
+	generate(node -> left, begin_number, end_number_switch);
 
 	int depth = node -> val;
 	Node_t* branch = node -> right;
@@ -1214,7 +1218,7 @@ void gen_switch(Node_t* node) {
 			break;
 		} else {
 			// get a case label 
-			generate(caseBranch ->left, 0, end_number);
+			generate(caseBranch ->left, begin_number, end_number_switch);
 			pop_stack( RN_RDI, caseBranch -> left -> tp -> size);
 
 			//get a value
@@ -1225,7 +1229,7 @@ void gen_switch(Node_t* node) {
 			// For a next loop, 
 			// I push the rcx value at the end of evaluation.
 			compare_value(rax, rdi);
-			jump_equal(get_label_file_scope(String_add("case", i2a(i + end_number))));
+			jump_equal(get_label_file_scope(String_add("case", i2a(i + end_number_switch))));
 			push_stack( RN_RCX, size);
 
 			caseBranch = caseBranch -> right;
@@ -1233,27 +1237,27 @@ void gen_switch(Node_t* node) {
 		}
 	}
 	// jump to default
-	jump(get_label_file_scope(String_add("end", i2a(end_number))));
+	jump(get_label_file_scope(String_add("end", i2a(end_number_switch))));
 	
 	// body code generation 
 	for(int j = 0; j < depth; j++) {
 		if(bodyBranch -> kind == ND_DEFAULT) {
-			label(get_label_file_scope(String_add("end", i2a(end_number))));
+			label(get_label_file_scope(String_add("end", i2a(end_number_switch))));
 
 			Node_t* statement = bodyBranch -> left;
 			while (statement -> kind != ND_BLOCKEND)
 			{
-				generate(statement -> left, 0, end_number);
+				generate(statement -> left, begin_number, end_number_switch);
 				statement = statement -> right;
 			}
 			break;
 		} else {
-			label(get_label_file_scope(String_add("case", i2a(j + end_number))));
+			label(get_label_file_scope(String_add("case", i2a(j + end_number_switch))));
 
 			Node_t* statement = bodyBranch -> left;
 			while (statement -> kind != ND_BLOCKEND)
 			{
-				generate(statement -> left, 0, end_number);
+				generate(statement -> left, begin_number, end_number_switch);
 				statement = statement -> right;
 			}
 
@@ -1263,7 +1267,7 @@ void gen_switch(Node_t* node) {
 	}
 	if(bodyBranch -> kind == ND_BLOCKEND)
 	{
-		label(get_label_file_scope(String_add("end", i2a(end_number))));
+		label(get_label_file_scope(String_add("end", i2a(end_number_switch))));
 	}
 	filenumber = filenumber + depth;
 }
@@ -1507,7 +1511,7 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 		return;
 	case ND_FOR: gen_for(node);
 		return;
-	case ND_SWITCH: gen_switch(node);
+	case ND_SWITCH: gen_switch(node, labelLoopBegin);
 		return;
 	//around the top of the ast tree ===================================================
 	// operators ===================
