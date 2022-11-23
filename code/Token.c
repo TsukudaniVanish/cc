@@ -234,7 +234,7 @@ int check_ident_appear_until_punctuator(Token_t** token) {
 }
 
 void expect(int kind ,Token_t **token) {
-	if( (*token) -> kind > 100 |  kind != (*token) -> str[0])
+	if( (*token) -> kind > 100 ||  kind != (*token) -> str[0])
 	{
 		error_at( (*token) -> str ,"expect %c but got %c", kind, (*token) -> str[0]);
 	}

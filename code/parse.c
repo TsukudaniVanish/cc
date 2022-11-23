@@ -296,7 +296,7 @@ int typecheck(Node_t *node) {
 	return 2;
 }
 
-#if defined(Min)
+#if defined Min
 	#define Is_type_integer(t) INTEGER_TYPE_START == Min(t,INTEGER_TYPE_START) ? t <= INTEGER_TYPE_END ? 1: t == TP_ENUM? 1: 0: 0 
 #endif
 #define Is_type_pointer(t) (t == TP_POINTER || t == TP_ARRAY? 1: 0)
