@@ -1065,3 +1065,6 @@ void gen_formula(Node_t*);
 // generate assembly code from ast.
 void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd);
 //=====================================================
+
+// globals 
+

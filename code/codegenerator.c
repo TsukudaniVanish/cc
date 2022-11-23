@@ -171,6 +171,10 @@ void section_read_only() {
 	printf("%s", l);
 } 
 
+void section_comm(char* name, unsigned size, unsigned align) {
+	printf("	.comm %s, %d, %d\n", name, size, align);
+}
+
 void section_global(char* name) {
 	char* l = String_add(".global ", name);
 	l = String_add(l, "\n");
@@ -963,20 +967,15 @@ void gen_glob_declare(Node_t* node) {
 	char* name = node -> kind != ND_INITLIST? node -> name: node -> left -> name;
 	Type* type = node -> kind != ND_INITLIST? node -> tp: node -> left -> tp;
 	int storage_class = node -> kind != ND_INITLIST? node -> storage_class: node -> left -> storage_class;
-	// register symbol
-	if(storage_class == SC_STATIC) {
-		section_local(name);
-	} 	
-	else {
-		section_global(name);
-		printf("	.align 8\n"); // TODO wrap by a function
-	}
-	section_type(name, "@object");
-	section_size(name, ui2a(type -> size));
-	label(name);
-
 	if(node -> kind == ND_INITLIST)
 	{
+		if(node -> storage_class != SC_STATIC) {
+			section_global(name);
+			printf("	.align 8\n"); // TODO wrap by a function
+		}
+		section_type(name, "@object");
+		section_size(name, ui2a(type -> size));
+		label(name);
 		Node_t* init_branch = node -> right;
 		while(init_branch -> kind == ND_BLOCK)
 		{
@@ -986,13 +985,28 @@ void gen_glob_declare(Node_t* node) {
 		return;
 	}
 
-	// generate data definition
-	if(node -> val == 0) {
-		section_zero(node -> tp -> size);
-		return;
+	// .comm 
+	if(node -> val == 0 || storage_class != SC_AUTO) {
+		if(storage_class == SC_STATIC) {
+			section_local(name);
+		}
+		section_comm(name, type -> size, type -> size);
+		return ;
+	}	
+
+	// initialize variable 
+	// register symbol
+	if(storage_class == SC_STATIC) {
+		section_local(name);
+	} 	
+	else {
+		section_global(name);
+		printf("	.align 8\n"); // TODO wrap by a function
 	}
-	
-	if(node -> tp -> size <= 4) {
+	section_type(name, "@object");
+	section_size(name,ui2a(type -> size));
+	label(name);
+	if(type -> size <= 4) {
 		section_long(node -> val);
 	} else {
 		section_quad(l2a(node -> val));

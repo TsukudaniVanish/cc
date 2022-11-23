@@ -811,7 +811,6 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	}
 
 	// global variable declaration 
-	
 	Lvar *lvar = find_lvar(node -> name, String_len(node -> name), &global);
 	if(lvar == NULL) {
 		lvar = declare_glIdent(node -> tp,node -> name, String_len(node -> name),&global);
@@ -1044,9 +1043,11 @@ Node_t *declare(Token_t **token) {
 	Lvar* lvar = find_lvar(node -> name, String_len(node -> name), &table);
 	if(lvar == NULL || !ScopeInfo_equal(current_Scope, lvar -> scope)) {
 		lvar = declare_ident(node -> tp, node -> name,String_len(node -> name),&table);
+		lvar -> storage_class = node -> storage_class;
 		set_tag_obj_to_ordinary_namespace(lvar -> name);
-	}
-	else
+	} else if(lvar -> storage_class != SC_AUTO) {
+		// just skip
+	} else 
 		error_at((*token) -> str, "Can't use same identifier in SameScope: %s", node -> name);
 
 	node -> offset = lvar -> offset;
