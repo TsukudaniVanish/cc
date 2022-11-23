@@ -663,7 +663,12 @@ int parse_case_default(int depth, Token_t** token, Node_t** _caseLabel, Node_t**
 	caseLabel -> left = primary(token);
 	expect(':', token);
 
-	Node_t* statements = new_Node_t(ND_BLOCK, stmt(token), NULL, 0, 0, 0, 0);
+	Node_t* statements;
+	if((*token) -> kind == TK_CASE) {
+		statements = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+	} else {
+		statements = new_Node_t(ND_BLOCK, stmt(token), NULL, 0, 0, 0, 0); // todo: allow blank statement
+	}
 	caseStatement -> left = statements;
 
 	statements -> right = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
@@ -840,7 +845,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 
 			(*token) = (*token) -> next;
 
-			node = new_Node_t(ND_DEREF, postfix(token), NULL,0,0,NULL,NULL);
+			node = new_Node_t(ND_DEREF, unitary(token), NULL,0,0,NULL,NULL);
 			if( node -> left -> tp -> Type_label == TP_ARRAY)
 			{
 				node -> tp = node -> left -> tp -> pointer_to;
@@ -860,7 +865,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 
 			(*token) = (*token) -> next;
 
-			node = new_Node_t(ND_ADDR,postfix(token), NULL,0,0,NULL,NULL);
+			node = new_Node_t(ND_ADDR,unitary(token), NULL,0,0,NULL,NULL);
 			node -> tp = new_tp(TP_POINTER,node -> left -> tp,SIZEOF_POINTER);
 			return node;
 		}
