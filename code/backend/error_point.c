@@ -4,8 +4,6 @@
 extern char* user_input;
 extern char* filepath;
 extern char* parsing_here;
-extern void Memory_copy(void*, void*, unsigned int);
-
 // this function does not call exit(1)
 void error(char *fmt,...)
 {

@@ -224,7 +224,7 @@ Type *Type_function_return(char **name,Token_t** token) {
 	Token_t *buf = consume(token);
 	if(*name)
 		free(*name);
-	*name = calloc(buf -> length, sizeof(char));
+	*name = new_String(buf -> length);
 	Memory_copy(*name,buf -> str,buf -> length);
 	
 	NameData* data = search_from_ordinary_namespace(*name, ScopeController_get_current_scope(controller));
@@ -250,7 +250,7 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 	Lvar *lvar = calloc(1,sizeof(Lvar));
 	lvar -> next = next;
 	// identifier name copy
-	lvar -> name = calloc(length,sizeof(char));
+	lvar -> name = new_String(length);
 	Memory_copy(lvar -> name,name,length);
 
 	lvar -> length = length;
@@ -437,7 +437,7 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
 }
 
 Node_t *new_node_function_call(Token_t **token) {
-	char* name = calloc((*token) -> length, sizeof(char));
+	char* name = new_String((*token) -> length);
 	Memory_copy(name, (*token) -> str, (*token) -> length);
 	NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
 	if(data == NULL || data -> tag != TAG_FUNCTION)
@@ -499,7 +499,7 @@ Node_t *new_node_var(Token_t **token) {
 	if(ident != NULL)
 	{
 		char* name = NULL;
-		name = calloc(ident -> length, sizeof(char));
+		name = new_String(ident -> length);
 		Memory_copy(name, ident -> str, ident -> length);
 
 		NameData* data = search_from_ordinary_namespace(name, ScopeController_get_current_scope(controller));
@@ -772,7 +772,7 @@ Node_t *new_node_string_literal(Token_t ** token) {
 	
 	Lvar *literal = declare_ident(node -> tp,(*token) -> str,(*token) -> length,&string_literal);
 	
-	node -> name = calloc(literal -> length, sizeof(char));
+	node -> name = new_String(literal -> length);
     Memory_copy(node -> name,literal -> name,literal -> length);
 	node -> offset = literal -> offset;
 	
@@ -1239,7 +1239,7 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	char* name = NULL; 
 	if((*token) -> kind == TK_IDENT)
 	{
-		name = calloc((*token) -> length, sizeof(char));
+		name = new_String((*token) -> length);
 		Memory_copy(name, (*token) -> str, (*token) -> length);
 		consume(token);
 	}
@@ -1349,7 +1349,7 @@ Node_t* enum_specify(Token_t** token, Node_t* node) {
 	if((*token) -> kind == TK_IDENT)
 	{
 		Token_t* buf = consume(token);
-		name = calloc(buf -> length, sizeof(char));
+		name = new_String(buf -> length);
 		Memory_copy(name, buf -> str, buf -> length);
 	}
 	else
