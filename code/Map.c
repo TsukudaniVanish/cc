@@ -13,8 +13,8 @@ unsigned long hash(char* key){
 
 	unsigned long res = 0;
 	for(char *c = key; *c; c++){
-		res += *c;
-		res *= *c;
+		res = res + *c;
+		res = res * *c;
 	}
 	return res;
 }

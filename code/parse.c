@@ -181,7 +181,7 @@ StructData* make_StructData() {
 // add member to data. update data -> size
 void StructData_add(StructData* data, Node_t* member) {
 	if(data -> tag == TAG_STRUCT) {
-		data -> size +=  member -> tp -> size;
+		data -> size = data -> size +  member -> tp -> size;
 	}
 	else if(data -> tag == TAG_UNION)
 		data -> size = data -> size < member -> tp -> size? member -> tp -> size: data -> size;

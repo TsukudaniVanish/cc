@@ -659,7 +659,7 @@ void gen_function_def(Node_t *node){
 	// allocate memory on stack for arguments
 	if(nametable){
 		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(nametable -> offset));
-		rsp_counter += nametable ->offset;
+		rsp_counter = rsp_counter + nametable ->offset;
 	}//=======================================
 
 	Node_t *arg = node -> left;
@@ -1265,7 +1265,7 @@ void gen_switch(Node_t* node) {
 	{
 		label(get_label_file_scope(String_add("end", i2a(end_number))));
 	}
-	filenumber += depth;
+	filenumber = filenumber + depth;
 }
 
 void gen_log_and_or(Node_t* node) {

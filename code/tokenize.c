@@ -184,7 +184,7 @@ int is_symbol(char *p) {
 				if(String_compare(operator, p, len))
 				{
 					if(kind > PUNCTUATOR_START && kind < END_OF_SYMBOLS)
-						len += 1000;
+						len = len + 1000;
 					return len;
 				}
 				kind ++;
@@ -205,13 +205,13 @@ int is_comment(char *p) {
 
 void comment_skip(char **p) {
 
-	*p += 1;
-	//line comment 
+	*p = *p + 1;
+	//line comment comment
 	if(**p == '/')
 	{
 		while(**p != '\n' && **p != '\0')
 		{
-			*p += 1;
+			*p = *p + 1;
 		}
 		return;
 	}
@@ -220,10 +220,10 @@ void comment_skip(char **p) {
 	{
 		if( **p == '*' && String_compare(*p,"*/",2))
 		{
-			*p += 2;
+			*p = *p + 2;
 			return;
 		}
-		*p += 1;
+		*p = *p + 1;
 	}
 	
 }
@@ -420,7 +420,7 @@ Token_t* tokenize_keyword(char** p, Token_t* cur) {
 	keyword keyWord = is_keyword(*p);
 	Token_kind kind = get_correspond_token_kind(keyWord);
 	cur = new_keyword(kind, keyWord, cur, *p);
-	*p += cur -> length;
+	*p = *p + cur -> length;
 	return cur;
 }
 
@@ -436,7 +436,7 @@ Token_t* tokenize_symbol(char** p, Token_t* cur) {
 		// place holder ...
 		cur -> kind = TK_PLACE_HOLDER;
 	}
-	*p += cur -> length;
+	*p = *p + cur -> length;
 	return cur;
 }
 
