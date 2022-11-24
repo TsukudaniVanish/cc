@@ -230,6 +230,7 @@ typedef struct {
 		TAG_TYPEDEF,
 		TAG_ENUMCONSTANT,
 	}tag;
+	StorageClass storage;
 }NameData;
 
 Map *ordinaryNameSpace;

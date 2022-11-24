@@ -237,6 +237,7 @@ void data_string_literal(long offset, char* name) {
 	label(get_label_string_literal(offset));
 
 	section_string(name);
+	printf("	.align 8\n");
 }
 
 /**
@@ -477,8 +478,8 @@ void pop_stack(RegisterName register_name, int long size){
 	}
 }
 
-void call(char* name) {
-	char* ins = String_add("	call ", name);
+void call(char* name, StorageClass storage) {
+	char* ins = storage == SC_EXTERN? String_add("	call ", String_add(name, "@PLT")):String_add("	call ", name);
 	ins = String_add(ins, "\n");
 	printf("%s", ins);
 }
@@ -590,7 +591,7 @@ void gen_function_call(Node_t *node){
 	}
 
 	move_data(get_registername(RN_RAX, 4), i2a(0));
-	call(node -> name);
+	call(node -> name, node -> storage_class);
 	
 	if(rsp_counter%16 !=0)
 	{
@@ -1556,7 +1557,7 @@ void gen_printf_h() {
 	}
 
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("printf@plt");
+	call("printf", SC_EXTERN);
 
 		
 	if(rsp_counter%16 !=0)
@@ -1588,7 +1589,7 @@ void gen_sprintf_h() {
 	}
 
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("sprintf@plt");
+	call("sprintf", SC_EXTERN);
 
 		
 	if(rsp_counter%16 !=0)
@@ -1621,7 +1622,7 @@ void gen_calloc_h() {
 	}
 
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("calloc@plt");
+	call("calloc", SC_EXTERN);
 
 		
 	if(rsp_counter%16 !=0)
@@ -1654,7 +1655,7 @@ void gen_exit_h() {
 	}
 
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("exit@plt");
+	call("exit", SC_EXTERN);
 
 		
 	if(rsp_counter%16 !=0)

@@ -448,6 +448,7 @@ Node_t *new_node_function_call(Token_t **token) {
 			error_at((*token) -> str, "%s is not function", name);
 	}
 	Node_t *node = new_Node_t(ND_FUNCTIONCALL,NULL,NULL,0,0,NULL,NULL);
+	node -> storage_class = data -> storage;
 	node -> tp = Type_function_return(&node -> name,token);
 	
 	expect('(',token);
@@ -479,6 +480,7 @@ Node_t *new_node_function_definition(Token_t **token) {
 
 	NameData* data = new_NameData(TAG_FUNCTION);
 	data -> tp = node -> tp;
+	data -> storage = node -> storage_class;
 	Map_add(ordinaryNameSpace, node -> name, data);
 	
 	expect('(',token);	
