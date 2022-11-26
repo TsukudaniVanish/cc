@@ -12,7 +12,7 @@ extern char* String_add(char*, char*);
 extern char* i2a(int);
 extern char* ui2a(unsigned int);
 extern char* l2a(long);
-long int rsp_counter = 0;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
+static long int stack_depth;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
 int filenumber = 0; // use for operarion flow
 
 extern char* get_label_string_literal(long offset);
@@ -426,25 +426,12 @@ void jump_not_equal(char* label) {
  */
 void push_stack( RegisterName register_name, int long size){
 
-	char *name = get_registername(register_name,size);
-	if(size < 5 && size > 1)
-	{
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_INT));
-		move_data(get_pointer(get_pointerpref(SIZEOF_INT), RN_RSP),name);
-		rsp_counter = rsp_counter + SIZEOF_INT;
+	char *name = get_registername(register_name,SIZEOF_POINTER);
+	if(size == 1) {
+		move_data_zero_extension(name, get_registername(register_name, size));
 	}
-	else if(0 < size && size < 2)
-	{
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(size));
-		move_data(get_pointer(get_pointerpref(size), RN_RSP),name);
-		rsp_counter = rsp_counter + 1;
-	}
-	else
-	{
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_POINTER));
-		move_data(get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP),name);
-		rsp_counter = rsp_counter + SIZEOF_POINTER;
-	}
+	printf("	push %s\n", name);
+	stack_depth++;
 }
 
 /**
@@ -456,32 +443,19 @@ void push_stack( RegisterName register_name, int long size){
  */
 void pop_stack(RegisterName register_name, int long size){
 
-	char *name = get_registername(register_name,size);
-
-	if(size < 5 && size > 1)
-	{
-		move_data(name, get_pointer(get_pointerpref(SIZEOF_INT), RN_RSP));
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_INT));
-		rsp_counter = rsp_counter - SIZEOF_INT;
-	}
-	else if(0 < size && size < 2)
-	{
-		move_data(name, get_pointer(get_pointerpref(1), RN_RSP));
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(1));
-		rsp_counter = rsp_counter - 1;
-	}
-	else
-	{
-		move_data(name, get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP));
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_POINTER));
-		rsp_counter = rsp_counter + SIZEOF_POINTER;
-	}
+	char *name = get_registername(register_name,SIZEOF_POINTER);
+	printf("	pop %s\n", name);
+	stack_depth--;
 }
 
 void call(char* name, StorageClass storage) {
 	char* ins = storage == SC_EXTERN? String_add("	call ", String_add(name, "@PLT")):String_add("	call ", name);
 	ins = String_add(ins, "\n");
 	printf("%s", ins);
+}
+
+void leave() {
+	printf("	leave \n");
 }
 
 void ret() {
@@ -585,17 +559,17 @@ void gen_function_call(Node_t *node){
 
 	gen_arg_entry(node -> left);
 
-	if(rsp_counter%16 !=0)
+	if(stack_depth%2 == 1)
 	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(8));
 	}
 
 	move_data(get_registername(RN_RAX, 4), i2a(0));
 	call(node -> name, node -> storage_class);
 	
-	if(rsp_counter%16 !=0)
+	if(stack_depth%2 == 1)
 	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(8));
 	}
 
 
@@ -646,21 +620,22 @@ char* function_footer(char* name) {
 }
 
 void gen_function_def(Node_t *node){
-
+	stack_depth = 1;
 	Lvar* nametable = *rootBlock;
 
 	// function header
 	function_header(node -> name, node -> storage_class);
-	int return_rsp_number = rsp_counter;
+	int return_rsp_number = stack_depth;
 
 	//prologue=======================================
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
 	// allocate memory on stack for arguments
-	if(nametable){
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(nametable -> offset));
-		rsp_counter = rsp_counter + nametable ->offset;
+	if(nametable != NULL){
+		long stack_length = nametable -> offset + (8 - (nametable -> offset % 8));
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(stack_length));
+		stack_depth = stack_length / 8 + 1;
 	}//=======================================
 
 	Node_t *arg = node -> left;
@@ -689,8 +664,7 @@ void gen_function_def(Node_t *node){
 
 	//epilogue return
 	pop_stack(RN_RAX, node -> tp -> size);
-	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
-	pop_stack( RN_RBP, SIZEOF_POINTER);
+	leave();
 	ret();
 
 	// function footer
@@ -944,8 +918,7 @@ void gen_return(Node_t* node) {
 	if(node != NULL)// is "return;"?
 		pop_stack( RN_RAX, node -> tp -> size);
 	
-	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
-	pop_stack( RN_RBP, SIZEOF_POINTER);
+	leave();
 	ret();
 	return;
 }
@@ -1551,19 +1524,9 @@ void gen_printf_h() {
 	function_header(name, SC_EXTERN);
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
 
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("printf", SC_EXTERN);
-
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
 
 	push_stack(RN_RAX, return_size);
 
@@ -1583,19 +1546,8 @@ void gen_sprintf_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
-
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("sprintf", SC_EXTERN);
-
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
 
 	push_stack(RN_RAX, return_size);
 
@@ -1616,19 +1568,8 @@ void gen_calloc_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
-
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("calloc", SC_EXTERN);
-
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
 
 	push_stack(RN_RAX, return_size);
 
@@ -1649,22 +1590,10 @@ void gen_exit_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
-
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
 	call("exit", SC_EXTERN);
 
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
-
 	push_stack(RN_RAX, return_size);
-
 
 	pop_stack( RN_RAX, return_size);
 	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));

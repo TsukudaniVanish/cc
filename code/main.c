@@ -1,4 +1,3 @@
-// TODO: add option not to write helper_functions
 #include "cc.h"
 
 extern int unit_test();
