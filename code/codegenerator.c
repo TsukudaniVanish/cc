@@ -13,7 +13,7 @@ extern char* i2a(int);
 extern char* ui2a(unsigned int);
 extern char* l2a(long);
 static long int stack_depth;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
-int filenumber = 0; // use for operarion flow
+static int filenumber = 0; // use for operarion flow
 
 extern char* get_label_string_literal(long offset);
 
