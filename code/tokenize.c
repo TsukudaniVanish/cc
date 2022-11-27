@@ -262,6 +262,7 @@ char* get_keyword(keyword kind) {
 		case INT: return "int";
 		case UNSIGNED: return "unsigned";
 		case UNSIGNED_INT: return "unsigned int";
+		case UNSIGNED_LONG: return "unsigned long";
 		case LONG: return "long";
 		case LONG_INT: return "long int";
 		case STRUCT: return "struct";
@@ -292,6 +293,7 @@ Token_kind get_correspond_token_kind(keyword kind) {
 		case STATIC: return TK_STATIC;
 		case EXTERN: return TK_EXTERN;
 		case VOID: return TK_TypeVOID;
+		case UNSIGNED_LONG:
 		case LONG:
 		case LONG_INT: return TK_TypeLONG;
 		case UNSIGNED:

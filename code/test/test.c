@@ -685,6 +685,18 @@ void test_mod() {
 	test_passed(test);
 }
 
+void test_unsigned_long() {
+	char* test = "unsigned long";
+	unsigned long x = 10;
+	x++;
+	x = x + x;
+	x = x + 2;
+	if(x != 24) {
+		error_template_int(test, 24, x);
+	}
+	test_passed(test);
+}
+
 extern void test_place_holder(int, int, char*, ...);
 extern OK_IFDEF* test_type_alias_function_declare(int, char*, struct struct_scope_test,OK_IFDEF, OK_IFDEF*);
 
@@ -736,6 +748,8 @@ int main(){// line comment
 	test_ifdef_ifndef();
 	test_scope_parallel();
 	test_macro_in_macro();
+	test_mod();
+	test_unsigned_long();
 
 
 	test_global();

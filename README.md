@@ -85,7 +85,7 @@ Generator functions which convert an abstract syntax tree into  assembly codes.
 - [x] refactoring/ remove include standard library
 - [x] allow type cast in a global declaration
 - [x] add %
-- [ ] add unsigned long 
+- [x] add unsigned long 
 - [ ] add macro operator #, ##
 - [ ] fix the extern static variables code generation
 - [x] add va-arg function declaration 

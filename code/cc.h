@@ -277,6 +277,7 @@ typedef enum keyWords {
 	UNSIGNED,
 	LONG_INT,
 	LONG,
+	UNSIGNED_LONG,
 	STRUCT,
 	UNION,
 	ENUM,
