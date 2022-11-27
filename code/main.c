@@ -14,6 +14,9 @@ extern void gen_calloc_h();
 extern void gen_exit_h();
 
 int main(int argc, char **argv){
+	if(argc < 1 || argv == NULL) {
+		return 0;
+	}
 	int helper_flag = 1; 
 	controller = NULL;
 	ordinaryNameSpace = NULL;
