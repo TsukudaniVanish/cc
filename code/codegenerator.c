@@ -12,8 +12,8 @@ extern char* String_add(char*, char*);
 extern char* i2a(int);
 extern char* ui2a(unsigned int);
 extern char* l2a(long);
-long int rsp_counter = 0;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
-int filenumber = 0; // use for operarion flow
+static long int stack_depth;//use for x86 api / value of rsp must be divided by 16 when you use call instruction
+static int filenumber = 0; // use for operarion flow
 
 extern char* get_label_string_literal(long offset);
 
@@ -171,6 +171,10 @@ void section_read_only() {
 	printf("%s", l);
 } 
 
+void section_comm(char* name, unsigned size, unsigned align) {
+	printf("	.comm %s, %d, %d\n", name, size, align);
+}
+
 void section_global(char* name) {
 	char* l = String_add(".global ", name);
 	l = String_add(l, "\n");
@@ -233,6 +237,7 @@ void data_string_literal(long offset, char* name) {
 	label(get_label_string_literal(offset));
 
 	section_string(name);
+	printf("	.align 8\n");
 }
 
 /**
@@ -421,25 +426,12 @@ void jump_not_equal(char* label) {
  */
 void push_stack( RegisterName register_name, int long size){
 
-	char *name = get_registername(register_name,size);
-	if(size < 5 && size > 1)
-	{
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_INT));
-		move_data(get_pointer(get_pointerpref(SIZEOF_INT), RN_RSP),name);
-		rsp_counter = rsp_counter + SIZEOF_INT;
+	char *name = get_registername(register_name,SIZEOF_POINTER);
+	if(size == 1) {
+		move_data_zero_extension(name, get_registername(register_name, size));
 	}
-	else if(0 < size && size < 2)
-	{
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(size));
-		move_data(get_pointer(get_pointerpref(size), RN_RSP),name);
-		rsp_counter = rsp_counter + 1;
-	}
-	else
-	{
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_POINTER));
-		move_data(get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP),name);
-		rsp_counter = rsp_counter + SIZEOF_POINTER;
-	}
+	printf("	push %s\n", name);
+	stack_depth++;
 }
 
 /**
@@ -451,32 +443,19 @@ void push_stack( RegisterName register_name, int long size){
  */
 void pop_stack(RegisterName register_name, int long size){
 
-	char *name = get_registername(register_name,size);
-
-	if(size < 5 && size > 1)
-	{
-		move_data(name, get_pointer(get_pointerpref(SIZEOF_INT), RN_RSP));
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_INT));
-		rsp_counter = rsp_counter - SIZEOF_INT;
-	}
-	else if(0 < size && size < 2)
-	{
-		move_data(name, get_pointer(get_pointerpref(1), RN_RSP));
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(1));
-		rsp_counter = rsp_counter - 1;
-	}
-	else
-	{
-		move_data(name, get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP));
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(SIZEOF_POINTER));
-		rsp_counter = rsp_counter + SIZEOF_POINTER;
-	}
+	char *name = get_registername(register_name,SIZEOF_POINTER);
+	printf("	pop %s\n", name);
+	stack_depth--;
 }
 
-void call(char* name) {
-	char* ins = String_add("	call ", name);
+void call(char* name, StorageClass storage) {
+	char* ins = storage == SC_EXTERN? String_add("	call ", String_add(name, "@PLT")):String_add("	call ", name);
 	ins = String_add(ins, "\n");
 	printf("%s", ins);
+}
+
+void leave() {
+	printf("	leave \n");
 }
 
 void ret() {
@@ -580,16 +559,17 @@ void gen_function_call(Node_t *node){
 
 	gen_arg_entry(node -> left);
 
-	if(rsp_counter%16 !=0)
+	if(stack_depth%2 == 1)
 	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(8));
 	}
 
-	call(node -> name);
+	move_data(get_registername(RN_RAX, 4), i2a(0));
+	call(node -> name, node -> storage_class);
 	
-	if(rsp_counter%16 !=0)
+	if(stack_depth%2 == 1)
 	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
+		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(8));
 	}
 
 
@@ -640,21 +620,22 @@ char* function_footer(char* name) {
 }
 
 void gen_function_def(Node_t *node){
-
+	stack_depth = 1;
 	Lvar* nametable = *rootBlock;
 
 	// function header
 	function_header(node -> name, node -> storage_class);
-	int return_rsp_number = rsp_counter;
+	int return_rsp_number = stack_depth;
 
 	//prologue=======================================
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
 	// allocate memory on stack for arguments
-	if(nametable){
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(nametable -> offset));
-		rsp_counter += nametable ->offset;
+	if(nametable != NULL){
+		long stack_length = nametable -> offset + (8 - (nametable -> offset % 8));
+		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(stack_length));
+		stack_depth = stack_length / 8 + 1;
 	}//=======================================
 
 	Node_t *arg = node -> left;
@@ -683,8 +664,7 @@ void gen_function_def(Node_t *node){
 
 	//epilogue return
 	pop_stack(RN_RAX, node -> tp -> size);
-	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
-	pop_stack( RN_RBP, SIZEOF_POINTER);
+	leave();
 	ret();
 
 	// function footer
@@ -703,11 +683,14 @@ int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** regi
 	case TP_POINTER:
 		return node -> tp -> pointer_to -> size;
 	case TP_CHAR: return 1;
+	case TP_LONG:
 	case TP_INT: return 1;
+	case TP_ENUM: return 1;
 	default:
 		return 0;
 	}
 }
+// fix adding enum constant
 void gen_inc_dec(Node_t *node) {
 	int instruction = 0;
 	switch(node -> kind) {
@@ -935,8 +918,7 @@ void gen_return(Node_t* node) {
 	if(node != NULL)// is "return;"?
 		pop_stack( RN_RAX, node -> tp -> size);
 	
-	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));
-	pop_stack( RN_RBP, SIZEOF_POINTER);
+	leave();
 	ret();
 	return;
 }
@@ -962,19 +944,15 @@ void gen_glob_declare(Node_t* node) {
 	char* name = node -> kind != ND_INITLIST? node -> name: node -> left -> name;
 	Type* type = node -> kind != ND_INITLIST? node -> tp: node -> left -> tp;
 	int storage_class = node -> kind != ND_INITLIST? node -> storage_class: node -> left -> storage_class;
-	// register symbol
-	if(storage_class == SC_STATIC) {
-		section_local(name);
-	} 	
-	else {
-		section_global(name);
-	}
-	section_type(name, "@object");
-	section_size(name, ui2a(type -> size));
-	label(name);
-
 	if(node -> kind == ND_INITLIST)
 	{
+		if(node -> storage_class != SC_STATIC) {
+			section_global(name);
+			printf("	.align 8\n"); // TODO wrap by a function
+		}
+		section_type(name, "@object");
+		section_size(name, ui2a(type -> size));
+		label(name);
 		Node_t* init_branch = node -> right;
 		while(init_branch -> kind == ND_BLOCK)
 		{
@@ -984,13 +962,28 @@ void gen_glob_declare(Node_t* node) {
 		return;
 	}
 
-	// generate data definition
-	if(node -> val == 0) {
-		section_zero(node -> tp -> size);
-		return;
+	// .comm 
+	if(node -> val == 0 || storage_class != SC_AUTO) {
+		if(storage_class == SC_STATIC) {
+			section_local(name);
+		}
+		section_comm(name, type -> size, type -> size);
+		return ;
+	}	
+
+	// initialize variable 
+	// register symbol
+	if(storage_class == SC_STATIC) {
+		section_local(name);
+	} 	
+	else {
+		section_global(name);
+		printf("	.align 8\n"); // TODO wrap by a function
 	}
-	
-	if(node -> tp -> size <= 4) {
+	section_type(name, "@object");
+	section_size(name,ui2a(type -> size));
+	label(name);
+	if(type -> size <= 4) {
 		section_long(node -> val);
 	} else {
 		section_quad(l2a(node -> val));
@@ -1176,8 +1169,9 @@ void gen_for(Node_t* node) {
 }
 
 // store value at rcx. to compare case label with value, we copy value to rax
-void gen_switch(Node_t* node) {
-	int end_number = filenumber++;
+// TODO: allow blank block
+void gen_switch(Node_t* node, int begin_number) {
+	int end_number_switch = filenumber++;
 	unsigned int size = node -> left -> tp -> size;
 	char* prefix = get_pointerpref(size);
 	char* rcx = get_registername(RN_RCX, size);
@@ -1185,7 +1179,7 @@ void gen_switch(Node_t* node) {
 	char* rax = get_registername(RN_RAX, size);
 	// get  a value 
 	// value is in the head of the current stack
-	generate(node -> left, 0, end_number);
+	generate(node -> left, begin_number, end_number_switch);
 
 	int depth = node -> val;
 	Node_t* branch = node -> right;
@@ -1198,7 +1192,7 @@ void gen_switch(Node_t* node) {
 			break;
 		} else {
 			// get a case label 
-			generate(caseBranch ->left, 0, end_number);
+			generate(caseBranch ->left, begin_number, end_number_switch);
 			pop_stack( RN_RDI, caseBranch -> left -> tp -> size);
 
 			//get a value
@@ -1209,7 +1203,7 @@ void gen_switch(Node_t* node) {
 			// For a next loop, 
 			// I push the rcx value at the end of evaluation.
 			compare_value(rax, rdi);
-			jump_equal(get_label_file_scope(String_add("case", i2a(i + end_number))));
+			jump_equal(get_label_file_scope(String_add("case", i2a(i + end_number_switch))));
 			push_stack( RN_RCX, size);
 
 			caseBranch = caseBranch -> right;
@@ -1217,27 +1211,27 @@ void gen_switch(Node_t* node) {
 		}
 	}
 	// jump to default
-	jump(get_label_file_scope(String_add("end", i2a(end_number))));
+	jump(get_label_file_scope(String_add("end", i2a(end_number_switch))));
 	
 	// body code generation 
 	for(int j = 0; j < depth; j++) {
 		if(bodyBranch -> kind == ND_DEFAULT) {
-			label(get_label_file_scope(String_add("end", i2a(end_number))));
+			label(get_label_file_scope(String_add("end", i2a(end_number_switch))));
 
 			Node_t* statement = bodyBranch -> left;
 			while (statement -> kind != ND_BLOCKEND)
 			{
-				generate(statement -> left, 0, end_number);
+				generate(statement -> left, begin_number, end_number_switch);
 				statement = statement -> right;
 			}
 			break;
 		} else {
-			label(get_label_file_scope(String_add("case", i2a(j + end_number))));
+			label(get_label_file_scope(String_add("case", i2a(j + end_number_switch))));
 
 			Node_t* statement = bodyBranch -> left;
 			while (statement -> kind != ND_BLOCKEND)
 			{
-				generate(statement -> left, 0, end_number);
+				generate(statement -> left, begin_number, end_number_switch);
 				statement = statement -> right;
 			}
 
@@ -1247,9 +1241,9 @@ void gen_switch(Node_t* node) {
 	}
 	if(bodyBranch -> kind == ND_BLOCKEND)
 	{
-		label(get_label_file_scope(String_add("end", i2a(end_number))));
+		label(get_label_file_scope(String_add("end", i2a(end_number_switch))));
 	}
-	filenumber += depth;
+	filenumber = filenumber + depth;
 }
 
 void gen_log_and_or(Node_t* node) {
@@ -1491,7 +1485,7 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 		return;
 	case ND_FOR: gen_for(node);
 		return;
-	case ND_SWITCH: gen_switch(node);
+	case ND_SWITCH: gen_switch(node, labelLoopBegin);
 		return;
 	//around the top of the ast tree ===================================================
 	// operators ===================
@@ -1530,19 +1524,9 @@ void gen_printf_h() {
 	function_header(name, SC_EXTERN);
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
 
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("printf@plt");
-
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
+	call("printf", SC_EXTERN);
 
 	push_stack(RN_RAX, return_size);
 
@@ -1562,19 +1546,8 @@ void gen_sprintf_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
-
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("sprintf@plt");
-
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
+	call("sprintf", SC_EXTERN);
 
 	push_stack(RN_RAX, return_size);
 
@@ -1595,19 +1568,8 @@ void gen_calloc_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
-
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("calloc@plt");
-
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
+	call("calloc", SC_EXTERN);
 
 	push_stack(RN_RAX, return_size);
 
@@ -1628,22 +1590,10 @@ void gen_exit_h() {
 	push_stack( RN_RBP, SIZEOF_POINTER);
 	move_data(get_registername(RN_RBP, SIZEOF_POINTER), get_registername(RN_RSP, SIZEOF_POINTER));
 
-	if(rsp_counter%16 !=0)
-	{// modify rsp place
-		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(16 - rsp_counter % 16));
-	}
-
 	move_data(get_registername(RN_RAX, return_size), i2a(0)); // eax will have return value 
-	call("exit@plt");
-
-		
-	if(rsp_counter%16 !=0)
-	{
-		addition(get_registername(RN_RSP, SIZEOF_POINTER), l2a(16 - rsp_counter %16));
-	}
+	call("exit", SC_EXTERN);
 
 	push_stack(RN_RAX, return_size);
-
 
 	pop_stack( RN_RAX, return_size);
 	move_data(get_registername(RN_RSP, SIZEOF_POINTER), get_registername(RN_RBP, SIZEOF_POINTER));

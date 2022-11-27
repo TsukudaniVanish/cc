@@ -86,6 +86,7 @@ Generator functions which convert an abstract syntax tree into  assembly codes.
 - [x] allow type cast in a global declaration
 - [ ] add %
 - [ ] add macro operator #, ##
+- [ ] fix the extern static variables code generation
 - [x] add va-arg function declaration 
 - [x] add include file path find algorithm 
 - [x] add #ifndef, #ifdef

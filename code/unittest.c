@@ -210,7 +210,7 @@ void unit_test_Vector()
 	assert_int(test,3,*x);
 
 	Vector_pop(v);
-	assert_int(test,SIZEOF_INT,Vector_get_length(v));
+	assert_int(test,4,Vector_get_length(v));
 	
 	test_passed(test);
 }

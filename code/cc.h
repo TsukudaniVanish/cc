@@ -230,6 +230,7 @@ typedef struct {
 		TAG_TYPEDEF,
 		TAG_ENUMCONSTANT,
 	}tag;
+	StorageClass storage;
 }NameData;
 
 Map *ordinaryNameSpace;
@@ -802,6 +803,7 @@ typedef struct {
 	ScopeInfo* scope;
 	Vector* memberNames;
 	Map* memberContainer;
+	Type* tp;
 }StructData;
 StructData* make_StructData();
 void StructData_add(StructData* data, Node_t* member);
@@ -915,14 +917,15 @@ Node_t* arrmemaccess(Token_t **token , Node_t**);
 
 
 /**
- * @brief  make new node typecheck left and right node. result node has type. expect l and r has type
+ * @brief  make new node. typecheck left and right node. result node has type. expect l and r has type
+ * if lhs or rhs is pointer then other size value is scaling
  * @param Node_kind kind 
  * @param Node_t l : left
  * @param Node_t r : right
  * @param char* parsing here
  * @return Node_t* 
  */
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char*);
+Node_t *new_node_arithmetic( Node_kind kind,Node_t *l,Node_t *r, char*);
 Node_t* new_node_function_call(Token_t** token);
 
 /**
@@ -1065,3 +1068,6 @@ void gen_formula(Node_t*);
 // generate assembly code from ast.
 void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd);
 //=====================================================
+
+// globals 
+

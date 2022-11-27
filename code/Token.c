@@ -1,5 +1,6 @@
 #include "cc.h"
 
+extern char* new_String(unsigned);
 extern unsigned int String_len(char*);
 extern int String_compare(char* ,char* ,unsigned int);
 extern void Memory_copy(void* dest,void* source, unsigned int size);
@@ -112,7 +113,7 @@ char* get_ident_name(Token_t** token) {
 		return NULL;
 	}
 	int len = (*token) -> length;
-	char* name = calloc(len, sizeof(char));
+	char* name = new_String(len);
 	Memory_copy(name, (*token) -> str, len);
 	return name;
 }
@@ -233,7 +234,7 @@ int check_ident_appear_until_punctuator(Token_t** token) {
 }
 
 void expect(int kind ,Token_t **token) {
-	if( (*token) -> kind > 100 |  kind != (*token) -> str[0])
+	if( (*token) -> kind > 100 ||  kind != (*token) -> str[0])
 	{
 		error_at( (*token) -> str ,"expect %c but got %c", kind, (*token) -> str[0]);
 	}
@@ -250,7 +251,7 @@ char *expect_ident(Token_t **token) {
 	}
 	else
 	{
-		char *name = calloc((*token) -> length, sizeof(char));
+		char *name = new_String((*token) -> length);
 		Memory_copy(name,(*token) -> str, (*token) -> length);
 		consume(token);
 		return name;
