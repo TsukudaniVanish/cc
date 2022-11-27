@@ -822,7 +822,7 @@ void gen_arithmetic_instruction(Node_t *node) {
 	if(node -> kind == ND_MOD) {
 		sign_extension(size);
 		division(rdi);
-		push_stack(RN_RDI, size);
+		push_stack(RN_RDX, size);
 		return;
 	}
 
