@@ -1152,11 +1152,10 @@ Node_t* ident_specify(Token_t** token, Node_t* node) {
 /*@brief specify declaration type struct static or extern?
  * */
 Node_t* declare_specify(Token_t** token, Node_t* node, int isTypeAlias) {
-	int is_typedef = (*token) -> kind == TK_TYPEDEF? 1: 0;
 	if((*token) -> kind >= TOKEN_TYPE && (*token) -> kind < TK_TYPEEND)
 		return type_specify(token, node);
 		
-	if((*token) -> kind == TK_TYPEDEF || is_typedef) {
+	if((*token) -> kind == TK_TYPEDEF) {
 		consume(token);
 		return new_node_set_type_alias(token, node);
 	}
@@ -1266,6 +1265,7 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 		structData = make_StructData();
 		structData -> tag = node -> tp -> Type_label == TP_STRUCT? TAG_STRUCT: TAG_UNION;
 		structData -> scope = ScopeInfo_copy(ScopeController_get_current_scope(controller));
+		structData -> tp = node -> tp;
 		Map_add(tagNameSpace, name, structData);
 	}
 	if(structData -> tag != tag)
@@ -1278,13 +1278,16 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	{
 		while(!find('}', token))
 		{
-			struct_declare(token, node);
+			node = struct_declare(token, node);
 		}
 	}
 	if(node -> tp -> Type_label == TP_UNION)
 	{
 		StructData* data = Map_at(tagNameSpace, node -> tp -> name);
 		node -> tp -> size = data -> size;
+		if(data -> tp != NULL) {
+			data -> tp -> size = node -> tp -> size;
+		}
 		return node;
 	}
 
@@ -1296,6 +1299,9 @@ Node_t* struct_union_specify(Token_t** token, Node_t* node) {
 	}
 	Node_t* tail = Map_at(structData -> memberContainer, lastMember);
 	node -> tp -> size = tail -> offset + tail -> tp -> size;
+	if(structData -> tp != NULL) {
+		structData -> tp -> size = node -> tp -> size;
+	}
 	return node;
 }
 /*

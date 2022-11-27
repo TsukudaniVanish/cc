@@ -803,6 +803,7 @@ typedef struct {
 	ScopeInfo* scope;
 	Vector* memberNames;
 	Map* memberContainer;
+	Type* tp;
 }StructData;
 StructData* make_StructData();
 void StructData_add(StructData* data, Node_t* member);
