@@ -1581,15 +1581,18 @@ Node_t *mul(Token_t **token) {
 		if(find('*',token))
 		{
 			node = new_node_arithmetic(ND_MUL,node,cast(token, NULL), (*token) -> str);
-		}
-		else if(find('/',token))
-		{
-			node = new_node_arithmetic(ND_DIV,node,cast(token, NULL), (*token) -> str);
-		}
-		else
-		{
 			return node;
 		}
+		if(find('/',token))
+		{
+			node = new_node_arithmetic(ND_DIV,node,cast(token, NULL), (*token) -> str);
+			return node;
+		}
+		if(find('%', token)) {
+			node = new_node_arithmetic(ND_MOD, node, cast(token, NULL), (*token) -> str);
+			return node;
+		}
+		return node;
 	}
 }
 

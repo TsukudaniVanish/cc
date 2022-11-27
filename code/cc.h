@@ -310,6 +310,7 @@ typedef enum symbols {
 	EXCLAMATION, //= '!'
 	QUESTION, //= '?'
 	SHARP, // = '#'
+	PERCENTILE, // = '%'
 	END_OF_UNIT_OPERATOR,
 	PUNCTUATOR_START,
 	COMMA,// = ','
@@ -537,6 +538,7 @@ typedef enum nodeKind{
 	ND_SUB, // <-> -
 	ND_MUL, // <-> *
 	ND_DIV, // <-> /
+	ND_MOD, // <-> %
 	ND_ASSIGN, // <-> = 
 	ND_LOGNOT, // <-> !
 	ND_ADDR, //<-> & reference

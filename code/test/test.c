@@ -672,6 +672,19 @@ void test_scope_parallel() {
 	test_passed(test);
 }
 
+void test_mod() {
+	char* test = "mod";
+	int x = 10;
+	if(x % 2 != 0) {
+		error_template_int(test, 0, x % 2);
+	}
+	int m = 3;
+	if(x % m != 1) {
+		error_template_int(test, 1, x % m);
+	}
+	test_passed(test);
+}
+
 extern void test_place_holder(int, int, char*, ...);
 extern OK_IFDEF* test_type_alias_function_declare(int, char*, struct struct_scope_test,OK_IFDEF, OK_IFDEF*);
 

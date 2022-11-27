@@ -136,6 +136,7 @@ char *get_symbol(int kind) {
 	case PLUS: return "+";
 	case MINUS: return "-";
 	case STER: return "*";
+	case PERCENTILE: return "\%";
 	case DOT: return ".";
 	case BACK_SLASH: return "/";
 	case EXCLAMATION: return "!";

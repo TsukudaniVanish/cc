@@ -819,6 +819,12 @@ void gen_arithmetic_instruction(Node_t *node) {
 		push_stack( RN_RAX, size);
 		return;
 	}
+	if(node -> kind == ND_MOD) {
+		sign_extension(size);
+		division(rdi);
+		push_stack(RN_RDI, size);
+		return;
+	}
 
 	switch (node -> kind)
 	{
@@ -1501,6 +1507,7 @@ void generate(Node_t *node, int labelLoopBegin, int labelLoopEnd){
 	case ND_SUB:
 	case ND_MUL:
 	case ND_DIV:
+	case ND_MOD:
 		generate(node -> left, 0, 0);
 		generate(node -> right, 0, 0);		
 		gen_arithmetic_instruction(node);
