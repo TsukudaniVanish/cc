@@ -32,7 +32,7 @@ Container* make_container() {
 	return new_Container(NULL,NULL,NULL,NULL);
 }
 
-Map* new_Map(long s, long b, Container* body[]) {
+Map* new_Map(long s, long b, Container** body) {
 	if(s > b) return NULL;
 
 	Map* map = calloc(1,sizeof(Map));
