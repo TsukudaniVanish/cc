@@ -386,7 +386,7 @@ int is_arrmemaccess(Token_t **token) {
 	}
 	return 0;
 }
-Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
+Node_t* new_node_array_member_access(Token_t **token , Node_t** prev) {
 	expect('[',token);
 	Node_t *node = expr(token);
 	expect(']',token);
@@ -400,7 +400,7 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 		(Is_type_pointer(node -> tp -> Type_label) && Is_type_integer((*prev) -> tp -> Type_label)) ||
 		(Is_type_integer(node -> tp -> Type_label) && Is_type_pointer((*prev) -> tp -> Type_label))
 	){
-		Node_t *get_address = new_node(ND_ADD,*prev,node, (*token) -> str);
+		Node_t *get_address = new_node_arithmetic(ND_ADD,*prev,node, (*token) -> str);
 		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
 	}
 
@@ -408,8 +408,13 @@ Node_t* arrmemaccess(Token_t **token , Node_t** prev) {
 	error_at((*token) -> str,"lval is expected");
 }
 
-//Node_t making function with type check typically used in parsing formula
-Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
+Node_t* new_node_scaling_value(Node_t* lhs, Type* tr) {
+	return new_Node_t(ND_MUL, lhs, new_node_num(tr -> pointer_to -> size), 0, 0,tr, NULL); 
+}
+
+// Node_t making function with type check typically used in parsing formula
+// in this function, scaling number for pointer arithmetic.
+Node_t *new_node_arithmetic( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
 	Node_t *node = new_Node_t(kind,l,r,0,0,NULL,NULL);
 	//type check
 	if(typecheck(node) == 0)
@@ -423,10 +428,8 @@ Node_t *new_node( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
 		if(node_tp == TP_ARRAY) node_tp = TP_POINTER;
 		if(node_tp == TP_POINTER && (node -> kind == ND_ADD || node -> kind == ND_SUB))
 		{
-			if(l -> kind == ND_NUM)
-				l -> val = l -> val * node -> tp -> pointer_to -> size;
-			if(r -> kind == ND_NUM)
-				r -> val = r -> val * node -> tp -> pointer_to -> size;
+			if(l -> tp -> size < SIZEOF_POINTER) node -> left = new_node_scaling_value(l, node -> tp);
+			if(r -> tp -> size < SIZEOF_POINTER) node -> right = new_node_scaling_value(r, node -> tp);
 		}
 		return node;
 	}
@@ -1066,7 +1069,7 @@ Node_t *declare(Token_t **token) {
 		if(node -> tp -> Type_label == TP_STRUCT || node -> tp -> Type_label == TP_ARRAY)
 			node = init(token, node);
 		else
-			node = new_node(ND_ASSIGN, node, init(token, node), (*token) -> str);
+			node = new_node_arithmetic(ND_ASSIGN, node, init(token, node), (*token) -> str);
 		return node;
 	}
 	return node;
@@ -1444,7 +1447,7 @@ Node_t *assign(Token_t **token) {
 	{
 		if(is_lval(node))
 		{
-			node = new_node(ND_ASSIGN,node,expr(token), (*token) -> str);
+			node = new_node_arithmetic(ND_ASSIGN,node,expr(token), (*token) -> str);
 			return node;
 		}
 		else
@@ -1503,11 +1506,11 @@ Node_t *equality(Token_t **token){
 		parsing_here = (*token) -> str;
 		if(find(EQUAL,token))
 		{
-			node = new_node(ND_EQL,node,relational(token), (*token) -> str);
+			node = new_node_arithmetic(ND_EQL,node,relational(token), (*token) -> str);
 		
 		}else if( find(NEQ,token) )
 		{	
-			node = new_node(ND_NEQ,node,relational(token), (*token) -> str);
+			node = new_node_arithmetic(ND_NEQ,node,relational(token), (*token) -> str);
 		}
 		else
 		{
@@ -1523,19 +1526,19 @@ Node_t *relational(Token_t **token) {
 		parsing_here = (*token) -> str;
 		if( find(LEQ,token) )
 		{		
-			node = new_node(ND_LEQ,node,add(token), (*token) -> str);
+			node = new_node_arithmetic(ND_LEQ,node,add(token), (*token) -> str);
 		}
 		else if( find('<',token))
 		{
-			node = new_node(ND_LES,node,add(token), (*token) -> str);
+			node = new_node_arithmetic(ND_LES,node,add(token), (*token) -> str);
 		}
 		else if(find(GEQ,token))
 		{
-			node = new_node(ND_LEQ,add(token),node, (*token) -> str);
+			node = new_node_arithmetic(ND_LEQ,add(token),node, (*token) -> str);
 		}
 		else if(find('>',token))
 		{
-			node = new_node(ND_LES,add(token),node, (*token) -> str);	
+			node = new_node_arithmetic(ND_LES,add(token),node, (*token) -> str);	
 		}
 		else
 		{	
@@ -1551,11 +1554,11 @@ Node_t *add(Token_t **token) {
 		parsing_here = (*token) -> str;
 		if( find('+',token) )
 		{
-			node = new_node(ND_ADD,node,mul(token), (*token) -> str);
+			node = new_node_arithmetic(ND_ADD,node,mul(token), (*token) -> str);
 		}
 		else if( find('-',token) )
 		{
-			node = new_node(ND_SUB,node,mul(token), (*token) -> str);
+			node = new_node_arithmetic(ND_SUB,node,mul(token), (*token) -> str);
 		}
 		else
 		{
@@ -1571,11 +1574,11 @@ Node_t *mul(Token_t **token) {
 		parsing_here = (*token) -> str;
 		if(find('*',token))
 		{
-			node = new_node(ND_MUL,node,cast(token, NULL), (*token) -> str);
+			node = new_node_arithmetic(ND_MUL,node,cast(token, NULL), (*token) -> str);
 		}
 		else if(find('/',token))
 		{
-			node = new_node(ND_DIV,node,cast(token, NULL), (*token) -> str);
+			node = new_node_arithmetic(ND_DIV,node,cast(token, NULL), (*token) -> str);
 		}
 		else
 		{
@@ -1671,7 +1674,7 @@ Node_t *unitary(Token_t **token) {
 	}
 	else if( find('-',token) )
 	{
-		node = new_node(ND_SUB,new_node_num(0),postfix(token), (*token) -> str);
+		node = new_node_arithmetic(ND_SUB,new_node_num(0),postfix(token), (*token) -> str);
 		node -> tp = node -> right -> tp;
 		return node;
 	}
@@ -1701,7 +1704,7 @@ Node_t *postfix(Token_t **token) {
 		parsing_here = (*token) -> str;
 		if(is_arrmemaccess(token))
 		{
-			node = arrmemaccess(token, &node);
+			node = new_node_array_member_access(token, &node);
 			parsing_here = (*token) -> str;
 			continue;
 		}
@@ -1733,6 +1736,7 @@ Node_t *postfix(Token_t **token) {
 			}
 			if(node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION)
 				error_at((*token) -> str, "member access is expected");
+
 			char *memberName = expect_ident(token);
 			StructData* data = Map_at(tagNameSpace, node -> tp -> name);
 			if(!Map_contains(data -> memberContainer, memberName))
@@ -1745,13 +1749,17 @@ Node_t *postfix(Token_t **token) {
 		{
 			if(node -> tp -> Type_label != TP_POINTER)
 				error_at(parsing_here, "Pointer type is expected");
+
 			node = new_Node_t(ND_DEREF, node, NULL, 0, 0, node -> tp -> pointer_to, NULL);
 			if(node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION)
 				error_at((*token) -> str, "member access is expected");
+
 			char *memberName = expect_ident(token);
 			StructData* data = Map_at(tagNameSpace, node -> tp -> name);
+
 			if(!Map_contains(data -> memberContainer, memberName))
 				error_at((*token) -> str, "unknown member name");
+
 			Node_t* member = Map_at(data -> memberContainer, memberName);
 			node = new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
 			continue;
