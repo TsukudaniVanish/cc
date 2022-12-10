@@ -32,7 +32,7 @@ Container* make_container() {
 	return new_Container(NULL,NULL,NULL,NULL);
 }
 
-Map* new_Map(long s, long b, Container* body[]) {
+Map* new_Map(long s, long b, Container** body) {
 	if(s > b) return NULL;
 
 	Map* map = calloc(1,sizeof(Map));
@@ -59,7 +59,9 @@ Map* make_Map() {
 void Map_add(Map* m,char* key, void* data) {
 	unsigned long index = hash(key) % m -> bodySize;
 	Container* c = new_Container(key, data, m -> body[index], NULL);
-	if(m -> body[index] != NULL) m -> body[index] -> prev = c;
+	if(m -> body[index] != NULL) {
+		m -> body[index] -> prev = c;
+	}
 	m -> body[index] = c;
 	m -> size++;
 }

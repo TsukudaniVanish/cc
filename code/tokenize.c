@@ -12,6 +12,8 @@ static void* NULL = (void*) 0;
 extern long strtol(char*, char**, unsigned);
 extern int isdigit(char);
 
+Map *macros;
+
 Token_t* tokenize_macro_if(char** pointer, Token_t* cur);
 
 int sizeof_token(int kind) {

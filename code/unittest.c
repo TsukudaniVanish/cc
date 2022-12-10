@@ -238,6 +238,7 @@ void unit_test_String(){
 void unit_test_Map() {
 	char *test = "Map test";
 	Map *m = make_Map();
+
 	Map_add(m,"a", recode_Person("James", 34));
 	Map_add(m, "b", recode_Person("Bob",46));
 	Map_add(m, "b", recode_Person("BobI", 88));

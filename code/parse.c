@@ -77,6 +77,8 @@ static void* NULL = (void*) 0;
 extern void* calloc(unsigned nmem, unsigned size);
 extern void free(void*);
 
+ScopeController* controller;
+
 // Scope is set with a current scope.
 NameData* new_NameData(int tag) {
 	NameData* data = calloc(1, sizeof(NameData));
@@ -428,8 +430,8 @@ Node_t *new_node_arithmetic( Node_kind kind,Node_t *l,Node_t *r, char *parsing_h
 		if(node_tp == TP_ARRAY) node_tp = TP_POINTER;
 		if(node_tp == TP_POINTER && (node -> kind == ND_ADD || node -> kind == ND_SUB))
 		{
-			if(l -> tp -> size < SIZEOF_POINTER) node -> left = new_node_scaling_value(l, node -> tp);
-			if(r -> tp -> size < SIZEOF_POINTER) node -> right = new_node_scaling_value(r, node -> tp);
+			if(l -> tp -> size < SIZEOF_POINTER || l -> tp -> Type_label == TP_LONG) node -> left = new_node_scaling_value(l, node -> tp);
+			if(r -> tp -> size < SIZEOF_POINTER || r -> tp -> Type_label == TP_LONG) node -> right = new_node_scaling_value(r, node -> tp);
 		}
 		return node;
 	}
@@ -1581,16 +1583,16 @@ Node_t *mul(Token_t **token) {
 		if(find('*',token))
 		{
 			node = new_node_arithmetic(ND_MUL,node,cast(token, NULL), (*token) -> str);
-			return node;
+			continue;
 		}
 		if(find('/',token))
 		{
 			node = new_node_arithmetic(ND_DIV,node,cast(token, NULL), (*token) -> str);
-			return node;
+			continue;
 		}
 		if(find('%', token)) {
 			node = new_node_arithmetic(ND_MOD, node, cast(token, NULL), (*token) -> str);
-			return node;
+			continue;
 		}
 		return node;
 	}

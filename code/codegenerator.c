@@ -635,7 +635,7 @@ void gen_function_def(Node_t *node){
 	if(nametable != NULL){
 		long stack_length = nametable -> offset + (8 - (nametable -> offset % 8));
 		substitution(get_registername(RN_RSP, SIZEOF_POINTER), i2a(stack_length));
-		stack_depth = stack_length / 8 + 1;
+		stack_depth = stack_length / 8;
 	}//=======================================
 
 	Node_t *arg = node -> left;
@@ -1026,6 +1026,7 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 	int end_number_else;
 	int else_number;
 	char* end_label;
+	int depth;
 	switch(node -> kind) {
 	case ND_IF:
 		end_number_if = filenumber++;
@@ -1036,8 +1037,14 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 		pop_stack( RN_RAX, size);
 		compare_value(get_registername(RN_RAX, size), i2a(0));
 		jump_equal(end_label);
+
+		depth = stack_depth;
 		generate(node -> right, labelLoopBegin, labelLoopEnd); // if body 
-	
+		if(stack_depth%2 != depth %2) { // stack management 
+			move_data(get_registername(RN_RAX, SIZEOF_POINTER), get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP));
+			push_stack(RN_RAX, SIZEOF_POINTER);
+		}
+
 		label(end_label);
 		
 		return;
@@ -1048,8 +1055,13 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 			end_number_else = filenumber++;
 			end_label = get_label_file_scope(String_add("end", i2a(end_number_else))); // .Lend%d, end_number_else
 
+			depth = stack_depth;
 			generate(node -> right, labelLoopBegin, labelLoopEnd); // else body 
-			
+			if(stack_depth%2 != depth %2) { // stack management 
+				move_data(get_registername(RN_RAX, SIZEOF_POINTER), get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP));
+				push_stack(RN_RAX, SIZEOF_POINTER);
+			}
+
 			label(end_label);
 			return;
 		}
@@ -1064,9 +1076,13 @@ void gen_if(Node_t* node, int labelLoopBegin, int labelLoopEnd) {
 		compare_value(get_registername(RN_RAX, size), i2a(0));
 		jump_equal(else_label);
 		
-
+		depth = stack_depth;
 		generate(node -> right, labelLoopBegin, labelLoopEnd); // if body 
-		
+		if(stack_depth%2 != depth %2) { // stack management 
+			move_data(get_registername(RN_RAX, SIZEOF_POINTER), get_pointer(get_pointerpref(SIZEOF_POINTER), RN_RSP));
+			push_stack(RN_RAX, SIZEOF_POINTER);
+		}
+
 		// After this function called then else body part will generate.
 		// Same file number is used for end_number_else;
 		// so I don't increment filenumber at this time.
@@ -1138,17 +1154,19 @@ void gen_for(Node_t* node) {
 		char* begin_label = get_label_file_scope(String_add("begin", i2a(begin_number_for)));
 		int end_number_for = filenumber++;
 		char* end_label = get_label_file_scope(String_add("end", i2a(end_number_for)));
+		int update_number_for = filenumber++;
+		char* update_label = get_label_file_scope(String_add("begin", i2a(update_number_for)));
 
 		Node_t *conditions = node -> left;
 		Node_t *init_condition = conditions -> left;
 		Node_t *update = conditions -> right;
 
-		generate(init_condition -> left, begin_number_for, end_number_for);
+		generate(init_condition -> left, update_number_for, end_number_for);
 
 		label(begin_label);
 		
 		
-		generate(init_condition -> right, begin_number_for, end_number_for);
+		generate(init_condition -> right, update_number_for, end_number_for);
 
 		int size; // memory size of a iterator
 		if(init_condition -> right -> tp)
@@ -1164,9 +1182,11 @@ void gen_for(Node_t* node) {
 		compare_value(get_registername(RN_RAX, size), i2a(0));
 		jump_equal(end_label);
 
-		generate(node -> right, begin_number_for, end_number_for);
+		generate(node -> right, update_number_for, end_number_for);
 
-		generate(update, begin_number_for, end_number_for);
+		// TODO: add update label 
+		label(update_label);
+		generate(update, update_number_for, end_number_for);
 
 		jump(begin_label);
 		label(end_label);

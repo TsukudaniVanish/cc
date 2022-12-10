@@ -15,13 +15,15 @@ if [ $? -eq 1 ]; then
     exit 1
 fi
 
-sh ./test/test_unittest_link.sh 
+sh ./test/test_link.sh 
 
 # for target in `find *.c`
 # do 
+#     echo $target
 #     ./cc -f $target
 #     if [ $? -eq 1 ]; then 
-#         echo $target
+#         echo "failed: $target"
+
 #         exit 1
 #     fi 
 # done
