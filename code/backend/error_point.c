@@ -1,9 +1,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-extern char* user_input;
-extern char* filepath;
-extern char* parsing_here;
+char* user_input;
+char* filepath;
+char* parsing_here;
+
 // this function does not call exit(1)
 void error(char *fmt,...)
 {

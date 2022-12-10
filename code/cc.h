@@ -215,8 +215,8 @@ struct lvar{
 	unsigned int offset;
 	ScopeInfo* scope;
 };
-Lvar *string_literal;
-Lvar *global;
+extern Lvar *string_literal;
+extern Lvar *global;
 
 /* @brief  this use for ordinary name space
 */
@@ -233,10 +233,10 @@ typedef struct {
 	StorageClass storage;
 }NameData;
 
-Map *ordinaryNameSpace;
-Map *tagNameSpace;// tag name space which contains a name of which struct , union and enum.
-Vector *nameTable;//table of identifier which has block scope.
-void** rootBlock;// this variable points an current root block.
+extern Map *ordinaryNameSpace;
+extern Map *tagNameSpace;// tag name space which contains a name of which struct , union and enum.
+extern Vector *nameTable;//table of identifier which has block scope.
+extern void** rootBlock;// this variable points an current root block.
 
 
 
@@ -634,13 +634,13 @@ extern char *file_open(char *);
 // error_point.c====================================================
 
 //error assert
-char* user_input;
+extern char* user_input;
 
 //error assert
-char* filepath;
+extern char* filepath;
 
 //error assert
-char *parsing_here;
+extern char *parsing_here;
 
 extern void error(char* fmt, ...);
 
@@ -719,7 +719,7 @@ extern int get_correspond_token_kind(keyword);
 extern Token_t *lexical_analyze(char *p);
 
 // store identifier: macro tokens
-Map *macros;
+extern Map *macros;
 extern Token_t* tokenize_macro(char** p, Token_t* cur);
 //=====================================================
 
@@ -794,7 +794,7 @@ void ScopeController_nest_disappeared(ScopeController*);
 /* if you want to copy scopeInfo, wrap this with ScopeInfo_copy*/
 ScopeInfo* ScopeController_get_current_scope(ScopeController*);
 
-ScopeController* controller;
+extern ScopeController* controller;
 
 typedef struct {
 	enum {

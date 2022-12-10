@@ -77,6 +77,8 @@ static void* NULL = (void*) 0;
 extern void* calloc(unsigned nmem, unsigned size);
 extern void free(void*);
 
+ScopeController* controller;
+
 // Scope is set with a current scope.
 NameData* new_NameData(int tag) {
 	NameData* data = calloc(1, sizeof(NameData));
