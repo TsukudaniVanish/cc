@@ -14,20 +14,20 @@ cc -no-pie -g -o tmp Vector.o tokenize.o String.o tmp_Map.s Node.o Token.o tmp_m
 
 ./tmp -T
 if [ $? -eq 0 ]; then 
-    echo "OK!"
+    echo "unit_test: OK!"
 else 
     echo "Failed"
     $? = 1
     exit 1
 fi 
 
-./tmp -f ./test/test.c > tmp_tmp.s 
-cc -g -o tmp_tmp tmp_tmp.s 
-./tmp_tmp 
-if [ $? -eq 0 ]; then 
-    echo "OK!"
-else 
-    echo "Failed"
-    $? = 1
-    exit 1
-fi 
+# ./tmp -f ./test/test.c > tmp_tmp.s 
+# cc -g -o tmp_tmp tmp_tmp.s 
+# ./tmp_tmp 
+# if [ $? -eq 0 ]; then 
+#     echo "OK!"
+# else 
+#     echo "Failed"
+#     $? = 1
+#     exit 1
+# fi 
