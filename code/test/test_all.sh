@@ -17,13 +17,13 @@ fi
 
 sh ./test/test_link.sh 
 
-for target in `find *.c`
-do 
-    echo $target
-    ./cc -f $target
-    if [ $? -eq 1 ]; then 
-        echo "failed: $target"
+# for target in `find *.c`
+# do 
+#     echo $target
+#     ./cc -f $target
+#     if [ $? -eq 1 ]; then 
+#         echo "failed: $target"
 
-        exit 1
-    fi 
-done
+#         exit 1
+#     fi 
+# done
