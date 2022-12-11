@@ -1,0 +1,53 @@
+* program = func*
+*
+* func = declare_specify ident_specify "(" type_parameter_list  ")"  stmt
+* type_parameter_list = parameter_list 
+* parameter_list = parameter_declare ("," parameter_declare )*
+* parameter_declare = declare_specify ident_specify | "..."
+* stmt = expr";"
+* 		| declare ";"
+* 		| "{" stmt* "}"
+* 		| "if" "(" expr  ")" stmt ( "else" stmt  )?
+* 		| "while"  "(" expr ")" stmt
+* 		| "for"  "(" expr?; expr? ; expr? ")"stmt
+* 		| "return" expr";"
+* declare = declare_specify* ident_specify ( "=" init  )?
+* init =  expr | "{" init_list ","? "}"
+* init_list = init ( "," init)*
+* ident_specify = pointer? ident ("[" expr "]")*
+* declare_specify =  type_specify
+* type_specify = "void"
+* 		| "int"
+* 		| "unsigned int"
+* 		| "unsigned"
+* 		| "char"
+* 		| enum_specify
+* 		| struct_union_specify
+* struct_union_specify = ("struct" | "union") ( ident? "{" struct_declare* "}" | ident )
+* struct_declare = struct_declare_inside ("," struct_declare_inside)* ";"  
+* struct_declare_inside = type_specify ident_specify
+* enum_specify = "enum" ( ident | ident? "{" enum_list "}" )
+* enum_list = enum ( "," enum )*
+* enum = indent ( "-" expr)
+* pointer = "*"*
+* expr = assign
+* assign = conditional ("=" expr )?
+* conditional = log_or | log_or "?" expr ":" conditional 
+* log_or = log_and (|| log_or)?
+* log_and = equality (&& log_and)?
+* equality = relational("==" relational | "!=" relational)*
+* relational = add( "<=" add | "<" add | ">=" add | ">" add  )*
+* add = mul( "+"mul | "-"mul)* 
+* mul = cast  | cast ("*" cast | "/" cast )*
+* cast = unitary | "(" type_name ")" cast 
+* type_name = type_specify pointer?
+* unitary = postfix
+* 			|"sizeof" unitary
+* 			| ('+' | '-' | '*' | '&' | '!' ) postfix
+* 			| ('++' | '--') unitary
+* postfix = primary 
+* 			|( primary [expr] | primary '++' | primary '--' | primary "." ident | primary "->" ident)*
+* primary = num 
+* 			| indent 
+* 			| "(" expr ")"
+* 			| "\"" string literal "\""
