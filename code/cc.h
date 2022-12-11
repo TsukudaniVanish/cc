@@ -326,32 +326,7 @@ typedef enum symbols {
 	END_OF_SYMBOLS,
 
 }Symbols;
-/**
- * @brief this is list of Type of tokens
- * 
- *
- * tokens:
- * 		operator: 
- * 		number 	1001 1002 1003 1004 1005 1006
- * 				"==","!=","<=",">=","&&","||"
- * 				"<",">","+","-","*","/","&","=",
- * 		key word:
- * 				return ...
- * 				if(...)...
- * 				if(...)...else...
- * 				while(...)...
- * 				for(...)...
- * 				sizeof ...
- * 				struct
- * 				int
- * 				char
- * 				unsigned
- * 		punctuator:
- * 					"{","}","[","]",";",","
- * 		identifier
- * 		constant
- * 		string-literal
- */
+
 #define TOKEN_FLOW_OPERATION_START 100
 #define TOKEN_SIZEOF 200
 #define TOKEN_TYPE 300
@@ -399,7 +374,6 @@ typedef enum tokenKind{
 }Token_kind;
 
 typedef struct token Token_t;
-
 struct token {
 
 	Token_kind kind;

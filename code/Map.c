@@ -82,7 +82,7 @@ Vector* Map_get_all(Map* m, char* key) {
 	unsigned long  index = hash(key) %m -> bodySize;
 	unsigned int len = String_len(key);
 
-	for(Container* p = m -> body[index]; p; p = p -> next)
+	for(Container* p = m -> body[index]; p != NULL; p = p -> next)
 	{
 		if(String_len(p -> key) == len && String_compare(p -> key, key, len))
 			Vector_push(toReturn, p -> data);
