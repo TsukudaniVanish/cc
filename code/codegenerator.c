@@ -537,9 +537,9 @@ void gen_arg_entry(Node_t* node){
 
 	Vector *arg_types = make_vector();
 
-	for(int i = 0; node -> kind != ND_BLOCKEND; i++ , node = node -> right){
-		generate(node -> left, 0, 0);
-		Vector_push(arg_types,node -> left -> tp);
+	for(Node_t* param = node; param -> kind != ND_BLOCKEND; param = param -> right){
+		generate(param -> left, 0, 0);
+		Vector_push(arg_types,param -> left -> tp);
 	}
 	int len = Vector_get_length(arg_types);
 
@@ -638,10 +638,10 @@ void gen_function_def(Node_t *node){
 		stack_depth = stack_length / 8;
 	}//=======================================
 
-	Node_t *arg = node -> left;
+	int i = 0;
 	long int size[7];
 	long int offset[7];
-	for(int i = 0 ;arg -> kind != ND_BLOCKEND; i++,arg = arg -> right)
+	for(Node_t *arg = node -> left; arg -> kind != ND_BLOCKEND; arg = arg -> right)
 	{	
 		size[i] = arg -> left -> tp -> size;
 		if(i > 0)
@@ -652,6 +652,7 @@ void gen_function_def(Node_t *node){
 		{
 			offset[i] = size[i];
 		}
+		i++;
 	}
 	// set arguments
 	for (long i = node -> val; i > 0; i--)
@@ -673,10 +674,16 @@ void gen_function_def(Node_t *node){
 	return;
 }
 
-int get_inc_dec_registers(Node_t *node,long *size, char** register1, char** register2, RegisterName name_register1, RegisterName name_register2, char** pref) {
+int get_inc_dec_registers(
+	Node_t *node,
+	long *size,
+	char** register1,
+	char** register2, 
+	char** pref
+) {
 	*size = node -> tp -> size;
-	*register1 = get_registername(name_register1, *size);
-	*register2 = get_registername(name_register2, *size);
+	*register1 = get_registername(RN_RAX, *size);
+	*register2 = get_registername(RN_RDI, *size);
 	*pref = get_pointerpref(*size);
 	int operand;
 	switch(node -> tp -> Type_label) {
@@ -710,7 +717,7 @@ void gen_inc_dec(Node_t *node) {
 	if(node -> left == NULL && node -> right != NULL)
 	{// postfix
 		
-		int operand = get_inc_dec_registers(node -> right, &size, &rax, &rdi, RN_RAX, RN_RDI, &pref);
+		int operand = get_inc_dec_registers(node -> right, &size, &rax, &rdi, &pref);
 		
 		gen_lval(node -> right);// result of node -> right is stored in the head of current stack
 		
@@ -737,7 +744,7 @@ void gen_inc_dec(Node_t *node) {
 	}
 	if(node -> right == NULL && node -> left != NULL)
 	{// prefix
-		int operand = get_inc_dec_registers(node -> left, &size, &rax, &rdi, RN_RAX, RN_RDI, &pref);	
+		int operand = get_inc_dec_registers(node -> left, &size, &rax, &rdi, &pref);	
 		gen_lval(node -> left);
 		
 		pop_stack( RN_RAX, SIZEOF_POINTER);
@@ -1143,9 +1150,10 @@ void gen_do_while(Node_t* node) {
 
 void gen_for(Node_t* node) {
 
-	if(node -> left == 0)
+	if(node -> left == NULL || node -> left -> right == NULL)
 	{//loop will go on
 		// don't accept infinite loop
+		error_at(user_input, "can't accept infinite loop with for");
 		return;
 	}
 	else
@@ -1165,8 +1173,9 @@ void gen_for(Node_t* node) {
 
 		label(begin_label);
 		
-		
-		generate(init_condition -> right, update_number_for, end_number_for);
+		if(init_condition -> right != NULL) {
+			generate(init_condition -> right, update_number_for, end_number_for);
+		}
 
 		int size; // memory size of a iterator
 		if(init_condition -> right -> tp)
@@ -1412,7 +1421,6 @@ void gen_break(int endLabel) {
 void gen_conditional_operator(Node_t* node) {
 	long condition_size = node -> left -> tp -> size;
 	int first_expr = filenumber++;
-	char* begin_label1 = get_label_file_scope(String_add("begin", i2a(first_expr)));
 	int second_expr = filenumber++;
 	char* begin_label2 = get_label_file_scope(String_add("begin", i2a(second_expr)));
 	char* end_label2 = get_label_file_scope(String_add("end", i2a(second_expr)));
@@ -1424,9 +1432,7 @@ void gen_conditional_operator(Node_t* node) {
 	
 	compare_value(get_registername(RN_RAX, condition_size), i2a(0));
 	jump_equal(begin_label2);
-	jump(begin_label1);
-	
-	label(begin_label1);
+
 	generate(r -> left, 0, 0);
 	jump(end_label2);
 

@@ -274,7 +274,8 @@ Lvar *new_lvar(Type *tp,char *name, int length,Lvar *next) {
 
 int typecheck(Node_t *node) {
 
-	Type *tp_l , *tp_r;
+	Type *tp_l;
+	Type *tp_r;
 	if(node -> left)
 	{
 		tp_l = node -> left -> tp;
@@ -299,11 +300,22 @@ int typecheck(Node_t *node) {
 }
 
 #if defined Min
-	#define Is_type_integer(t) INTEGER_TYPE_START == Min(t,INTEGER_TYPE_START) ? t <= INTEGER_TYPE_END ? 1: t == TP_ENUM? 1: 0: 0 
+	int is_type_integer(int t) {
+		if(INTEGER_TYPE_START == Min(t, INTEGER_TYPE_START)) {
+			if(t <= INTEGER_TYPE_END) {
+				return 1;
+			}
+			if(t == TP_ENUM) {
+				return 1;
+			}
+		}	
+		return 0;
+	}
 #endif
 #define Is_type_pointer(t) (t == TP_POINTER || t == TP_ARRAY? 1: 0)
 Type *imptypecast(Node_t *node) {
-	int tp_l , tp_r;
+	int tp_l;
+	int tp_r;
 
 	switch (typecheck(node))
 	{
@@ -327,7 +339,7 @@ Type *imptypecast(Node_t *node) {
 
 	if(tp_l == TP_POINTER)
 	{
-		if(Is_type_integer(tp_r))
+		if(is_type_integer(tp_r))
 		{
 			return node -> left -> tp;
 		}
@@ -335,13 +347,13 @@ Type *imptypecast(Node_t *node) {
 	}
 	else if(tp_r == TP_POINTER)
 	{
-		if(Is_type_integer(tp_l))
+		if(is_type_integer(tp_l))
 		{
 			return node -> right -> tp;
 		}
 		return NULL;
 	}
-	if(Is_type_integer(tp_l) && Is_type_integer(tp_r))
+	if(is_type_integer(tp_l) && is_type_integer(tp_r))
 	{
 		return tp_l < tp_r ? node -> left -> tp  : node -> right -> tp;
 	}
@@ -399,8 +411,8 @@ Node_t* new_node_array_member_access(Token_t **token , Node_t** prev) {
 	 * 
 	 */
 	if(
-		(Is_type_pointer(node -> tp -> Type_label) && Is_type_integer((*prev) -> tp -> Type_label)) ||
-		(Is_type_integer(node -> tp -> Type_label) && Is_type_pointer((*prev) -> tp -> Type_label))
+		(Is_type_pointer(node -> tp -> Type_label) && is_type_integer((*prev) -> tp -> Type_label)) ||
+		(is_type_integer(node -> tp -> Type_label) && Is_type_pointer((*prev) -> tp -> Type_label))
 	){
 		Node_t *get_address = new_node_arithmetic(ND_ADD,*prev,node, (*token) -> str);
 		return new_Node_t(ND_DEREF, get_address, NULL, 0, get_address -> tp -> pointer_to, NULL);
@@ -620,15 +632,17 @@ Node_t* new_node_do_while(Token_t** token) {
 }
 
 Node_t *new_node_for(Token_t **token) {
-	Node_t *init,*check,*update = NULL;
+	Node_t *init_expr = NULL;
+	Node_t* check = NULL;
+	Node_t* update = NULL;
 	expect('(',token);
 	ScopeController_nest_appeared(controller);
 	if(!find(';',token))
 	{// this is not infinite loop
 		if(is_lvardec(token))
-			init = declare(token);
+			init_expr = declare(token);
 		else
-			init = expr(token);
+			init_expr = expr(token);
 		expect(';',token);
 		check = expr(token);
 		expect(';',token);
@@ -645,7 +659,7 @@ Node_t *new_node_for(Token_t **token) {
 			ND_FORUPDATE,
 			new_Node_t(
 				ND_FORINITCONDITION,
-				init,
+				init_expr,
 				check,
 				0,NULL,NULL
 			),
@@ -1199,7 +1213,7 @@ Node_t* declare_specify(Token_t** token, Node_t* node, int isTypeAlias) {
  * @brief pointer parse pointer '*'. change assigned node -> tp.
  * */
 Node_t *pointer(Token_t** token, Node_t* node) {
-	for(;;)
+	while(1)
 	{
 		if(find('*', token))
 		{
@@ -1479,7 +1493,7 @@ Node_t* conditional(Token_t** token) {
 
 		exprs -> left = expr(token);
 		expect(':',token);
-		exprs -> right = conditional(token);
+		exprs -> right = expr(token);
 
 		if(exprs -> left -> tp -> size >= exprs -> right -> tp -> size) {
 			exprs -> tp = exprs -> left -> tp;
@@ -1512,7 +1526,7 @@ Node_t* log_and(Token_t **token) {
 
 Node_t *equality(Token_t **token){
 	Node_t *node = relational(token);
-	for(;;)
+	while(1)
 	{	
 		parsing_here = (*token) -> str;
 		if(find(EQUAL,token))
@@ -1532,7 +1546,7 @@ Node_t *equality(Token_t **token){
 
 Node_t *relational(Token_t **token) {
 	Node_t *node = add(token);
-	for (;;)
+	while(1)
 	{
 		parsing_here = (*token) -> str;
 		if( find(LEQ,token) )
@@ -1560,7 +1574,7 @@ Node_t *relational(Token_t **token) {
 
 Node_t *add(Token_t **token) {
 	Node_t *node = mul(token);
-	for(;;)
+	while(1)
 	{
 		parsing_here = (*token) -> str;
 		if( find('+',token) )
@@ -1580,7 +1594,7 @@ Node_t *add(Token_t **token) {
 
 Node_t *mul(Token_t **token) {
 	Node_t *node = cast(token, NULL);
-	for(;;)
+	while(1)
 	{
 		parsing_here = (*token) -> str;
 		if(find('*',token))
@@ -1713,7 +1727,7 @@ Node_t *postfix(Token_t **token) {
 	{
 		return node;
 	}
-	for(;;)
+	while(1)
 	{
 		parsing_here = (*token) -> str;
 		if(is_arrmemaccess(token))

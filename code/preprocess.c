@@ -150,7 +150,7 @@ static Expr* mulMacro(Token_t** token) {
         return new_Expr(Div, 0, exp, mulMacro(token));
     return exp;
 }
-char unitOps[] = {'+', '-', '!'};
+char unitOps[3] = {'+', '-', '!'};
 #define OpsLen 3
 #define getOpsKind(i) i == 0? Plus: i == 1? Minus: LogNot
 static Expr* unitMacro(Token_t** token) {
@@ -246,11 +246,21 @@ int eval_Expr(Expr* exp) {
 
 Vector* read_parameters(Token_t** token) {
     Vector* result = make_vector();
-    while (!find(')', token))
+    int parenthesis = 1;
+    while (parenthesis > 0)
     {
         Token_t* buf = *token;
-        while (*token && (*token) -> str[0] != ',' && (*token) -> str[0] != ')')
+        while (*token && (*token) -> str[0] != ',' && parenthesis > 0 || (*token && (*token) -> str[0] != ',' && (*token) -> str[0] != ')'))
         {
+            if(find('(', token)) {
+                parenthesis++;
+                continue;
+            }
+            if((*token) -> str[0] == ')') {
+                parenthesis--;
+                if(parenthesis > 0) consume(token);
+                continue;
+            }
             consume(token);
         }
         if(*token == NULL) {
@@ -260,8 +270,11 @@ Vector* read_parameters(Token_t** token) {
         Vector_push(result, arg_head);
         if((*token) -> str[0] == ',') {
             consume(token);
+            continue;
         }
+        if((*token) -> str[0] != ')') error_at((*token) -> str, "failed to read parameters");
     }
+    expect(')', token);
     return result;
 }
 
@@ -274,11 +287,13 @@ Token_t* replace_arguments(MacroData* macroData,Token_t* buf, Token_t* head, Tok
         {
             char* name = expect_ident(&head);
             int i = MacroData_contains_parameters(macroData, name);
-            if(i > -1)
+            if(i > -1 && i < arguments -> length)
             {
                 Token_t* arg = Vector_at(arguments, i);
                 Token_t* replace_ident = Token_copy_all(arg, NULL);
                 Token_splice(replace_ident, buf, head);
+            } else if(i > -1) {
+                error_at(head -> str,"error at replace_arguments");
             }
             buf = buf -> next;
             continue;
@@ -340,8 +355,8 @@ int macro_expansion(Token_t* token) {
 Token_t* preprocess(Token_t* token) {
     Token_t* toReturn = token;
 
-    for(;;)
-    {
+   while ((1))
+   {
         if(macro_expansion(token))
             continue;
         break;

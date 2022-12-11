@@ -1,5 +1,5 @@
 
-#define Min(a,b) a < b ? a: b
+#define Min(a, b) a < b? a: b
 #define Max(a, b) a < b? b: a
 
 extern void int_to_string(char*, int);
