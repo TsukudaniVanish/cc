@@ -403,7 +403,7 @@ Node_t* new_node_array_member_access(Token_t **token , Node_t** prev) {
 		(Is_type_integer(node -> tp -> Type_label) && Is_type_pointer((*prev) -> tp -> Type_label))
 	){
 		Node_t *get_address = new_node_arithmetic(ND_ADD,*prev,node, (*token) -> str);
-		return new_Node_t(ND_DEREF,get_address,NULL,0,0,get_address -> tp -> pointer_to,NULL);
+		return new_Node_t(ND_DEREF, get_address, NULL, 0, get_address -> tp -> pointer_to, NULL);
 	}
 
 	error( "type : %d\n", (*prev) -> tp -> Type_label);
@@ -411,13 +411,13 @@ Node_t* new_node_array_member_access(Token_t **token , Node_t** prev) {
 }
 
 Node_t* new_node_scaling_value(Node_t* lhs, Type* tr) {
-	return new_Node_t(ND_MUL, lhs, new_node_num(tr -> pointer_to -> size), 0, 0,tr, NULL); 
+	return new_Node_t(ND_MUL,  lhs,  new_node_num(tr -> pointer_to -> size),  0, tr,  NULL); 
 }
 
 // Node_t making function with type check typically used in parsing formula
 // in this function, scaling number for pointer arithmetic.
 Node_t *new_node_arithmetic( Node_kind kind,Node_t *l,Node_t *r, char *parsing_here) {
-	Node_t *node = new_Node_t(kind,l,r,0,0,NULL,NULL);
+	Node_t *node = new_Node_t(kind, l, r, 0, NULL, NULL);
 	//type check
 	if(typecheck(node) == 0)
 	{
@@ -452,13 +452,13 @@ Node_t *new_node_function_call(Token_t **token) {
 		else
 			error_at((*token) -> str, "%s is not function", name);
 	}
-	Node_t *node = new_Node_t(ND_FUNCTIONCALL,NULL,NULL,0,0,NULL,NULL);
+	Node_t *node = new_Node_t(ND_FUNCTIONCALL, NULL, NULL, 0, NULL, NULL);
 	node -> storage_class = data -> storage;
 	node -> tp = Type_function_return(&node -> name,token);
 	
 	expect('(',token);
 
-	Node_t *node_end = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);
+	Node_t *node_end = new_Node_t(0, NULL, NULL, 0, NULL, NULL);
 	node -> left = node_end;
 
 	while (!find(')',token))
@@ -467,7 +467,7 @@ Node_t *new_node_function_call(Token_t **token) {
 		node -> val++;
 
 		node_end -> kind = ND_ARGMENT;
-		Node_t *node_right_end = new_Node_t(0,NULL,NULL,0,0,NULL,NULL);
+		Node_t *node_right_end = new_Node_t(0, NULL, NULL, 0, NULL, NULL);
 		node_end ->left = conditional(token);
 		node_end ->right = node_right_end;
 		node_end = node_right_end;
@@ -479,7 +479,7 @@ Node_t *new_node_function_call(Token_t **token) {
 
 // to make a scope of function global, we update scope after parse function name. 
 Node_t *new_node_function_definition(Token_t **token) {
-	Node_t *node = new_Node_t(ND_FUNCTIONDEF,NULL,NULL,0,0,NULL,NULL);
+	Node_t *node = new_Node_t(ND_FUNCTIONDEF, NULL, NULL, 0, NULL, NULL);
 	node = declare_specify(token, node, is_type_alias(token));
 	node = ident_specify(token, node); 
 
@@ -524,12 +524,15 @@ Node_t *new_node_var(Token_t **token) {
 	}
 	if(lvar != NULL && ScopeInfo_inscope(lvar -> scope))
 	{//local variable
-		return new_Node_t(ND_LVAL,NULL,NULL,0,lvar -> offset,lvar -> tp,lvar -> name);
+		Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, lvar -> tp, lvar -> name);
+		node -> offset = lvar -> offset;
+		return node;
 	}
 	lvar = find_lvar(ident -> str,ident -> length,&global);
 	if(lvar != NULL)
 	{//global variable
-		return new_Node_t(ND_GLOBVALCALL,NULL,NULL,0,0,lvar -> tp,lvar -> name);
+		Node_t* node = new_Node_t(ND_GLOBVALCALL, NULL, NULL, 0, lvar -> tp, lvar -> name);
+		return node;
 	}
 	error_at(ident -> str,"Anonymous identifier: %*s", ident -> length, ident -> str);
 }
@@ -547,7 +550,7 @@ Node_t *new_node_ident(Token_t**token)
 }
 
 Node_t *new_node_block(Token_t ** token){
-	Node_t *node = new_Node_t(ND_BLOCK,NULL,NULL,0,0,NULL,NULL);
+	Node_t *node = new_Node_t(ND_BLOCK, NULL, NULL, 0, NULL, NULL);
 	Node_t *node_top = node;
 
 	while (!find('}',token))
@@ -555,7 +558,7 @@ Node_t *new_node_block(Token_t ** token){
 		node -> kind = ND_BLOCK;
 		node -> left = stmt(token);
 
-		Node_t *right = new_Node_t(ND_BLOCK,NULL,NULL,0,0,NULL,NULL);
+		Node_t *right = new_Node_t(ND_BLOCK, NULL, NULL, 0, NULL, NULL);
 		node -> right = right;
 
 		node = right;
@@ -577,15 +580,15 @@ Node_t *new_node_if(Token_t** token)
 		consume(token);
 		return new_Node_t(
 				ND_ELSE,
-				new_Node_t(ND_IFE,condition,statement,0,0,NULL,NULL),
-				stmt(token),
-				0,0,NULL,NULL);
+				new_Node_t(ND_IFE, condition, statement, 0, NULL, NULL),
+				stmt(token),/* else body */
+				0,NULL,NULL);
 	}
 	Node_t* node = new_Node_t(
 			ND_IF,
 			condition,
 			statement,
-			0,0,NULL,NULL);
+			0,NULL,NULL);
 	ScopeController_nest_disappeared(controller);
 	return node;
 }
@@ -595,7 +598,7 @@ Node_t *new_node_while(Token_t **token) {
 
 	Node_t *condition = expr(token);
 	Node_t *statement = stmt(token);
-	Node_t* node = new_Node_t(ND_WHILE,condition,statement,0,0,NULL,NULL);
+	Node_t* node = new_Node_t(ND_WHILE, condition, statement, 0, NULL, NULL);
 
 	ScopeController_nest_disappeared(controller);
 	return node;
@@ -610,7 +613,7 @@ Node_t* new_node_do_while(Token_t** token) {
 	}
 	consume(token);
 	Node_t* condition = expr(token);
-	Node_t* node = new_Node_t(ND_DO, condition, statement,0, 0, NULL, NULL);
+	Node_t* node = new_Node_t(ND_DO,  condition,  statement, 0,  NULL,  NULL);
 
 	ScopeController_nest_disappeared(controller);
 	return node;
@@ -644,20 +647,20 @@ Node_t *new_node_for(Token_t **token) {
 				ND_FORINITCONDITION,
 				init,
 				check,
-				0,0,NULL,NULL
+				0,NULL,NULL
 			),
 			update,
-			0,0,NULL,NULL
+			0,NULL,NULL
 		),
 		stmt(token),
-		0,0,NULL,NULL
+		0,NULL,NULL
 	);
 	ScopeController_nest_disappeared(controller);
 	return node;
 }
 
 Node_t *new_node_return(Token_t **token) {
-	Node_t *node = new_Node_t(ND_RETURN, expr(token),NULL,0,0,NULL,NULL);
+	Node_t *node = new_Node_t(ND_RETURN,  expr(token), NULL, 0, NULL, NULL);
 	expect(';',token);
 	return node;
 }
@@ -672,25 +675,25 @@ int parse_case_default(int depth, Token_t** token, Node_t** _caseLabel, Node_t**
 
 	Node_t* statements;
 	if((*token) -> kind == TK_CASE) {
-		statements = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+		statements = new_Node_t(ND_BLOCK,  NULL,  NULL,  0,  NULL,  NULL);
 	} else {
-		statements = new_Node_t(ND_BLOCK, stmt(token), NULL, 0, 0, 0, 0); // todo: allow blank statement
+		statements = new_Node_t(ND_BLOCK,  stmt(token),  NULL,  0,  NULL,  NULL); // todo: allow blank statement
 	}
 	caseStatement -> left = statements;
 
-	statements -> right = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+	statements -> right = new_Node_t(ND_BLOCK,  NULL,  NULL,  0,  NULL,  NULL);
 	statements = statements -> right;
 	while((*token) -> kind != TK_CASE && (*token) -> kind != TK_DEFAULT && ((*token) -> str)[0] != '}')
 	{
 		statements -> left = stmt(token);
 
-		statements -> right = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+		statements -> right = new_Node_t(ND_BLOCK,  NULL,  NULL,  0,  NULL,  NULL);
 		statements = statements -> right;
 	}
 	statements -> kind = ND_BLOCKEND;
 
-	caseLabel -> right = new_Node_t(ND_CASE, NULL, NULL, depth, 0, NULL, NULL);
-	caseStatement -> right = new_Node_t(ND_BLOCK, NULL, NULL, depth, 0, NULL, NULL);
+	caseLabel -> right = new_Node_t(ND_CASE,  NULL,  NULL,  depth,  NULL,  NULL);
+	caseStatement -> right = new_Node_t(ND_BLOCK,  NULL,  NULL,  depth,  NULL,  NULL);
 
 	// return
 	*_caseLabel = caseLabel -> right;
@@ -699,17 +702,17 @@ int parse_case_default(int depth, Token_t** token, Node_t** _caseLabel, Node_t**
 
 Node_t* new_node_switch(Token_t** token) {
 
-	Node_t* node = new_Node_t(ND_SWITCH, NULL, NULL, 0, 0, NULL, NULL);
+	Node_t* node = new_Node_t(ND_SWITCH,  NULL,  NULL,  0,  NULL,  NULL);
 	expect('(', token);
 	node -> left = expr(token);
 	expect(')', token);
 
-	Node_t* branch = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+	Node_t* branch = new_Node_t(ND_BLOCK,  NULL,  NULL,  0,  NULL,  NULL);
 	node -> right = branch;
 
 	int numberOfCase = 0;
-	Node_t* caseLabel = new_Node_t(ND_CASE, NULL, NULL, 0, 0, NULL, NULL);
-	Node_t* caseStatement = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
+	Node_t* caseLabel = new_Node_t(ND_CASE,  NULL,  NULL,  0,  NULL,  NULL);
+	Node_t* caseStatement = new_Node_t(ND_BLOCK,  NULL,  NULL,  0,  NULL,  NULL);
 
 	Node_t** _caseLabel = &caseLabel; // helper pointer
 	Node_t** _caseStatement = &caseStatement; // helper pointer
@@ -764,23 +767,23 @@ Node_t *new_node_flow_operation(Token_kind kind,Token_t **token) {
 	case TK_ELSE: // ERROR
 		error_at((*token) -> str, "'else' follows after 'if' or 'else if' statement");
 	case TK_CONTINUE:
-		return new_Node_t(ND_CONTINUE, NULL, NULL, 0, 0, NULL, NULL);
+		return new_Node_t(ND_CONTINUE,  NULL,  NULL,  0,  NULL,  NULL);
 	case TK_BREAK:
-		return new_Node_t(ND_BREAK, NULL, NULL, 0, 0, NULL, NULL);
+		return new_Node_t(ND_BREAK,  NULL,  NULL,  0,  NULL,  NULL);
 	default:
 		return NULL;
 	}
 }
 
 Node_t *new_node_num(int val) {
-	Node_t *node = new_Node_t(ND_NUM,NULL,NULL,val,0,new_tp(TP_INT,NULL,SIZEOF_INT),NULL);
+	Node_t *node = new_Node_t(ND_NUM, NULL, NULL, val, new_tp(TP_INT,NULL,SIZEOF_INT), NULL);
 	return node;
 }
 
 
 
 Node_t *new_node_string_literal(Token_t ** token) {
-	Node_t *node = new_Node_t(ND_STRINGLITERAL,NULL,NULL,0,0,new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),SIZEOF_POINTER),NULL);
+	Node_t *node = new_Node_t(ND_STRINGLITERAL, NULL, NULL, 0, new_tp(TP_POINTER,new_tp(TP_CHAR,NULL,1),SIZEOF_POINTER), NULL);
 	
 	Lvar *literal = declare_ident(node -> tp,(*token) -> str,(*token) -> length,&string_literal);
 	
@@ -801,7 +804,7 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	}
 
 	if((*token) -> kind == TK_TYPEDEF) {
-		Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+		Node_t* node = new_Node_t(ND_LVAL,  NULL,  NULL,  0,  NULL,  NULL);
 		consume(token);
 		node = new_node_set_type_alias(token, node);
 		expect(';', token);
@@ -809,7 +812,7 @@ Node_t *new_node_glob_ident(Token_t**token) {
 	}
 
 	// global variable declaration or struct-union declaration 
-	Node_t *node = new_Node_t(ND_GLOBVALDEF,NULL,NULL,0,0,NULL,NULL);
+	Node_t *node = new_Node_t(ND_GLOBVALDEF, NULL, NULL, 0, NULL, NULL);
 	node = declare_specify(token, node, is_type_alias(token));
 	node = ident_specify(token, node);
 
@@ -852,7 +855,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 
 			(*token) = (*token) -> next;
 
-			node = new_Node_t(ND_DEREF, unitary(token), NULL,0,0,NULL,NULL);
+			node = new_Node_t(ND_DEREF,  unitary(token),  NULL, 0, NULL, NULL);
 			if( node -> left -> tp -> Type_label == TP_ARRAY)
 			{
 				node -> tp = node -> left -> tp -> pointer_to;
@@ -872,7 +875,7 @@ Node_t *new_node_ref_deref(Token_t **token) {
 
 			(*token) = (*token) -> next;
 
-			node = new_Node_t(ND_ADDR,unitary(token), NULL,0,0,NULL,NULL);
+			node = new_Node_t(ND_ADDR, unitary(token),  NULL, 0, NULL, NULL);
 			node -> tp = new_tp(TP_POINTER,node -> left -> tp,SIZEOF_POINTER);
 			return node;
 		}
@@ -935,14 +938,14 @@ int type_parameter_list(Token_t** token, Node_t** parameter_container) {
 // after this function being called, parameter_list points head of list of nodes which has parameter info.
 int parameter_list(Token_t** token, Node_t** parameter_container) {
 	int number_of_parameters = 0;
-	Node_t* param_tree = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
+	Node_t* param_tree = new_Node_t(ND_ARGMENT, NULL, NULL, 0, NULL, NULL);
 	*parameter_container = param_tree;
 	while (!find(')',token))
 	{
 		param_tree -> left = parameter_declare(token, number_of_parameters);
 		find(',',token);
 
-		Node_t *next = new_Node_t(ND_ARGMENT,NULL,NULL,0,0,NULL,NULL);
+		Node_t *next = new_Node_t(ND_ARGMENT, NULL, NULL, 0, NULL, NULL);
 		param_tree -> right = next;
 		param_tree = next;
 		if((*token) -> kind == TK_PLACE_HOLDER) {
@@ -963,7 +966,7 @@ int parameter_list(Token_t** token, Node_t** parameter_container) {
 Node_t* parameter_declare(Token_t** token, int number_of_parameter) {
 	ScopeInfo* current_scope = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
-	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+	Node_t* node = new_Node_t(ND_LVAL,  NULL,  NULL,  0,  NULL,  NULL);
 
 	node = declare_specify(token, node, is_type_alias(token));
 	node = ident_specify(token, node);
@@ -1029,7 +1032,7 @@ Node_t *stmt(Token_t **token) {
 Node_t *declare(Token_t **token) {
 	ScopeInfo* current_Scope = ScopeController_get_current_scope(controller);
 	Lvar *table = Vector_get_tail(nameTable);
-	Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+	Node_t* node = new_Node_t(ND_LVAL,  NULL,  NULL,  0,  NULL,  NULL);
 	int isTypeDef = (*token) -> kind == TK_TYPEDEF;
 	int isTypeAlias = (*token) -> kind == TK_IDENT? is_type_alias(token): 0;
 
@@ -1097,8 +1100,8 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 		int i = 0;
 		char* member_name = Vector_at(data -> memberNames, i);
 		Node_t* member = Map_at(data -> memberContainer, member_name);
-		Node_t *initBranch = new_Node_t(ND_BLOCK, NULL, NULL, 0, 0, NULL, NULL);
-		node = new_Node_t(ND_INITLIST, node, initBranch, 0, 0, node -> tp, NULL);
+		Node_t *initBranch = new_Node_t(ND_BLOCK,  NULL,  NULL,  0,  NULL,  NULL);
+		node = new_Node_t(ND_INITLIST,  node,  initBranch,  0,  node -> tp,  NULL);
 		
 		initBranch -> left = init(token, member);
 		while(find(',', token))
@@ -1112,22 +1115,22 @@ Node_t* init_list(Token_t** token, Node_t* node) {
 			else
 				error_at((*token) -> str, "too many initializer");
 
-			initBranch -> right = new_Node_t(ND_BLOCK, init(token, member), NULL, 0, 0, NULL, NULL);
+			initBranch -> right = new_Node_t(ND_BLOCK, init(token,  member),  NULL,  0,  NULL,  NULL);
 			initBranch = initBranch -> right;
 		}
-		initBranch -> right = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
+		initBranch -> right = new_Node_t(ND_BLOCKEND,  NULL,  NULL,  0,  NULL,  NULL);
 		return node;
 	}
 	if(node -> tp -> Type_label == TP_ARRAY)
 	{
-		Node_t* initBranch = new_Node_t(ND_BLOCK, init(token, node), NULL, 0, 0, NULL, NULL);
-		node = new_Node_t(ND_INITLIST, node, initBranch, 0, 0, NULL, NULL);
+		Node_t* initBranch = new_Node_t(ND_BLOCK, init(token,  node),  NULL,  0,  NULL,  NULL);
+		node = new_Node_t(ND_INITLIST,  node,  initBranch,  0,  NULL,  NULL);
 		while(find(',', token))
 		{
-			initBranch -> right = new_Node_t(ND_BLOCK, init(token, node), NULL, 0, 0, NULL, NULL);
+			initBranch -> right = new_Node_t(ND_BLOCK, init(token,  node),  NULL,  0,  NULL,  NULL);
 			initBranch = initBranch -> right;
 		}
-		initBranch -> right = new_Node_t(ND_BLOCKEND, NULL, NULL, 0, 0, NULL, NULL);
+		initBranch -> right = new_Node_t(ND_BLOCKEND,  NULL,  NULL,  0,  NULL,  NULL);
 		return node;
 	}
 	return NULL;
@@ -1324,7 +1327,7 @@ Node_t* struct_declare(Token_t** token, Node_t* node) {
 Node_t* struct_declare_inside(Token_t** token, Node_t* node) {
 	StructData* data = search_from_tag_namespece(node -> tp -> name, ScopeController_get_current_scope(controller));
 	char* previousMember = Vector_get_tail(data -> memberNames);
-	Node_t* member = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+	Node_t* member = new_Node_t(ND_LVAL,  NULL,  NULL,  0,  NULL,  NULL);
 	
 	member = type_specify(token, member);
 	if((*token) -> kind == TK_OPERATOR || (*token) -> kind == TK_IDENT)
@@ -1438,7 +1441,7 @@ Node_t* enumerator(Token_t** token, Node_t* node) {
 		{
 			nameData -> val = member != NULL?member -> val + 1: 0;
 		}
-		StructData_add(data, new_Node_t(ND_LVAL, NULL, NULL, nameData -> val, 0, NULL, name));
+		StructData_add(data, new_Node_t(ND_LVAL,  NULL,  NULL,  nameData -> val,  NULL,  name));
 		
 	}
 	return node;
@@ -1470,8 +1473,8 @@ Node_t* conditional(Token_t** token) {
 	Node_t* node = log_or(token);
 
 	if(find('?', token)) {
-		node = new_Node_t(ND_CONDITIONAL, node, NULL, 0, 0, NULL, NULL);
-		Node_t* exprs = new_Node_t(ND_CONDITIONAL_EXPRS, NULL, NULL, 0, 0, NULL, NULL);
+		node = new_Node_t(ND_CONDITIONAL,  node,  NULL,  0,  NULL,  NULL);
+		Node_t* exprs = new_Node_t(ND_CONDITIONAL_EXPRS,  NULL,  NULL,  0,  NULL,  NULL);
 		node -> right = exprs;
 
 		exprs -> left = expr(token);
@@ -1492,7 +1495,7 @@ Node_t* log_or(Token_t **token) {
 	Node_t *node = log_and(token);
 	if(find(LOG_OR, token))
 	{
-		node = new_Node_t(ND_LOGOR, node, log_or(token), 0, 0, new_tp(TP_INT, NULL, SIZEOF_INT), NULL);
+		node = new_Node_t(ND_LOGOR,  node,  log_or(token),  0,  new_tp(TP_INT, NULL, SIZEOF_INT),  NULL);
 	}
 	return node;
 }
@@ -1501,7 +1504,7 @@ Node_t* log_and(Token_t **token) {
 	Node_t *node = equality(token);
 	if(find(LOG_AND, token))
 	{
-		node = new_Node_t(ND_LOGAND, node, log_and(token), 0, 0, new_tp(TP_INT, NULL, SIZEOF_INT), NULL);
+		node = new_Node_t(ND_LOGAND,  node,  log_and(token),  0,  new_tp(TP_INT, NULL, SIZEOF_INT),  NULL);
 	}
 	return node;
 }
@@ -1600,7 +1603,7 @@ Node_t *mul(Token_t **token) {
 
 Node_t* cast(Token_t** token, Node_t* node) {
 	if(is_cast(token)) {
-		Node_t* node_tp = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL);
+		Node_t* node_tp = new_Node_t(ND_LVAL,  NULL,  NULL,  0,  NULL,  NULL);
 		expect('(', token); // consume '('
 		node_tp = type_name(token, node_tp);
 		expect(')', token);
@@ -1628,7 +1631,7 @@ Node_t *unitary(Token_t **token) {
 	Node_t *node = NULL;
 	if((*token)-> kind == TK_SIZEOF)
 	{
-		Node_t* node = new_Node_t(ND_LVAL, NULL, NULL, 0, 0, NULL, NULL); // for get type
+		Node_t* node = new_Node_t(ND_LVAL,  NULL,  NULL,  0,  NULL,  NULL); // for get type
 
 		consume(token);
 		if(is_cast(token)) {
@@ -1662,7 +1665,7 @@ Node_t *unitary(Token_t **token) {
 		{// this is not enough condition for detect Left value.
 			error_at((*token) -> str, "lval is expected");
 		}
-		node = new_Node_t(ND_INC,unitary(token),NULL,0,0,NULL,NULL);
+		node = new_Node_t(ND_INC, unitary(token), NULL, 0, NULL, NULL);
 		node -> tp = node -> left -> tp;
 		return node;
 	}
@@ -1672,7 +1675,7 @@ Node_t *unitary(Token_t **token) {
 		{
 			error_at((*token) -> str, "lval is expected");
 		}
-		node = new_Node_t(ND_DEC,unitary(token),NULL,0,0,NULL,NULL);
+		node = new_Node_t(ND_DEC, unitary(token), NULL, 0, NULL, NULL);
 		node -> tp = node -> left -> tp;
 		return node;
 	}
@@ -1696,7 +1699,7 @@ Node_t *unitary(Token_t **token) {
 	}
 	else if(find('!', token))
 	{
-		node = new_Node_t(ND_LOGNOT, postfix(token), NULL, 0, 0, new_tp(TP_INT, NULL, SIZEOF_INT), NULL);
+		node = new_Node_t(ND_LOGNOT,  postfix(token),  NULL,  0,  new_tp(TP_INT, NULL, SIZEOF_INT),  NULL);
 		return node;
 	}
 		
@@ -1725,7 +1728,7 @@ Node_t *postfix(Token_t **token) {
 			{
 				error_at(parsing_here, "lval is expected");
 			}
-			node = new_Node_t(ND_INC,NULL,node,0,0,NULL,NULL);
+			node = new_Node_t(ND_INC, NULL, node, 0, NULL, NULL);
 			node -> tp = node -> right -> tp;
 			continue;
 		}
@@ -1735,7 +1738,7 @@ Node_t *postfix(Token_t **token) {
 			{
 				error_at(parsing_here, "lval is expected");
 			}
-			node = new_Node_t(ND_DEC,NULL,node,0,0,NULL,NULL);
+			node = new_Node_t(ND_DEC, NULL, node, 0, NULL, NULL);
 			node -> tp = node -> right -> tp;
 			continue;
 		}
@@ -1753,7 +1756,7 @@ Node_t *postfix(Token_t **token) {
 			if(!Map_contains(data -> memberContainer, memberName))
 				error_at((*token) -> str, "unknown member name");
 			Node_t* member = Map_at(data -> memberContainer, memberName);
-			node= new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
+			node= new_Node_t(ND_DOT,  node,  member,  0,  member -> tp,  member -> name);
 			continue;
 		}
 		if(find(ARROW, token))
@@ -1761,7 +1764,7 @@ Node_t *postfix(Token_t **token) {
 			if(node -> tp -> Type_label != TP_POINTER)
 				error_at(parsing_here, "Pointer type is expected");
 
-			node = new_Node_t(ND_DEREF, node, NULL, 0, 0, node -> tp -> pointer_to, NULL);
+			node = new_Node_t(ND_DEREF,  node,  NULL,  0,  node -> tp -> pointer_to,  NULL);
 			if(node -> tp -> Type_label != TP_STRUCT && node -> tp -> Type_label != TP_UNION)
 				error_at((*token) -> str, "member access is expected");
 
@@ -1772,7 +1775,7 @@ Node_t *postfix(Token_t **token) {
 				error_at((*token) -> str, "unknown member name");
 
 			Node_t* member = Map_at(data -> memberContainer, memberName);
-			node = new_Node_t(ND_DOT, node, member, 0, 0, member -> tp, member -> name);
+			node = new_Node_t(ND_DOT,  node,  member,  0,  member -> tp,  member -> name);
 			continue;
 		}
 		return node;

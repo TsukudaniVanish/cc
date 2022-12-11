@@ -618,7 +618,7 @@ struct node {
  * 
  * @return Node_t* 
  */
-extern Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,unsigned int off,Type* tp,char *name);
+extern Node_t *new_Node_t(Node_kind,Node_t *l,Node_t *r,int v,Type* tp,char *name);
 // Identify node is lvar or not
 extern int is_lval(Node_t* node);
 

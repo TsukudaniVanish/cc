@@ -10,7 +10,7 @@ fi
 as -o tmp_ut.o tmp_ut.s
 as -o tmp_main.o tmp_main.s  
 as -o tmp_Map.o tmp_Map.s 
-cc -no-pie -g -o tmp Vector.o tokenize.o String.o tmp_Map.s Node.o Token.o tmp_main.s parse.o tmp_ut.s preprocess.o codegenerator.o ./backend/file.o ./backend/error_point.o
+cc -no-pie -g -o tmp Vector.o tokenize.o String.o tmp_Map.o Node.o Token.o tmp_main.o parse.o tmp_ut.o preprocess.o codegenerator.o ./backend/file.o ./backend/error_point.o
 
 ./tmp -T
 if [ $? -eq 0 ]; then 
